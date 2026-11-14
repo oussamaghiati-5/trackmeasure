@@ -1,0 +1,10 @@
+data/
+ext/
+results/
+__pycache__/
+*.pyc
+.env
+tranco_latest.zip
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

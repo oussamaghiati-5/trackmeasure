@@ -1,0 +1,14 @@
+services:
+  crawler:
+    build: .
+    # --init: reap zombies (Chromium spawns sub-processes that may become zombies)
+    # ipc: host (or shm_size: 2g): Chrome requires a large /dev/shm for rendering
+    init: true
+    ipc: host
+    volumes:
+      - ./data:/app/data          # read-write: SQLite outputs
+      - ./ext:/app/ext:ro         # read-only: unpacked extensions
+      - ./results:/app/results    # read-write: analysis CSVs
+    working_dir: /app
+    # No network restrictions here: the VPN overlay (docker-compose.vpn.yml)
+    # locks egress to a single EU exit when composing with that file.

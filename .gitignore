@@ -1,0 +1,12 @@
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/*.sqlite-journal
+ext/
+results/
+__pycache__/
+*.pyc
+.env
+tranco_latest.zip
+tm_profile_*/
+tm_resp_*/

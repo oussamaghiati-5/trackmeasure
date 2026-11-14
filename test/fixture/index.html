@@ -1,0 +1,11 @@
+<!doctype html><html><head><title>News</title>
+<script src="http://cdn.tracker.test/fp.js"></script>
+<script src="http://ads.test/ads.js"></script>
+<script>document.cookie = "session_pref=dark; path=/"; localStorage.setItem("lastVisit", "x");</script>
+</head><body>
+<div id="cmp" style="position:fixed;bottom:0;background:#eee;padding:10px">
+ We use cookies. <button onclick="decide('rejected')">Reject all</button> <button onclick="decide('accepted')">Accept all</button></div>
+<script>function decide(v){document.cookie="consent="+v+"; path=/; max-age=31536000"; document.getElementById('cmp').remove();}
+if (document.cookie.includes('consent=')) document.getElementById('cmp').remove();</script>
+<h1>Front page</h1><a href="/world">World</a> <a href="/sport">Sport</a> <a href="/tech">Tech</a> <a href="/login">Login</a>
+<div style="height:3000px"></div></body></html>

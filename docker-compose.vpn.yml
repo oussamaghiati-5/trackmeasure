@@ -1,0 +1,39 @@
+# VPN overlay: compose with the base file to route crawler traffic through gluetun.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.vpn.yml run --rm crawler python crawler.py ...
+#
+# Required .env keys (copy .env.example to .env and fill in):
+#   VPN_SERVICE_PROVIDER, VPN_TYPE, WIREGUARD_PRIVATE_KEY (or openvpn equiv),
+#   SERVER_COUNTRIES (e.g. France for GDPR banners; US for CCPA).
+#
+# COMPARABILITY: use the same exit node (SERVER_CITIES or SERVER_HOSTNAMES) for
+# every run of one experiment so geo-based A/B serving doesn't bias results.
+# Record the exit IP in your paper (verify via: docker compose ... run --rm crawler
+#   python -c "import urllib.request; print(urllib.request.urlopen('https://ifconfig.me').read())")
+
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    env_file:
+      - .env
+    # Subnets that must still be reachable from crawler even through the VPN
+    # (Docker bridge networks). Adjust if your Docker network uses different ranges.
+    environment:
+      - FIREWALL_OUTBOUND_SUBNETS=172.16.0.0/12,192.168.0.0/16
+    healthcheck:
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  crawler:
+    # Route ALL crawler traffic through gluetun (no direct internet access).
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy
