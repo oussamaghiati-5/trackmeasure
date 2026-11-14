@@ -103,7 +103,16 @@ make respawn
 make analyze
 ```
 
-Crawls resume: completed sites are skipped, failed ones are retried from scratch. The container runs as the non-root `pwuser` (no `--no-sandbox`) with `--init --ipc=host`. Only `./data` (rw), `./ext` (ro) and `./results` are mounted. The base image tag must match the pinned `playwright` version in `requirements.txt`.
+Crawls resume: completed sites are skipped, failed ones are retried from scratch. The base image tag must match the pinned `playwright` version in `requirements.txt`.
+
+### Isolation checklist (before any real crawl)
+
+The container runs as non-root `pwuser` (no `--no-sandbox`) with `init`, `shm_size: 2gb` (not `ipc: host`) and `cap_drop: [ALL]`. (`no-new-privileges` is not set: it broke every `exec` on the dev host.) Only `./data` (rw), `./ext` (ro) and `./results` (rw) are mounted; there is no Docker socket and no host network. The VPN overlay deliberately sets no `FIREWALL_OUTBOUND_SUBNETS`, so crawled pages can't reach your LAN.
+
+1. **Snapshot the VM** (`VBoxManage snapshot "<vm>" take pre-crawl` or `virsh snapshot-create-as <vm> pre-crawl`). Disable writable shared folders, clipboard sharing and drag-and-drop, keeping only the folder used to export `data/`.
+2. **`make preflight`** checks: uid is `pwuser`, no Docker socket, no `.env` in the image, Chromium launches with its sandbox enabled, and only the expected mounts. If the sandbox check fails, add Playwright's `seccomp_profile.json` under `security_opt`; do not fall back to `--no-sandbox`.
+3. **`make preflight-vpn`** prints the egress IP, which must be the VPN exit and not your real IP. Then run `docker compose -f docker-compose.yml -f docker-compose.vpn.yml stop gluetun` and confirm the crawler has no connectivity (kill switch).
+4. Use the same exit for every run of one experiment, and record it.
 
 Without Docker: `pip install -r requirements.txt && python -m playwright install --with-deps chromium`.
 
@@ -115,7 +124,7 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 ## Status
 
-Built and passing a local end-to-end smoke test with the original (non-container) setup. The container setup, extension fetch, Tranco and respawn-candidate scripts are written but not yet exercised. **Nothing has been run against real websites yet**; next is a 5-site pilot through an EU exit to tune consent regexes, timeouts and attribution.
+`make preflight` and `make smoke` pass in the container (headless `channel="chromium"`, non-root, MV3 test extension loads and blocks). The extension fetch, Tranco and respawn-candidate scripts and the VPN overlay are written but not yet exercised. **Nothing has been run against real websites yet**; next is a 5-site pilot through an EU exit to tune consent regexes, timeouts and attribution.
 
 ## Pitfalls (read before the real crawl)
 

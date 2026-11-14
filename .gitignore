@@ -5,6 +5,7 @@ data/*.sqlite-journal
 ext/
 results/
 __pycache__/
+_metadata/
 *.pyc
 .env
 tranco_latest.zip

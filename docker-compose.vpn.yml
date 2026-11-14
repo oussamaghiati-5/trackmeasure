@@ -20,10 +20,7 @@ services:
       - /dev/net/tun:/dev/net/tun
     env_file:
       - .env
-    # Subnets that must still be reachable from crawler even through the VPN
-    # (Docker bridge networks). Adjust if your Docker network uses different ranges.
-    environment:
-      - FIREWALL_OUTBOUND_SUBNETS=172.16.0.0/12,192.168.0.0/16
+    # No FIREWALL_OUTBOUND_SUBNETS on purpose: crawled pages must not reach the LAN.
     healthcheck:
       test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
       interval: 10s

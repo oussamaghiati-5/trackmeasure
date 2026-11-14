@@ -18,7 +18,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source (data/ and ext/ are mounted at runtime; excluded via .dockerignore)
-COPY . /app
+# --chown: Chromium must be able to read (and write generated rulesets into) unpacked extensions.
+COPY --chown=pwuser:pwuser . /app
 
 # Run as the non-root user pre-created by the base image (UID 1000).
 # This avoids the --no-sandbox flag that root would force on Chromium.

@@ -102,8 +102,8 @@ def main():
         b = fps[(fps["run"] == "baseline") & (fps["phase_group"] == "post")]
         for tech in ("canvas", "canvas_font", "webrtc", "audio", "webgl", "attr_enum"):
             check(tech in b["technique"].values, f"baseline detects {tech}")
-        check("cdn.tracker.test" in b["script_domain"].values,
-              "baseline attributes to cdn.tracker.test")
+        check("tracker.test" in b["script_domain"].values,
+              "baseline attributes to tracker.test (eTLD+1 of cdn.tracker.test)")
 
         # 2. Blocker: survival = 0.0, blocked_requests > 0
         bl_cmp = cmp[cmp["run"] == "blocker"]

@@ -2,6 +2,8 @@ data/
 ext/
 results/
 __pycache__/
+.git/
+_metadata/
 *.pyc
 .env
 tranco_latest.zip

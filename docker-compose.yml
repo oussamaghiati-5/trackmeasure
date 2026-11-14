@@ -2,9 +2,13 @@ services:
   crawler:
     build: .
     # --init: reap zombies (Chromium spawns sub-processes that may become zombies)
-    # ipc: host (or shm_size: 2g): Chrome requires a large /dev/shm for rendering
+    # shm_size instead of ipc: host, which would share the host IPC namespace.
     init: true
-    ipc: host
+    shm_size: 2gb
+    cap_drop: [ALL]
+    # no-new-privileges is deliberately not set: on the dev host it makes every exec fail
+    # ("operation not permitted"). If Chromium's sandbox fails as non-root, add Playwright's
+    # seccomp_profile.json under security_opt rather than using --no-sandbox.
     volumes:
       - ./data:/app/data          # read-write: SQLite outputs
       - ./ext:/app/ext:ro         # read-only: unpacked extensions
