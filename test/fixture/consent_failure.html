@@ -1,0 +1,18 @@
+<!doctype html><html><head><title>Consent failure fixture</title>
+<script src="http://cdn.tracker.test/fp.js"></script>
+</head><body><h1>Controlled consent failure</h1><div id="cmp"></div>
+<script>
+const host = location.hostname;
+const banner = document.getElementById('cmp');
+if (host === 'broken.test') {
+  // The button hides the banner but leaves a previously accepted state unchanged.
+  window.Cookiebot = { hasResponse: true,
+    consent: { preferences: true, statistics: true, marketing: true } };
+}
+if (host === 'incomplete.test') {
+  banner.innerHTML = '<button onclick="this.parentNode.textContent=\'Settings failed to load\'">Manage settings</button>';
+} else {
+  // unknown.test has a clickable button but exposes no supported state reader.
+  banner.innerHTML = '<button onclick="this.parentNode.remove()">Reject all</button>';
+}
+</script></body></html>

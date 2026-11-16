@@ -2,24 +2,31 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.vpn.yml run --rm crawler python crawler.py ...
 #
-# Required .env keys (copy .env.example to .env and fill in):
-#   VPN_SERVICE_PROVIDER, VPN_TYPE, WIREGUARD_PRIVATE_KEY (or openvpn equiv),
-#   SERVER_COUNTRIES (e.g. France for GDPR banners; US for CCPA).
-#
-# COMPARABILITY: use the same exit node (SERVER_CITIES or SERVER_HOSTNAMES) for
-# every run of one experiment so geo-based A/B serving doesn't bias results.
-# Record the exit IP in your paper (verify via: docker compose ... run --rm crawler
-#   python -c "import urllib.request; print(urllib.request.urlopen('https://ifconfig.me').read())")
+# .env contains WIREGUARD_CONFIG_PATH, an absolute path to your private .conf.
+# The file selects a fixed endpoint. Keep it outside the repository and use the
+# same endpoint for all conditions in an experiment. See make preflight-vpn.
 
 services:
   gluetun:
-    image: qmcgaw/gluetun:latest
+    image: qmcgaw/gluetun@sha256:cbafe0945d0fe5a3c55ca64d43a85c5db270458f4c645ee65797b527f6f57a64
     cap_add:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
-    env_file:
-      - .env
+    environment:
+      VPN_SERVICE_PROVIDER: custom
+      VPN_TYPE: wireguard
+      # Filtering belongs to the experimental browser extensions, not the VPN.
+      BLOCK_ADS: "off"
+      BLOCK_SURVEILLANCE: "off"
+      BLOCK_MALICIOUS: "off"
+    volumes:
+      - type: bind
+        source: ${WIREGUARD_CONFIG_PATH:?Set WIREGUARD_CONFIG_PATH in .env}
+        target: /gluetun/wireguard/wg0.conf
+        read_only: true
+        bind:
+          create_host_path: false
     # No FIREWALL_OUTBOUND_SUBNETS on purpose: crawled pages must not reach the LAN.
     healthcheck:
       test: ["CMD", "/gluetun-entrypoint", "healthcheck"]

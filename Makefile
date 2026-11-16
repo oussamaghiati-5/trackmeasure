@@ -1,10 +1,13 @@
 COMPOSE     = docker compose
 COMPOSE_VPN = docker compose -f docker-compose.yml -f docker-compose.vpn.yml
+COMPOSE_TEST = docker compose -f docker-compose.yml -f docker-compose.test.yml
 DB          = data/crawl.sqlite
 RESPAWN_DB  = data/respawn.sqlite
 RESULTS     = results
+SITE        ?= theguardian.com
+ACTION      ?= reject
 
-.PHONY: build dirs preflight preflight-vpn smoke baseline baseline2 blockers ubol pbadger optout accept respawn analyze
+.PHONY: build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout accept respawn analyze
 
 dirs:
 	mkdir -p data ext results
@@ -14,21 +17,38 @@ build: dirs
 
 # --- Isolation pre-flight (run before any real crawl) ---
 preflight: build
-	@echo "[1] user (expect non-root pwuser):"; $(COMPOSE) run --rm crawler id
-	@echo "[2] docker socket (expect absent):"; $(COMPOSE) run --rm crawler sh -c 'test ! -e /var/run/docker.sock && echo absent'
-	@echo "[3] .env in image (expect absent):"; $(COMPOSE) run --rm crawler sh -c 'test ! -e /app/.env && echo absent'
-	@echo "[4] Chromium sandbox without --no-sandbox:"; $(COMPOSE) run --rm crawler python -c \
-	  "from playwright.sync_api import sync_playwright as s; p=s().start(); b=p.chromium.launch(channel='chromium'); print('ok', b.version); b.close(); p.stop()"
+	$(COMPOSE) run --rm crawler python scripts/preflight.py
 	@echo "[5] mounts (expect only data rw, ext ro, results rw):"; $(COMPOSE) config | grep -A8 'volumes:'
 
-# Needs .env. Prints the egress IP: it must be the VPN exit, not your real IP.
-# Kill-switch check is manual: `docker compose ... stop gluetun`, then confirm the crawler has no connectivity.
+# Needs .env with WIREGUARD_CONFIG_PATH. Run before crawling: briefly stops VPN.
 preflight-vpn:
-	@echo "[egress IP via VPN]"; $(COMPOSE_VPN) run --rm crawler python -c "import urllib.request as u; print(u.urlopen('https://ifconfig.me',timeout=20).read().decode())"
+	python3 scripts/verify_vpn.py
+
+# Small diagnostic sample, separate data/results, one browser at a time.
+pilot-baseline: dirs
+	python3 scripts/run_pilot.py --modes baseline
+
+pilot-conditions: dirs
+	python3 scripts/run_pilot.py --modes baseline2 optout accept ubol pbadger
 
 # --- Smoke test (no VPN; fixture server inside the container) ---
 smoke: dirs build
+	$(COMPOSE) run --rm crawler python -m unittest discover -s test -p 'test_*.py'
 	$(COMPOSE) run --rm crawler python test/smoke.py
+
+extensions:
+	bash scripts/get_extensions.sh
+
+verify-blockers: dirs build
+	$(COMPOSE_TEST) run --rm crawler python -u test/verify_blockers.py
+
+verify-consent: dirs build
+	$(COMPOSE_TEST) run --rm crawler python -m unittest discover -s test -p 'test_consent*.py'
+	$(COMPOSE_TEST) run --rm crawler python -u test/verify_consent_frames.py
+
+# Fresh DB and timestamped evidence every time; completed pilot rows are untouched.
+consent-check: dirs build
+	python3 scripts/check_consent.py --site "$(SITE)" --action "$(ACTION)"
 
 # --- Full crawl runs (use COMPOSE_VPN; ensure .env is configured) ---
 baseline: dirs

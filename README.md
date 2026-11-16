@@ -46,7 +46,19 @@ One fresh Chromium profile per site. Every run uses the same four phases, so run
 | `accept` | CMP accept | upper bound |
 
 ### 3. Consent automation (`consent.py`)
-Tries, in order: the CMP's JavaScript API (OneTrust, Cookiebot, Didomi, Usercentrics v2/v3); a role-based button click with anchored multilingual regexes (EN/FR/DE/ES/IT/PT/NL); a two-layer "manage, then reject/save" flow. The resulting TCF v2 / USP state is read back so you can verify the opt-out registered.
+Tries the CMP's JavaScript API (OneTrust, Cookiebot, Didomi, Usercentrics v2/v3), then visible controls if the API does not produce confirmation: a role-based button click with anchored multilingual regexes (EN/FR/DE/ES/IT/PT/NL), or a two-layer "manage, then reject/save" flow.
+
+APIs are tried in the main page and child frames; missing APIs are retried within the consent wait because CMP code may load late. State is read concurrently across the current main/child frames after an action and on reload/subpages. This handles a cross-origin banner whose button updates the parent's API, even when the banner removes its own frame. Supported reports that disagree keep the result unknown; a convenient frame cannot override a contradictory supported report. Existing verification requirements remain unchanged, so unsupported CMPs and incomplete TCF events/maps still remain unknown. This change does not claim universal banner support or address every TCF timing/vendor-scope issue.
+
+Consent outcomes are `confirmed`, `failed`, or `unknown`; baseline/blocker runs use `not_requested` when no choice was requested. Confirmation requires a completed action plus readable saved state from TCF or Cookiebot. A vanished banner, successful function call, default false flags, or `gdprApplies=false` alone cannot confirm rejection. TCF is read using `addEventListener` (the old `getTCData` command is deprecated); its completed-action state must match the request. Cookiebot must report a response and all three optional categories must match. Other CMPs may be actuated but remain unknown unless a supported state reader confirms them. USP sale-opt-out data is retained separately and is not treated as proof of an all-cookie rejection.
+
+Confirmed choices are checked again on the homepage reload and each subpage. A missing/loading CMP is polled with a two-second retry budget (individual API reads also have timeouts); this accommodates APIs that initialize after page load. Rechecks never repeat consent actions. A readable opposite choice or conflicting supported reports downgrade confirmation immediately; persistently missing state becomes unknown. The action, attempts, evidence, subsequent checks (including polling count/time), outcome/reason, and GPC flag are stored in the existing consent JSON. Confirmation describes the observed CMP state, not a guarantee about tracking behavior or legal compliance. Failed/unknown consent does not make a successfully loaded website a navigation failure; raw observations stay available, but these site/runs are excluded from verified consent comparisons. Old requested-consent recordings without verification are unknown; the crawler's normal resume behavior still skips completed crawls, so use a new run label or database to collect fresh consent evidence.
+
+Verification references: [TCF CMP API](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md), [Cookiebot browser API](https://www.cookiebot.com/en/developer/).
+
+To test the frame handling, run `make verify-consent`. It rebuilds the image, runs the consent unit tests, and tests nine local browser cases with external networking disabled: parent TCF with a cross-origin accept/reject button that removes its frame, a settings step, a child Cookiebot API, deliberate loss of its saved choice, delayed API loading, unchanged defaults, conflicting reports and a no-op API/button. Positive cases must retain confirmation after reload; clearing stored consent must downgrade confirmation to unknown. Fixture pages use intercepted HTTPS URLs and the child uses a `SameSite=None; Secure; Partitioned` cookie, following [Chrome's iframe cookie guidance](https://developer.chrome.com/docs/modern-web-guidance/guides/security/security). Browser cookie protections are left enabled. These are synthetic checks, not evidence of real-site coverage.
+
+Then run `make consent-check SITE=theguardian.com ACTION=reject` (or `ACTION=accept`). Each invocation uses a new timestamped database under `data/consent-check/`, leaving the original pilot unchanged. Failed/unknown actions save a screenshot and per-frame control labels under `results/consent-check/`; diagnostics cannot change eligibility. The command reports the consent outcome, records settings/source hash/VPN exit, and checks the exit stays fixed. Use the same command on sites outside the development sample before reporting coverage. Generic crawler runs can opt into these artifacts with `--consent-artifacts results/<folder>`.
 
 ### 4. Respawning (`respawn.py`)
 Per site, three browsers on the same IP:
@@ -71,7 +83,9 @@ Detects fingerprinting per (script, frame, visit) using heuristics after Engleha
 
 Headline metric: **survival** of (script eTLD+1, technique) pairs vs the baseline in the post-consent phases. Report blocker and opt-out survival relative to the `baseline2` noise floor, not to 1.0.
 
-Outputs in `results/`: `per_site.csv` (requests, third-party domains, blocked requests, FP calls, storage ops, cookies, per-technique counts, pre-consent FP scripts, consent method, TCF purposes), `fp_scripts.csv` (every detected script), `comparison.csv` (survival vs baseline).
+Outputs in `results/`: `per_site.csv` (requests, third-party domains, blocked requests, FP calls, storage ops, cookies, per-technique counts, pre-consent FP scripts, consent action/method/outcome/reason, GPC, TCF purposes, and comparison eligibility), `fp_scripts.csv` (every detected script, including diagnostic observations), `comparison.csv` (eligible paired survival vs baseline), and `consent_coverage.csv` (counts of all site/runs by consent action and outcome, including exclusions). Coverage counts eligible site/runs, not the number of matched baseline pairs. GPC is recorded as enabled/disabled/unknown; the `optout` treatment remains rejection plus GPC, so do not attribute its effect to rejection alone.
+
+GPC records the observed `navigator.globalPrivacyControl` value on the final page, not just the CLI flag. The consent JSON also retains `gpc_requested`, the observation source, and the actual initialized extension metadata/settings. Privacy Badger enables GPC itself even when the crawler was not passed `--gpc`; treat its run as the extension's full default behavior, not blocking alone.
 
 ## Repository layout
 
@@ -79,7 +93,8 @@ Outputs in `results/`: `per_site.csv` (requests, third-party domains, blocked re
 crawler.py  instrument.js  consent.py  respawn.py  analyze.py  common.py
 sites.csv                 150-site seed list (news / e-commerce / social+affiliate)
 scripts/
-  get_extensions.sh       fetch uBOL (MV3) and Privacy Badger into ext/
+  get_extensions.sh/.py   install the hash-pinned Chromium MV3 packages into ext/
+extensions.lock.json      official package URLs, versions and SHA-256 checksums
   check_tranco.py         cross-check sites.csv against a dated Tranco list
   pick_respawn_sites.py   choose respawn candidates from the baseline cookies table
 test/                     local fixture: publisher, aggressive tracker, consent-respecting
@@ -92,8 +107,9 @@ Dockerfile  docker-compose.yml  docker-compose.vpn.yml  Makefile  requirements.t
 The crawl executes untrusted third-party JavaScript from ad-heavy sites, so run it in the container (ideally inside a VM), never directly on your host.
 
 ```bash
-cp .env.example .env            # VPN credentials (only for real crawls)
-scripts/get_extensions.sh       # populates ext/
+cp .env.example .env            # set your private WireGuard file's absolute path
+make extensions                # installs pinned MV3 packages; portable on macOS/Linux
+make verify-blockers           # actual extension startup/blocking, local fixture, no internet
 python scripts/check_tranco.py  # record the printed Tranco list ID in the paper
 
 make smoke                      # local fixture, no internet, no VPN
@@ -103,15 +119,43 @@ make respawn
 make analyze
 ```
 
+### Real blocker setup
+
+`extensions.lock.json` pins uBlock Origin Lite **2026.1110.1816** from its official Chromium release ZIP and Privacy Badger **2026.9.15.2** from EFF's official Chromium CRX3 download. The default Privacy Badger GitHub release source is MV2 and is not the Chromium build. The installer verifies the archive hash, manifest version/version number and worker before replacing installed directories; package code is not patched. Downloads are cached under gitignored `ext/.downloads/`. Keep this cache with the experiment: EFF's CRX URL is mutable, so a future changed download intentionally fails the pinned hash check rather than silently changing the experiment. To update versions, explicitly review/update the lock and rerun installation/verification.
+
+The extension inputs stay mounted read-only. Each browser gets a private writable copy so Chromium can compile DNR filter metadata; copies are removed when the browser closes or launch fails. Readiness checks wait for enabled default rules and, for Privacy Badger, completed initialization and seed loading. Missing/incompatible extensions or incomplete initialization fail the site/run rather than proceeding without protection. Runtime IDs may differ between unpacked private copies; they are recorded with the settings.
+
+`make verify-blockers` uses `docker-compose.test.yml` with `network_mode: none`. A local server impersonates the known tracker domain `adsrvr.org` through Chromium's resolver rules; no requests are sent to the real tracker. The baseline must execute both that script and a harmless first-party script. Each real blocker must prevent the tracker from reaching the server, produce `ERR_BLOCKED_BY_CLIENT`, and leave the harmless script working. The check also runs the actual crawler with Privacy Badger and verifies saved extension metadata and extension-enabled GPC. A report is written to `results/blocker_verification.json`; it is an installation/control check, not a measurement of real-site effectiveness. The regular smoke test still uses its separate artificial blocker.
+
+In the pinned packages, observed uBOL defaults are **optimal** for all URLs with six enabled default static rulesets. Privacy Badger uses its bundled seed data with `learnLocally=false`, and sends its default privacy signals. The verifier records observed settings/rule counts rather than assuming them; rerun it after any package or browser change. Package sources: [uBOL release](https://github.com/uBlockOrigin/uBOL-home/releases/tag/2026.1110.1816), [EFF Chromium download](https://privacybadger.org/#direct-download).
+
+### VPN setup (each teammate)
+
+Generate your own WireGuard configuration for a fixed EU server (for example, a Proton VPN Free Netherlands server). Select Linux, leave port forwarding and VPN ad/tracker blocking off, and download the `.conf` outside this repository. Set `WIREGUARD_CONFIG_PATH` in your local `.env` to its absolute path, and `VPN_EXPECTED_COUNTRY=NL` for the Netherlands. Share code and results, never private keys or configuration files. Keep all experimental conditions on the same exit; separate teammates' exits should be recorded as separate batches.
+
+The VPN overlay uses Gluetun's [custom WireGuard configuration mount](https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/custom.md). Only Gluetun receives the file, read-only; the crawler shares its network but receives no VPN secrets. A missing path fails instead of creating an empty directory. The image is pinned by digest, VPN DNS blocklists are disabled to avoid adding an extra blocker to every condition, and `.conf` files are excluded from both Git and the crawler build context.
+
+Run `make build` if the crawler image is missing, then `make preflight-vpn` **before starting a crawl**. This host-side script starts Gluetun, checks the exit country and that it differs from direct Docker egress, and keeps a crawler container running while stopping Gluetun. Both HTTPS and direct-IP probes must fail with the VPN stopped. It restores Gluetun even after a failed probe, verifies the original exit returns, and writes `results/vpn_verification.json`. A successful IPv6 connection before stopping is recorded when available; a failed IPv6 connection alone does not demonstrate working IPv6 through the tunnel. This test briefly interrupts the VPN, so never run it alongside an experiment. It tests egress loss, not every possible LAN or DNS-leak scenario.
+
+### Five-site diagnostic pilot
+
+`pilot_sites.csv` is a convenience sample from the seed list, covering news, shopping, social and affiliate sites; it is not a representative study sample. Run `make pilot-baseline`, inspect the failures, then `make pilot-conditions`. The latter runs baseline2, reject+GPC, accept, uBOL and Privacy Badger only on successful baseline sites. Each browser runs headfully under Xvfb, with one worker, five-second dwell, one subpage at most, a 45-second navigation timeout and a 180-second site timeout. Subpage URLs are reused from baseline where available. The full study's default commands and database stay separate.
+
+The pilot writes SQLite and input copies under `data/pilot/`, and logs, CSVs and settings/exit metadata under `results/pilot/`. It requires a Netherlands exit, checks that the exit stays fixed before/after each condition, and refuses to mix changed settings or exits into the same batch. It does not run the disruptive VPN-loss test during crawling. Baseline failures and unconfirmed consent remain diagnostic exclusions, not successful protection. Review the raw visit URLs for unexpected redirects or HTTP-200 challenge pages before interpreting any tracking counts.
+
 Crawls resume: completed sites are skipped, failed ones are retried from scratch. The base image tag must match the pinned `playwright` version in `requirements.txt`.
+
+A completed navigation requires a successful HTTP document response and the DOM-content-loaded event; a timeout, missing response, HTTP error, or empty 204/205 response makes that site/run unsuccessful. Failed visits retain their status and error for diagnosis. Any attempted subpage failure invalidates the site/run, so an incomplete crawl cannot look like successful blocking. `per_site.csv` includes `measurement_ok` and `measurement_error`; comparisons and headline summaries require successful execution, valid visits, and either confirmed or unrequested consent. This also applies to older databases. Challenge pages served with HTTP 200 are not yet detected.
 
 ### Isolation checklist (before any real crawl)
 
-The container runs as non-root `pwuser` (no `--no-sandbox`) with `init`, `shm_size: 2gb` (not `ipc: host`) and `cap_drop: [ALL]`. (`no-new-privileges` is not set: it broke every `exec` on the dev host.) Only `./data` (rw), `./ext` (ro) and `./results` (rw) are mounted; there is no Docker socket and no host network. The VPN overlay deliberately sets no `FIREWALL_OUTBOUND_SUBNETS`, so crawled pages can't reach your LAN.
+The shared browser launcher explicitly sets `chromium_sandbox=True` for the crawler and respawn experiments, including extension runs, and rejects sandbox-disabling custom flags. The container runs as non-root `pwuser` with `init`, `shm_size: 2gb` (not `ipc: host`) and `cap_drop: [ALL]`. (`no-new-privileges` is not set: it broke every `exec` on the dev host.) Only `./data` (rw), `./ext` (ro) and `./results` (rw) are mounted; there is no Docker socket and no host network. The VPN overlay deliberately sets no `FIREWALL_OUTBOUND_SUBNETS`, so crawled pages can't reach your LAN.
+
+Compose uses `security/seccomp_profile.json`, based on [Playwright v1.63.0's profile](https://github.com/microsoft/playwright/blob/v1.63.0/utils/docker/seccomp_profile.json) (upstream SHA-256 `cc3e61cabda6bbc1e53e54d27ba4d55a9d3be829b6dd1a596f4a7b31b1cc7849`). It allows namespace creation as described in the [Playwright Docker guide](https://playwright.dev/python/docs/docker#crawling-and-scraping). Our sole addition permits the `chroot` syscall: with all container capabilities dropped, the upstream capability-gated rule is omitted, even though Chromium needs chroot after creating its own user namespace. Kernel permission checks still apply; the crawler receives no additional container capabilities, and the profile retains its default-deny policy.
 
 1. **Snapshot the VM** (`VBoxManage snapshot "<vm>" take pre-crawl` or `virsh snapshot-create-as <vm> pre-crawl`). Disable writable shared folders, clipboard sharing and drag-and-drop, keeping only the folder used to export `data/`.
-2. **`make preflight`** checks: uid is `pwuser`, no Docker socket, no `.env` in the image, Chromium launches with its sandbox enabled, and only the expected mounts. If the sandbox check fails, add Playwright's `seccomp_profile.json` under `security_opt`; do not fall back to `--no-sandbox`.
-3. **`make preflight-vpn`** prints the egress IP, which must be the VPN exit and not your real IP. Then run `docker compose -f docker-compose.yml -f docker-compose.vpn.yml stop gluetun` and confirm the crawler has no connectivity (kill switch).
+2. **`make preflight`** checks non-root uid, no Docker socket, no `.env` in the image, and zero effective container capabilities. It uses the actual shared launcher, checks Chromium's effective command line, and requires `chrome://sandbox` to report layer-1 isolation, PID/network namespaces, and Seccomp-BPF enabled. Missing/disabled status fails the check. It also prints the configured mounts for inspection. If preflight fails, fix the runtime's namespace/seccomp support; do not fall back to `--no-sandbox`, privileged mode, or an unconfined seccomp profile.
+3. **`make preflight-vpn`** checks the exit country/IP, loss of crawler connectivity when Gluetun stops, and recovery with the same exit. It briefly interrupts the VPN: run only before crawling. See the VPN setup section and `results/vpn_verification.json`.
 4. Use the same exit for every run of one experiment, and record it.
 
 Without Docker: `pip install -r requirements.txt && python -m playwright install --with-deps chromium`.
@@ -122,14 +166,22 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 `make smoke` (or `python test/smoke.py`) starts the fixture server, runs every crawl mode and both respawn modes, and asserts: all 6 techniques detected on `tracker.test`; blocker survival 0.0 with blocked requests > 0; opt-out survival 1.0 (the fixture tracker ignores consent); respawn finds `_trk` (localStorage-backed) and, with `--clear all`, `_fpid` as fingerprint-derived.
 
+`make smoke` first runs the regression tests (`python -m unittest discover -s test -p 'test_*.py'`). The browser smoke test also visits deliberate HTTP 404/503 pages and checks they are recorded as failures and excluded from comparisons. Consent fixtures cover a confirmed decision, a button that leaves consent enabled, a click with no readable state, and an incomplete settings flow. Their raw observations are retained while unverified consent comparisons are excluded. Regression tests cover legacy records, default versus saved decisions, API-to-button fallback, conflicting evidence, and state loss after navigation.
+
 ## Status
 
-`make preflight` and `make smoke` pass in the container (headless `channel="chromium"`, non-root, MV3 test extension loads and blocks). The extension fetch, Tranco and respawn-candidate scripts and the VPN overlay are written but not yet exercised. **Nothing has been run against real websites yet**; next is a 5-site pilot through an EU exit to tune consent regexes, timeouts and attribution.
+See [IMPROVEMENTS.md](IMPROVEMENTS.md) for the group handoff, verified results and ordered tasks before the full experiment.
+
+`make preflight`, `make smoke`, and the offline real-blocker check pass in the container (headless `channel="chromium"`, non-root, sandbox enabled). Both pinned real MV3 extensions initialize and block the controlled known-domain request. The VPN preflight also passed with a Netherlands exit: HTTPS and direct IPv4 access stopped when Gluetun stopped, and the same exit returned on recovery. IPv6 was unavailable before and after stopping; IPv6 tunnel operation was not verified. The Tranco and respawn-candidate scripts are not yet exercised.
+
+The five-site diagnostic pilot completed on 2026-11-16, before the cross-frame consent update. The Guardian, Le Monde and Reddit completed baseline and all five comparison conditions; IKEA failed on a homepage reload with HTTP 403 and Slickdeals failed on landing with HTTP 403. All three reject actions failed to complete; all three accept actions clicked a control but remained unconfirmed. These consent conditions are excluded from verified comparisons. uBOL and Privacy Badger initialized and recorded 69 and 6 blocked requests respectively across the three sites. These are diagnostic observations, not representative effectiveness estimates or proof that detected API activity is tracking. Artifacts are in `data/pilot/` and `results/pilot/`.
+
+After the consent updates, the user ran `make verify-consent` successfully, including all nine browser fixtures, and a real Cookiebot rejection check confirmed the saved choice after reload. A fresh Guardian check still did not complete rejection; its saved banner offered a paid subscription option instead of a free reject-all button. Broader real-site coverage and a repeat of the full smoke test remain pending.
 
 ## Pitfalls (read before the real crawl)
 
-1. **Geolocation.** From a Moroccan IP most CMPs show no GDPR banner and `gdprApplies` is false. Run *all* runs through the same EU exit (gluetun sidecar), plus a separate US exit for CCPA "do not sell". Sites with an empty `consent_method` in the opt-out run never got an opt-out; exclude them from opt-out claims.
-2. **uBlock Origin (MV2) won't load** in current Chromium. Use uBlock Origin Lite (MV3) and/or Privacy Badger. uBOL defaults to "basic" filtering; document the mode you use. MV3 blockers can't do everything MV2 uBO could.
+1. **Geolocation.** From a Moroccan IP most CMPs show no GDPR banner and `gdprApplies` is false. Run *all* runs through the same EU exit (gluetun sidecar), plus a separate US exit for CCPA "do not sell". Only confirmed choices support verified opt-out claims; inspect `consent_coverage.csv` for failures and unknown cases. A non-empty `consent_method` alone is insufficient.
+2. **MV2 extensions won't load** in current Chromium. Use the pinned MV3 Chromium packages for uBlock Origin Lite and Privacy Badger, not Privacy Badger's default MV2 source branch. Filtering modes change across releases: this pinned uBOL uses optimal mode. Inspect `blocker_verification.json` and saved run metadata rather than assuming an older basic-mode default. MV3 blockers can't do everything MV2 uBO could.
 3. **Noise floor.** Always run `baseline2`.
 4. **Bot detection.** Headless runs can change tracker behaviour; use `--headful` under `xvfb-run` for final runs. Verify extensions block requests (> 0) under your chosen mode.
 5. **Blind spots.** Web/Service Workers aren't instrumented. Scripts can detect the hooks (`toString` is spoofed; other checks aren't). Bundled or eval'd code is attributed to the bundle's host. CNAME-cloaked trackers look first-party.
@@ -137,4 +189,4 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 ## Ethics and data
 
-Public pages only, no logins, no form submission beyond consent buttons, low rate (<=4 parallel browsers, one profile per site). `data/*.sqlite` contains cookie values and is gitignored; do not publish it.
+Public pages only, no logins, no form submission beyond consent buttons, low rate (<=4 parallel browsers, one profile per site). `data/` contains cookie values and is gitignored; do not publish it. Local consent screenshots and labels are also kept in ignored `results/`.

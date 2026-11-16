@@ -6,9 +6,11 @@ services:
     init: true
     shm_size: 2gb
     cap_drop: [ALL]
+    security_opt:
+      - seccomp=./security/seccomp_profile.json
     # no-new-privileges is deliberately not set: on the dev host it makes every exec fail
-    # ("operation not permitted"). If Chromium's sandbox fails as non-root, add Playwright's
-    # seccomp_profile.json under security_opt rather than using --no-sandbox.
+    # ("operation not permitted"). The Playwright seccomp profile permits the
+    # namespace operations required by Chromium's explicitly enabled sandbox.
     volumes:
       - ./data:/app/data          # read-write: SQLite outputs
       - ./ext:/app/ext:ro         # read-only: unpacked extensions

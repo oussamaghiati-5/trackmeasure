@@ -8,7 +8,17 @@ class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         host = (self.headers.get("Host") or "").split(":")[0]
         path = self.path.split("?")[0]
-        if host == "news.test":
+        if host == "news.test" and path in ("/__http404", "/__http503"):
+            status = int(path[-3:])
+            body = b"<!doctype html><title>Deliberate navigation failure</title>"
+            self.send_response(status); self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body))); self.end_headers()
+            self.wfile.write(body); return
+        if host == "news.test" and path == "/cmp.js":
+            f, ctype = ROOT / "cmp.js", "application/javascript"
+        elif host in ("broken.test", "unknown.test", "incomplete.test"):
+            f, ctype = ROOT / "consent_failure.html", "text/html"
+        elif host == "news.test":
             f = ROOT / ("index.html" if path in ("/",) else "page.html")
             ctype = "text/html"
         elif host == "cdn.tracker.test" and path == "/fp.js":

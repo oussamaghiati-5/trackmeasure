@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "extensions": {
+    "ubol": {
+      "name": "uBlock Origin Lite",
+      "version": "2026.1110.1816",
+      "url": "https://github.com/uBlockOrigin/uBOL-home/releases/download/2026.1110.1816/uBOLite_2026.1110.1816.chromium.zip",
+      "sha256": "85fe5909366e8ada66c5b331bbdbf69cf5100245ed6161b1e4e2f1f848ec7d03",
+      "archive": "zip",
+      "source": "https://github.com/uBlockOrigin/uBOL-home/releases/tag/2026.1110.1816"
+    },
+    "privacybadger": {
+      "name": "Privacy Badger",
+      "version": "2026.9.15.2",
+      "url": "https://www.eff.org/files/privacy_badger-chrome.crx",
+      "sha256": "8b9903bc23c13b7861590116390142a0cd09b2a32fcf7364ab4c9500241669a7",
+      "archive": "crx",
+      "source": "https://privacybadger.org/#direct-download"
+    }
+  }
+}

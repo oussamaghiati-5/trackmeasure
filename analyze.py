@@ -21,10 +21,18 @@ from pathlib import Path
 
 import pandas as pd
 
+from navigation import measurement_error
+from consent import consent_record
+
 PRE_PHASES = {"landing"}
 POST_PHASES = {"after_consent", "home_reload", "subpage"}
 TECHNIQUES = ["canvas", "canvas_font", "webrtc", "audio", "webgl", "attr_enum"]
 LOSSY = ("image/jpeg", "image/webp")
+COMPARISON_COLUMNS = [
+    "run", "site", "fp_pairs_baseline", "fp_pairs_surviving", "fp_pairs_new", "survival",
+    "tp_domains_baseline", "tp_domains_run", "fp_calls_baseline", "fp_calls_run",
+    "blocked_requests", "consent_method", "consent_action", "consent_outcome", "gpc",
+]
 
 
 def category(api):
@@ -105,6 +113,14 @@ def per_site(d, det):
     api = api.assign(cat=api["api"].map(category))
     g = ["run", "site"]
     out = d["done"][["run", "site", "ok", "error", "seconds"]].set_index(g)
+    problems = {}
+    for key, visits in d["visits"].groupby(g, sort=False):
+        # SQL NULLs in numeric columns become NaN in pandas. Restore None for
+        # the shared validity check, especially for unfinished visits.
+        records = visits.astype(object).where(visits.notna(), None).to_dict("records")
+        problems[key] = measurement_error(records)
+    out["measurement_error"] = [problems.get(key, "No visits recorded") for key in out.index]
+    out["measurement_ok"] = out["measurement_error"].isna().astype(int)
     out["requests"] = req.groupby(g).size()
     blocked = req.failure.fillna("").str.contains("BLOCKED_BY_CLIENT")
     tp = req[(req.third_party == 1) & ~blocked]  # contacted, i.e. not blocked by the extension
@@ -125,10 +141,17 @@ def per_site(d, det):
     pre = det[det.phase_group == "pre"] if len(det) else det
     out["fp_scripts_pre_consent"] = pre.groupby(g)["script_url"].nunique() if len(pre) else 0
     cons = d["visits"][d["visits"].phase == "after_consent"].set_index(g)["consent"]
-    out["consent_method"] = cons.map(lambda s: (json.loads(s) or {}).get("method") if isinstance(s, str) else None)
-    out["tcf_purposes"] = cons.map(lambda s: (json.loads(s) or {}).get("tcf") if isinstance(s, str) else None).map(
+    records = cons.map(consent_record).reindex(out.index).map(consent_record)
+    for field in ("method", "action", "outcome", "reason"):
+        out["consent_" + field] = records.map(lambda r: r.get(field))
+    out["gpc"] = records.map(lambda r: {True: "enabled", False: "disabled"}.get(r.get("gpc"), "unknown"))
+    out["comparison_eligible"] = ((out["ok"] == 1) & (out["measurement_ok"] == 1)
+                                  & out["consent_outcome"].isin(["confirmed", "not_requested"])).astype(int)
+    out["tcf_purposes"] = records.map(lambda r: r.get("tcf")).map(
         lambda t: ",".join(map(str, t.get("purposesConsented", []))) if isinstance(t, dict) else t)
-    num = [c for c in out.columns if c not in ("ok", "error", "seconds", "consent_method", "tcf_purposes")]
+    num = [c for c in out.columns if c not in (
+        "ok", "error", "seconds", "measurement_error", "consent_method", "consent_action",
+        "consent_outcome", "consent_reason", "gpc", "tcf_purposes")]
     out[num] = out[num].fillna(0).astype(int)
     return out.reset_index()
 
@@ -137,7 +160,7 @@ def compare(ps, det, baseline):
     """Survival of (script eTLD+1, technique) pairs vs. the baseline, post-consent phases."""
     key = lambda df: set(zip(df.script_domain, df.technique))
     post = det[det.phase_group == "post"] if len(det) else det
-    ok = ps[ps.ok == 1]
+    ok = ps[ps.comparison_eligible == 1]
     rows = []
     for run in sorted(set(ok.run) - {baseline}):
         both = set(ok[ok.run == baseline].site) & set(ok[ok.run == run].site)
@@ -151,8 +174,9 @@ def compare(ps, det, baseline):
                              survival=(len(b & r) / len(b)) if b else None,
                              tp_domains_baseline=pb.tp_domains, tp_domains_run=pr.tp_domains,
                              fp_calls_baseline=pb.fp_calls, fp_calls_run=pr.fp_calls,
-                             blocked_requests=pr.blocked_requests, consent_method=pr.consent_method))
-    return pd.DataFrame(rows)
+                             blocked_requests=pr.blocked_requests, consent_method=pr.consent_method,
+                             consent_action=pr.consent_action, consent_outcome=pr.consent_outcome, gpc=pr.gpc))
+    return pd.DataFrame(rows, columns=COMPARISON_COLUMNS)
 
 
 def main():
@@ -172,9 +196,22 @@ def main():
     ps.to_csv(out / "per_site.csv", index=False)
     det.drop_duplicates().to_csv(out / "fp_scripts.csv", index=False)
     cmp_.to_csv(out / "comparison.csv", index=False)
+    coverage = ps.groupby(["run", "consent_action", "consent_outcome"], dropna=False).agg(
+        site_runs=("site", "size"), usable_navigation=("measurement_ok", "sum"),
+        eligible_site_runs=("comparison_eligible", "sum")).reset_index()
+    coverage.to_csv(out / "consent_coverage.csv", index=False)
+    print("\n== Consent outcomes (all site/runs, including exclusions) ==")
+    print(coverage.to_string(index=False))
 
-    ok = ps[ps.ok == 1]
-    print("\n== Per-run summary (successful sites) ==")
+    ok = ps[(ps.ok == 1) & (ps.measurement_ok == 1)]
+    excluded = len(ps) - len(ok)
+    if excluded:
+        print(f"\nExcluded {excluded} incomplete/failed site-run measurement(s); "
+              "see ok/error and measurement_ok/measurement_error in per_site.csv.")
+    # Keep valid observations with failed/unknown consent in per_site.csv and
+    # the coverage table, but don't present them as verified consent results.
+    ok = ps[ps.comparison_eligible == 1]
+    print("\n== Per-run summary (eligible site/runs) ==")
     summ = ok.groupby("run").agg(sites=("site", "nunique"), median_tp_domains=("tp_domains", "median"),
                                  median_fp_calls=("fp_calls", "median"),
                                  sites_with_fp=("fp_scripts", lambda s: int((s > 0).sum())),
@@ -183,9 +220,10 @@ def main():
     for t in TECHNIQUES:
         summ[f"sites_{t}"] = ok.groupby("run")[t].apply(lambda s: int((s > 0).sum()))
     print(summ.to_string())
-    if len(det):
+    usable_det = det.merge(ok[["run", "site"]].drop_duplicates(), on=["run", "site"], how="inner")
+    if len(usable_det):
         print("\n== Top fingerprinting script domains ==")
-        top = det[det.run == a.baseline] if a.baseline in set(det.run) else det
+        top = usable_det[usable_det.run == a.baseline] if a.baseline in set(usable_det.run) else usable_det
         print(top.groupby("script_domain")["site"].nunique().sort_values(ascending=False).head(15).to_string())
     if len(cmp_):
         print(f"\n== vs. {a.baseline}: (script domain, technique) pairs surviving, post-consent ==")
@@ -194,7 +232,7 @@ def main():
                                       median_tp_domains_run=("tp_domains_run", "median"))
         agg["survival_rate"] = (agg.pairs_surviving / agg.pairs_baseline.where(agg.pairs_baseline > 0)).round(3)
         print(agg.to_string())
-    print(f"\nCSV written to {out}/ (per_site.csv, fp_scripts.csv, comparison.csv)")
+    print(f"\nCSV written to {out}/ (per_site.csv, fp_scripts.csv, comparison.csv, consent_coverage.csv)")
 
 
 if __name__ == "__main__":

@@ -79,6 +79,20 @@ def main():
         print("accept ...")
         run(*crawl, "--run", "accept", "--consent", "accept")
 
+        print("consent failures and unknown state ...")
+        consent_sites = td / "sites_consent.csv"
+        consent_sites.write_text("domain,category\nhttp://broken.test/,test\n"
+                                 "http://unknown.test/,test\nhttp://incomplete.test/,test\n")
+        extra = ["--sites", str(consent_sites), "--dwell", "1", "--subpages", "0", "--consent-wait", "1"]
+        run(*crawl, *extra, "--run", "baseline")
+        run(*crawl, *extra, "--run", "optout", "--consent", "reject", "--gpc")
+
+        print("failed navigations (HTTP 404 and 503) ...")
+        failed_sites = td / "sites_failed.csv"
+        failed_sites.write_text("domain,category\nhttp://news.test/__http404,test\n"
+                                "http://news.test/__http503,test\n")
+        run(*crawl, "--sites", str(failed_sites), "--run", "failed_navigation")
+
         print("respawn --clear cookies ...")
         run(*resp, "--clear", "cookies")
 
@@ -95,8 +109,45 @@ def main():
         fps = pd.read_csv(f"{out}/fp_scripts.csv")
         ps  = pd.read_csv(f"{out}/per_site.csv")
         cmp = pd.read_csv(f"{out}/comparison.csv")
+        coverage = pd.read_csv(f"{out}/consent_coverage.csv")
 
         print("\nAssertions:")
+
+        # Failed document loads must remain diagnostic rows, never successful scans.
+        ccon = sqlite3.connect(db)
+        failed = ccon.execute("SELECT site,ok,error FROM sites_done WHERE run='failed_navigation'").fetchall()
+        check(len(failed) == 2 and all(ok == 0 and error for _, ok, error in failed),
+              "HTTP failures are marked unsuccessful with error details")
+        statuses = ccon.execute("SELECT status,error FROM visits WHERE run='failed_navigation'").fetchall()
+        check(sorted(status for status, _ in statuses) == [404, 503]
+              and all(error for _, error in statuses), "failed visits retain HTTP status and error")
+        ccon.close()
+        check(not (cmp["run"] == "failed_navigation").any(),
+              "failed navigations are excluded from survival comparisons")
+        check((ps[ps["run"] == "failed_navigation"]["measurement_ok"] == 0).all(),
+              "failed navigations are flagged unusable in per_site.csv")
+
+        for host, outcome in (("broken.test", "failed"), ("unknown.test", "unknown"),
+                              ("incomplete.test", "failed")):
+            site = f"http://{host}/"
+            row = ps[(ps["run"] == "optout") & (ps["site"] == site)].iloc[0]
+            check(row["ok"] == 1 and row["measurement_ok"] == 1,
+                  f"{host}: browsing observations remain usable")
+            check(row["consent_outcome"] == outcome and row["comparison_eligible"] == 0,
+                  f"{host}: consent is {outcome}, excluded from verified comparisons")
+            check(row["fp_scripts"] > 0, f"{host}: raw tracking observations retained")
+            check(not ((cmp["run"] == "optout") & (cmp["site"] == site)).any(),
+                  f"{host}: no misleading opt-out survival result")
+        oo_ps = ps[(ps["run"] == "optout") & (ps["site"] == SITE_KEY)].iloc[0]
+        check(oo_ps["consent_outcome"] == "confirmed" and oo_ps["gpc"] == "enabled",
+              "working rejection is verified and GPC is recorded separately")
+        acc_ps = ps[(ps["run"] == "accept") & (ps["site"] == SITE_KEY)].iloc[0]
+        check(acc_ps["consent_outcome"] == "confirmed", "working acceptance is verified")
+        oo_coverage = coverage[coverage["run"] == "optout"].set_index("consent_outcome")
+        check(int(oo_coverage.loc["confirmed", "site_runs"]) == 1
+              and int(oo_coverage.loc["failed", "site_runs"]) == 2
+              and int(oo_coverage.loc["unknown", "site_runs"]) == 1,
+              "consent coverage reports confirmed, failed and unknown cases")
 
         # 1. All 6 techniques detected in the baseline post-consent phases
         b = fps[(fps["run"] == "baseline") & (fps["phase_group"] == "post")]

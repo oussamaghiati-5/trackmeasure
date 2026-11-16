@@ -6,6 +6,7 @@ __pycache__/
 _metadata/
 *.pyc
 .env
+*.conf
 tranco_latest.zip
 *.sqlite
 *.sqlite-wal

@@ -1,12 +1,15 @@
 """Shared helpers: eTLD+1, site list loading, SQLite schema, browser launch."""
 import csv
 import ipaddress
+import shutil
 import sqlite3
+import tempfile
 import time
 from pathlib import Path
 from urllib.parse import urlparse
 
 import tldextract
+from extension_state import manifest_at
 
 HERE = Path(__file__).parent
 # Bundled Public Suffix List snapshot only: offline and reproducible across runs.
@@ -93,19 +96,46 @@ Object.defineProperty(Navigator.prototype, 'globalPrivacyControl',
   { get: function globalPrivacyControl() { return true; }, configurable: true, enumerable: true });
 """
 
+SANDBOX_DISABLE_FLAGS = {
+    "--no-sandbox", "--disable-setuid-sandbox", "--disable-namespace-sandbox",
+    "--disable-seccomp-filter-sandbox", "--disable-gpu-sandbox", "--no-zygote-sandbox",
+    "--no-zygote", "--single-process",
+}
+
 
 async def launch(pw, profile_dir, *, headless=True, extensions=(), proxy=None, gpc=False,
                  locale="en-US", timezone=None, viewport=(1366, 768), scale=1, extra_args=(),
                  extra_init=()):
+    extra_args = tuple(extra_args)
+    unsafe = [arg for arg in extra_args if arg.split("=", 1)[0] in SANDBOX_DISABLE_FLAGS]
+    if unsafe:
+        raise ValueError("Sandbox-disabling Chromium flags are not allowed: " + ", ".join(unsafe))
     args = ["--no-first-run", "--no-default-browser-check",
             "--disable-blink-features=AutomationControlled",
             "--disable-background-networking", "--disable-sync", *extra_args]
+    extension_dir = None
     if extensions:
-        exts = ",".join(str(Path(e).resolve()) for e in extensions)
+        # Chromium compiles DNR metadata beside unpacked extensions. Keep the
+        # downloaded inputs read-only and compile only private per-profile copies.
+        sources = [Path(extension).resolve() for extension in extensions]
+        for source in sources:
+            manifest_at(source)
+        extension_dir = tempfile.TemporaryDirectory(prefix="tm_extensions_")
+        prepared = []
+        try:
+            for index, source in enumerate(sources):
+                # Keep compiled extension data separate from browser profile files.
+                target = Path(extension_dir.name) / str(index)
+                shutil.copytree(source, target)
+                prepared.append(str(target))
+        except BaseException:
+            extension_dir.cleanup()
+            raise
+        exts = ",".join(prepared)
         args += [f"--disable-extensions-except={exts}", f"--load-extension={exts}"]
     kw = dict(
         channel="chromium",  # full Chromium (new headless): required for extensions
-        headless=headless, args=args, locale=locale,
+        headless=headless, chromium_sandbox=True, args=args, locale=locale,
         viewport={"width": viewport[0], "height": viewport[1]}, device_scale_factor=scale,
     )
     if timezone:
@@ -114,7 +144,14 @@ async def launch(pw, profile_dir, *, headless=True, extensions=(), proxy=None, g
         kw["proxy"] = {"server": proxy}
     if gpc:
         kw["extra_http_headers"] = {"Sec-GPC": "1"}
-    ctx = await pw.chromium.launch_persistent_context(str(profile_dir), **kw)
+    try:
+        ctx = await pw.chromium.launch_persistent_context(str(profile_dir), **kw)
+    except BaseException:
+        if extension_dir:
+            extension_dir.cleanup()
+        raise
+    if extension_dir:
+        ctx.on("close", lambda *args: extension_dir.cleanup())
     if gpc:
         await ctx.add_init_script(GPC_JS)
     for js in extra_init:

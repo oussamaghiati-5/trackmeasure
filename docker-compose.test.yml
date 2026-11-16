@@ -1,0 +1,4 @@
+# Local fixtures only: loopback works, but the container has no external network.
+services:
+  crawler:
+    network_mode: none

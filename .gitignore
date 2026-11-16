@@ -2,12 +2,15 @@ data/*.sqlite
 data/*.sqlite-wal
 data/*.sqlite-shm
 data/*.sqlite-journal
+data/
 ext/
 results/
 __pycache__/
 _metadata/
 *.pyc
 .env
+# Private VPN configuration files must never be committed.
+*.conf
 tranco_latest.zip
 tm_profile_*/
 tm_resp_*/

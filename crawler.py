@@ -28,6 +28,8 @@ from playwright.async_api import async_playwright
 
 import consent
 from common import HERE, etld1, host_of, launch, load_sites, open_db, site_url
+from navigation import measurement_error, navigation_error
+from extension_state import wait_for_extensions
 
 INSTRUMENT = (HERE / "instrument.js").read_text()
 SKIP_EXT = (".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".mp4", ".mp3", ".xml", ".rss", ".svg", ".webp")
@@ -113,10 +115,28 @@ async def interact(page, dwell, rng):
 
 async def goto(page, url, timeout):
     try:
-        resp = await page.goto(url, wait_until="load", timeout=timeout * 1000)
-        return (resp.status if resp else None), None
-    except Exception as e:  # timeouts still leave a partially loaded page worth measuring
-        return None, str(e).splitlines()[0][:300]
+        # Don't require every ad/image to finish loading to measure the document.
+        resp = await page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
+        status = resp.status if resp else None
+        return status, navigation_error(status)
+    except Exception as e:
+        message = str(e).splitlines()[0] if str(e) else type(e).__name__
+        return None, message[:300]
+
+
+async def navigate(page, url, phase, args, st, rng):
+    """Persist the outcome before rejecting an unusable site measurement."""
+    vid = st.new_visit(url, phase)
+    status, error = await goto(page, url, args.timeout)
+    if error is None:
+        try:
+            await interact(page, args.dwell, rng)
+        except Exception as e:
+            error = (str(e).splitlines()[0] if str(e) else type(e).__name__)[:300]
+    st.end_visit(vid, status, error, page.url)
+    if error:
+        raise RuntimeError(f"{phase} {url}: {error}")
+    return page.url
 
 
 async def pick_subpages(page, site_domain, n, rng):
@@ -158,12 +178,15 @@ async def crawl_site(pw, args, db, domain, category):
     rng = random.Random(f"{args.seed}:{domain}")
     profile = Path(tempfile.mkdtemp(prefix="tm_profile_"))
     ctx = None
+    extension_info = []
     try:
         ctx = await launch(pw, profile, headless=not args.headful, extensions=args.extension,
                            proxy=args.proxy, gpc=args.gpc, locale=args.locale, timezone=args.timezone,
                            extra_args=args.chromium_arg)
         if args.extension:
             await asyncio.sleep(args.ext_warmup)  # let filter lists / rulesets initialise
+            extension_info = await wait_for_extensions(ctx, args.extension)
+            print(f"[{args.run}] {domain} extensions: {json.dumps(extension_info)}", file=sys.stderr)
         await ctx.expose_binding("__tmLog", st.on_log)
         await ctx.add_init_script(INSTRUMENT)
         ctx.on("request", st.on_request)
@@ -172,38 +195,49 @@ async def crawl_site(pw, args, db, domain, category):
         page = ctx.pages[0] if ctx.pages else await ctx.new_page()
 
         # 1. landing
-        vid = st.new_visit(url, "landing")
-        status, err = await goto(page, url, args.timeout)
-        await interact(page, args.dwell, rng)
-        final_home = page.url
-        st.end_visit(vid, status, err, final_home)
+        final_home = await navigate(page, url, "landing", args, st, rng)
         # The site's own domain may redirect (e.g. foo.com -> foo.co.uk); measure against the final one.
-        if status and etld1(final_home):
+        if etld1(final_home):
             st.site_domain = etld1(final_home)
 
         # 2. consent action on the same page
-        vid = st.new_visit(final_home, "after_consent")
+        consent_vid = st.new_visit(final_home, "after_consent")
         res = await consent.apply_consent(page, args.consent, wait=args.consent_wait)
+        await consent.save_diagnostics(page, res, args.consent_artifacts,
+                                       f"{args.run}:{domain}")
+        res["gpc_requested"] = args.gpc
+        res["gpc"] = None
+        res["extensions"] = extension_info
         await page.wait_for_timeout(args.dwell * 500)
-        st.end_visit(vid, None, None, page.url, consent.dumps(res))
+        st.end_visit(consent_vid, None, None, page.url, consent.dumps(res))
 
         # 3. reload homepage with stored consent state
-        vid = st.new_visit(final_home, "home_reload")
-        status, err = await goto(page, final_home, args.timeout)
-        await interact(page, args.dwell, rng)
-        st.end_visit(vid, status, err, page.url)
+        await navigate(page, final_home, "home_reload", args, st, rng)
+        await consent.recheck_consent(page, res)
+        await consent.save_diagnostics(page, res, args.consent_artifacts,
+                                       f"{args.run}:{domain}", phase="home_reload")
+        db.execute("UPDATE visits SET consent=? WHERE id=?", (consent.dumps(res), consent_vid))
+        db.commit()
 
         # 4. subpages
         subs = reused_urls(args.reuse_urls_from, domain) if args.reuse_urls_from else []
         if not subs:
             subs = await pick_subpages(page, st.site_domain, args.subpages, rng)
         for su in subs[: args.subpages]:
-            vid = st.new_visit(su, "subpage")
-            status, err = await goto(page, su, args.timeout)
-            await interact(page, args.dwell, rng)
-            st.end_visit(vid, status, err, page.url)
+            await navigate(page, su, "subpage", args, st, rng)
+            await consent.recheck_consent(page, res, phase="subpage")
+            await consent.save_diagnostics(page, res, args.consent_artifacts,
+                                           f"{args.run}:{domain}", phase="subpage")
 
         st.visit_id = None
+        # Extensions such as Privacy Badger can enable GPC themselves. Read it
+        # after measurement logging stops so this observation adds no FP calls.
+        try:
+            res["gpc"] = await page.evaluate("() => navigator.globalPrivacyControl === true")
+        except Exception:
+            res["gpc"] = None
+        res["gpc_source"] = "navigator.globalPrivacyControl on final page"
+        db.execute("UPDATE visits SET consent=? WHERE id=?", (consent.dumps(res), consent_vid))
         for c in await ctx.cookies():
             db.execute("INSERT INTO cookies VALUES (?,?,?,?,?,?,?,?,?,?)",
                        (args.run, domain, c["name"], c["domain"], c["value"][:1000], c.get("expires"),
@@ -235,6 +269,7 @@ async def main():
     ap.add_argument("--timeout", type=float, default=45, help="navigation timeout (s)")
     ap.add_argument("--site-timeout", type=float, default=300)
     ap.add_argument("--consent-wait", type=float, default=10)
+    ap.add_argument("--consent-artifacts", help="save failed/unknown consent screenshots and control labels here")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--proxy", help="e.g. socks5://127.0.0.1:1080 (use an EU exit for GDPR banners)")
     ap.add_argument("--locale", default="en-US")
@@ -246,7 +281,18 @@ async def main():
     args = ap.parse_args()
 
     db = open_db(args.out)
-    done = {r[0] for r in db.execute("SELECT site FROM sites_done WHERE run=? AND ok=1", (args.run,))}
+    done = set()
+    for (site,) in db.execute("SELECT site FROM sites_done WHERE run=? AND ok=1", (args.run,)).fetchall():
+        visits = [dict(zip(("phase", "status", "error", "ended"), row)) for row in db.execute(
+            "SELECT phase,status,error,ended FROM visits WHERE run=? AND site=? ORDER BY id",
+            (args.run, site))]
+        problem = measurement_error(visits)
+        if problem:
+            # Old versions could mark failed navigations as completed. Retry them.
+            db.execute("UPDATE sites_done SET ok=0,error=? WHERE run=? AND site=?",
+                       (problem, args.run, site))
+        else:
+            done.add(site)
     # Failed/partial sites get retried from scratch: drop their partial rows.
     for (site,) in db.execute("SELECT DISTINCT site FROM visits WHERE run=?", (args.run,)).fetchall():
         if site not in done:
