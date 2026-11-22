@@ -6,9 +6,9 @@ Course research project (web/device tracking, *Defensive: Detection/Transparency
 
 ## Research questions
 
-1. How common are fingerprinting (canvas, canvas-font, WebRTC, audio, WebGL, attribute enumeration), storage abuse and cookie respawning on ~150 popular news, e-commerce and social/affiliate sites?
+1. How common are fingerprinting (canvas, canvas-font, WebRTC, audio, WebGL, attribute enumeration), behavioural-signal collection, storage abuse and cookie respawning on ~150 popular news, e-commerce and social/affiliate sites, and how often do fingerprint values and identifiers actually leave the browser, and to whom?
 2. How much of it survives a content blocker (uBlock Origin Lite, Privacy Badger)?
-3. Does rejecting consent through the site's CMP (plus a Global Privacy Control signal) actually stop it? Accepting is measured as the upper bound.
+3. Does rejecting consent through the site's CMP stop it, and does a Global Privacy Control signal? Both are measured separately and together; accepting is the upper bound.
 4. Do identifiers respawn after cookies are cleared, including identifiers re-derived purely from the browser fingerprint?
 
 Related work: FPTrace (fingerprinting bypasses opt-outs), Englehardt & Narayanan CCS'16 (detection heuristics), FP-Inspector S&P'21, Fouad et al. (cookie respawning, including fingerprint-based).
@@ -34,6 +34,8 @@ One fresh Chromium profile per site. Every run uses the same four phases, so run
 
 `instrument.js` is injected into every frame before page scripts run. It wraps ~70 fingerprinting and storage APIs (canvas 2D/WebGL, audio, WebRTC, navigator/screen getters, fonts, `matchMedia`, localStorage/IndexedDB, `document.cookie`, `sendBeacon`) and attributes each call to the calling script via the `Error().stack`. Wrapped functions keep a native-looking `toString()`. Records are batched to Python every 250 ms.
 
+It also records, per script: the *values* returned by `toDataURL` and WebGL's unmasked vendor/renderer (first 10 per API per frame; Python keeps only match tokens, never the image), canvas `save`/`restore` and canvas event listeners (for the E&N animation exclusion), and registrations of behavioural listeners (`mousemove`/`pointer*`, `key*`, `touch*`, `wheel`/`scroll`, `devicemotion`/`deviceorientation`, including `on*` properties) and Generic Sensor constructors. The crawler stores request bodies (POST/beacon, first 64 KB) and URLs up to 8,000 chars so values can be found in outgoing traffic.
+
 ### 2. Runs
 
 | Run | Setup | Purpose |
@@ -43,7 +45,10 @@ One fresh Chromium profile per site. Every run uses the same four phases, so run
 | `ubol` | uBlock Origin Lite (MV3) | blocker effectiveness |
 | `pbadger` | Privacy Badger | blocker effectiveness |
 | `optout` | CMP reject + `Sec-GPC: 1` | does opt-out stop tracking? |
+| `rejectonly` | CMP reject, no GPC | effect of the banner choice alone |
+| `gpconly` | `Sec-GPC: 1`, no banner action | effect of GPC alone |
 | `accept` | CMP accept | upper bound |
+| `baseline3` | identical to baseline (optional) | variability of the noise floor |
 
 ### 3. Consent automation (`consent.py`)
 Tries the CMP's JavaScript API (OneTrust, Cookiebot, Didomi, Usercentrics v2/v3), then visible controls if the API does not produce confirmation: a role-based button click with anchored multilingual regexes (EN/FR/DE/ES/IT/PT/NL), or a two-layer "manage, then reject/save" flow.
@@ -53,6 +58,8 @@ APIs are tried in the main page and child frames; missing APIs are retried withi
 Consent outcomes are `confirmed`, `failed`, or `unknown`; baseline/blocker runs use `not_requested` when no choice was requested. Confirmation requires a completed action plus readable saved state from TCF or Cookiebot. A vanished banner, successful function call, default false flags, or `gdprApplies=false` alone cannot confirm rejection. TCF is read using `addEventListener` (the old `getTCData` command is deprecated); its completed-action state must match the request. Cookiebot must report a response and all three optional categories must match. Other CMPs may be actuated but remain unknown unless a supported state reader confirms them. USP sale-opt-out data is retained separately and is not treated as proof of an all-cookie rejection.
 
 Confirmed choices are checked again on the homepage reload and each subpage. A missing/loading CMP is polled with a two-second retry budget (individual API reads also have timeouts); this accommodates APIs that initialize after page load. Rechecks never repeat consent actions. A readable opposite choice or conflicting supported reports downgrade confirmation immediately; persistently missing state becomes unknown. The action, attempts, evidence, subsequent checks (including polling count/time), outcome/reason, and GPC flag are stored in the existing consent JSON. Confirmation describes the observed CMP state, not a guarantee about tracking behavior or legal compliance. Failed/unknown consent does not make a successfully loaded website a navigation failure; raw observations stay available, but these site/runs are excluded from verified consent comparisons. Old requested-consent recordings without verification are unknown; the crawler's normal resume behavior still skips completed crawls, so use a new run label or database to collect fresh consent evidence.
+
+**Pay-or-OK walls.** When a rejection fails, the visible controls are classified. An accept control plus a paid option ("subscribe", "abo", "€/month", ...) and no free reject control is recorded as `pay_or_ok` (the outcome stays `failed`; the reason starts with `Pay-or-OK`). This separates a site design (The Guardian's "Reject all and subscribe") from a detection gap. It is a candidate label: confirm each case with the saved screenshot.
 
 Verification references: [TCF CMP API](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md), [Cookiebot browser API](https://www.cookiebot.com/en/developer/).
 
@@ -74,7 +81,7 @@ Detects fingerprinting per (script, frame, visit) using heuristics after Engleha
 
 | Technique | Heuristic |
 |---|---|
-| `canvas` | >=10 distinct chars drawn and a non-lossy readback >=16x16 |
+| `canvas` | >=10 distinct chars drawn and a non-lossy readback >=16x16, and the script never calls `save`/`restore` or adds a canvas event listener (E&N animation exclusion, added 18 Nov 2026) |
 | `canvas_font` | >=50 distinct fonts in `measureText` |
 | `webrtc` | `createDataChannel` + `createOffer` |
 | `audio` | oscillator + compressor + readback |
@@ -83,7 +90,15 @@ Detects fingerprinting per (script, frame, visit) using heuristics after Engleha
 
 Headline metric: **survival** of (script eTLD+1, technique) pairs vs the baseline in the post-consent phases. Report blocker and opt-out survival relative to the `baseline2` noise floor, not to 1.0.
 
-Outputs in `results/`: `per_site.csv` (requests, third-party domains, blocked requests, FP calls, storage ops, cookies, per-technique counts, pre-consent FP scripts, consent action/method/outcome/reason, GPC, TCF purposes, and comparison eligibility), `fp_scripts.csv` (every detected script, including diagnostic observations), `comparison.csv` (eligible paired survival vs baseline), and `consent_coverage.csv` (counts of all site/runs by consent action and outcome, including exclusions). Coverage counts eligible site/runs, not the number of matched baseline pairs. GPC is recorded as enabled/disabled/unknown; the `optout` treatment remains rejection plus GPC, so do not attribute its effect to rejection alone.
+Value-level evidence ([exfil.py](exfil.py)) answers whether tracking actually happened, not just whether an API was called:
+
+- **Exfiltration** (`fp_exfil.csv`): a captured canvas or WebGL value found, raw, base64 or as MD5/SHA-1/SHA-256 hex, in the URL or body of a later request that was not blocked. `comparison.csv` adds **exfiltration survival** over (receiver eTLD+1, value kind) pairs. This is a lower bound: values combined with other attributes or hashed with custom functions are not recognised.
+- **Identifier sharing** (`id_sharing.csv`): identifier-like cookie values (>=10 chars, a digit, varied, not a timestamp) sent to a registrable domain other than the cookie's owner. Consent-string cookies are excluded.
+- **Behavioural listeners** (`behavior.csv`): which scripts register input/motion listeners, grouped into pointer/keyboard/touch/scroll/motion families. Registration alone is not proof of behavioural tracking.
+
+**Statistics.** `make stats` ([scripts/stats.py](scripts/stats.py)) pairs every site's survival in each condition with the same site's `baseline2` survival and reports the median difference with a bootstrap 95% CI and an exact sign test, for fingerprint and exfiltration survival. **Validation.** `make validation-sample` ([scripts/validation.py](scripts/validation.py)) draws a stratified sample of detections to label by hand; `python scripts/validation.py score ...` reports precision per technique with Wilson intervals.
+
+Outputs in `results/`: `per_site.csv` (requests, third-party domains, blocked requests, FP calls, storage ops, cookies, per-technique counts, pre-consent FP scripts, consent action/method/outcome/reason, GPC, TCF purposes, and comparison eligibility), `fp_scripts.csv` (every detected script, including diagnostic observations), `comparison.csv` (eligible paired survival and exfiltration survival vs baseline), `consent_coverage.csv` (counts of all site/runs by consent action and outcome, including exclusions and pay-or-OK walls), `fp_exfil.csv`, `id_sharing.csv` and `behavior.csv`. Coverage counts eligible site/runs, not the number of matched baseline pairs. GPC is recorded as enabled/disabled/unknown; the `optout` treatment remains rejection plus GPC, so do not attribute its effect to rejection alone.
 
 GPC records the observed `navigator.globalPrivacyControl` value on the final page, not just the CLI flag. The consent JSON also retains `gpc_requested`, the observation source, and the actual initialized extension metadata/settings. Privacy Badger enables GPC itself even when the crawler was not passed `--gpc`; treat its run as the extension's full default behavior, not blocking alone.
 
@@ -91,12 +106,16 @@ GPC records the observed `navigator.globalPrivacyControl` value on the final pag
 
 ```
 crawler.py  instrument.js  consent.py  respawn.py  analyze.py  common.py
+exfil.py                  value-level evidence: fingerprint exfiltration, identifier sharing
 sites.csv                 150-site seed list (news / e-commerce / social+affiliate)
 scripts/
   get_extensions.sh/.py   install the hash-pinned Chromium MV3 packages into ext/
 extensions.lock.json      official package URLs, versions and SHA-256 checksums
   check_tranco.py         cross-check sites.csv against a dated Tranco list
   pick_respawn_sites.py   choose respawn candidates from the baseline cookies table
+  stats.py                paired tests vs the baseline2 noise floor (make stats)
+  validation.py           sample detections for manual labelling, score precision
+paper/                    draft paper (ACM sigconf); make -C paper pdf
 test/                     local fixture: publisher, aggressive tracker, consent-respecting
                           tracker, MV3 test blocker, and smoke.py (end-to-end assertions)
 Dockerfile  docker-compose.yml  docker-compose.vpn.yml  Makefile  requirements.txt
@@ -113,10 +132,10 @@ make verify-blockers           # actual extension startup/blocking, local fixtur
 python scripts/check_tranco.py  # record the printed Tranco list ID in the paper
 
 make smoke                      # local fixture, no internet, no VPN
-make baseline baseline2 blockers optout accept
+make baseline baseline2 baseline3 blockers optout rejectonly gpconly accept
 python scripts/pick_respawn_sites.py data/crawl.sqlite --run baseline   # writes respawn_sites.csv
 make respawn
-make analyze
+make analyze stats validation-sample
 ```
 
 ### Real blocker setup
@@ -145,6 +164,8 @@ The pilot writes SQLite and input copies under `data/pilot/`, and logs, CSVs and
 
 Crawls resume: completed sites are skipped, failed ones are retried from scratch. The base image tag must match the pinned `playwright` version in `requirements.txt`.
 
+Build through `make`: it passes your uid/gid (`PW_UID`/`PW_GID`) so the container user can write the bind-mounted `data/` and `results/`. With plain `docker compose build` the user stays uid 1001, which cannot write those folders on a host whose uid differs (e.g. most single-user Linux machines, uid 1000).
+
 A completed navigation requires a successful HTTP document response and the DOM-content-loaded event; a timeout, missing response, HTTP error, or empty 204/205 response makes that site/run unsuccessful. Failed visits retain their status and error for diagnosis. Any attempted subpage failure invalidates the site/run, so an incomplete crawl cannot look like successful blocking. `per_site.csv` includes `measurement_ok` and `measurement_error`; comparisons and headline summaries require successful execution, valid visits, and either confirmed or unrequested consent. This also applies to older databases. Challenge pages served with HTTP 200 are not yet detected.
 
 ### Isolation checklist (before any real crawl)
@@ -172,6 +193,8 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 See [IMPROVEMENTS.md](IMPROVEMENTS.md) for the group handoff, verified results and ordered tasks before the full experiment.
 
+On 18 November 2026, after the methodology additions (exfiltration, identifier sharing, behavioural listeners, E&N canvas exclusion, pay-or-OK, `rejectonly`/`gpconly`/`baseline3`, stats and validation scripts, host-uid container user), `make preflight`, `make smoke` (76 unit tests plus the browser smoke test), `make verify-consent` and `make verify-blockers` all passed on a uid-1000 Linux host. These are fixture checks only.
+
 `make preflight`, `make smoke`, and the offline real-blocker check pass in the container (headless `channel="chromium"`, non-root, sandbox enabled). Both pinned real MV3 extensions initialize and block the controlled known-domain request. The VPN preflight also passed with a Netherlands exit: HTTPS and direct IPv4 access stopped when Gluetun stopped, and the same exit returned on recovery. IPv6 was unavailable before and after stopping; IPv6 tunnel operation was not verified. The Tranco and respawn-candidate scripts are not yet exercised.
 
 The five-site diagnostic pilot completed on 2026-11-16, before the cross-frame consent update. The Guardian, Le Monde and Reddit completed baseline and all five comparison conditions; IKEA failed on a homepage reload with HTTP 403 and Slickdeals failed on landing with HTTP 403. All three reject actions failed to complete; all three accept actions clicked a control but remained unconfirmed. These consent conditions are excluded from verified comparisons. uBOL and Privacy Badger initialized and recorded 69 and 6 blocked requests respectively across the three sites. These are diagnostic observations, not representative effectiveness estimates or proof that detected API activity is tracking. Artifacts are in `data/pilot/` and `results/pilot/`.
@@ -185,8 +208,9 @@ After the consent updates, the user ran `make verify-consent` successfully, incl
 3. **Noise floor.** Always run `baseline2`.
 4. **Bot detection.** Headless runs can change tracker behaviour; use `--headful` under `xvfb-run` for final runs. Verify extensions block requests (> 0) under your chosen mode.
 5. **Blind spots.** Web/Service Workers aren't instrumented. Scripts can detect the hooks (`toString` is spoofed; other checks aren't). Bundled or eval'd code is attributed to the bundle's host. CNAME-cloaked trackers look first-party.
-6. **Heuristics.** Thresholds follow E&N/FP-Inspector, minus the save/restore/animation exclusion. Changing a threshold changes the paper's numbers: document any change and spot-check detections by hand.
+6. **Heuristics.** Thresholds follow E&N/FP-Inspector, including the save/restore/animation exclusion (since 18 Nov 2026; pilot canvas counts predate it). Changing a threshold changes the paper's numbers: document any change, and measure precision with `make validation-sample`.
+7. **API use is not tracking.** Prefer claims backed by `fp_exfil.csv` (value sent to a party) over API counts. Exfiltration matching is a lower bound.
 
 ## Ethics and data
 
-Public pages only, no logins, no form submission beyond consent buttons, low rate (<=4 parallel browsers, one profile per site). `data/` contains cookie values and is gitignored; do not publish it. Local consent screenshots and labels are also kept in ignored `results/`.
+Public pages only, no logins, no form submission beyond consent buttons, low rate (<=4 parallel browsers, one profile per site). `data/` contains cookie values and request bodies sent by page scripts (first 64 KB) and is gitignored; do not publish it. Local consent screenshots and labels are also kept in ignored `results/`.

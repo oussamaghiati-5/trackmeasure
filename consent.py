@@ -26,6 +26,30 @@ SAVE = re.compile(
     r"^\s*(save( (and|&) exit| (my )?(choices|preferences|settings))?|confirm( my)? (choices|selection)|"
     r"enregistrer( et fermer)?|speichern|guardar|salva)\s*$", re.I)
 
+# Pay-or-OK ("consent or pay") walls: the only alternative to accepting is a subscription.
+PAYWALL = re.compile(
+    r"(subscri|abonn|\babo\b|pur[- ]?abo|werbefrei|ohne werbung|ad[- ]?free|without (ads|advertising)|"
+    r"sans (pub|publicit)|suscri|assin|€|£|\$\s?\d|/\s?(month|mois|monat|mes|mese)\b|per month|par mois|pro monat)", re.I)
+ACCEPT_LOOSE = re.compile(
+    r"\b(accept|agree|allow|akzeptier|zustimm|einverstanden|accepter|j'accepte|acepta|accett|aceit|accepteren)", re.I)
+CONTROLS_JS = """() => [...document.querySelectorAll(
+    'button, a, [role="button"], input[type="button"], input[type="submit"]')]
+    .filter(el => { const r = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return r.width && r.height && s.visibility !== 'hidden' && s.display !== 'none'; })
+    .map(el => ({label: (el.getAttribute('aria-label') || el.innerText || el.value || '').trim().slice(0, 200),
+                 tag: el.tagName})).filter(el => el.label).slice(0, 200)"""
+
+
+def classify_pay_or_ok(labels):
+    """True when visible controls offer accept or a paid option, but no free rejection."""
+    labels = [label for label in labels if isinstance(label, str)]
+    paid = [label for label in labels if PAYWALL.search(label)]
+    accept = any(ACCEPT_LOOSE.search(label) and not PAYWALL.search(label) for label in labels)
+    free_reject = any(REJECT.match(label) for label in labels)
+    return bool(paid and accept and not free_reject), paid[:3]
+
+
 JS_API = {
     "reject": """() => { const r = [];
       try { if (window.OneTrust && OneTrust.RejectAll) { OneTrust.RejectAll(); r.push('onetrust'); } } catch (e) {}
@@ -260,6 +284,14 @@ async def apply_consent(page, action, wait=10):
     await page.wait_for_timeout(2000)
     res.update(await read_page_state(page))
     res["outcome"], res["reason"] = assess_choice(action, res["action_completed"], res)
+    if action == "reject" and not res["action_completed"]:
+        labels = [c.get("label") for frame in page_frames(page)
+                  for c in (await _eval(frame, CONTROLS_JS) or []) if isinstance(c, dict)]
+        pay_or_ok, paid = classify_pay_or_ok(labels)
+        if pay_or_ok:
+            # Still a failed rejection, but a site design, not a detection gap.
+            res.update(pay_or_ok=True, pay_or_ok_labels=paid,
+                       reason="Pay-or-OK: no free reject control (" + "; ".join(paid) + ")")
     return res
 
 
@@ -299,13 +331,7 @@ async def save_diagnostics(page, res, directory, key, phase="after_consent"):
         for frame in page_frames(page):
             # Include labels that did not match our patterns; that is the point
             # of diagnostics. Limit size, but never use this list as verification.
-            controls = await _eval(frame, """() => [...document.querySelectorAll(
-                'button, a, [role="button"], input[type="button"], input[type="submit"]')]
-                .filter(el => { const r = el.getBoundingClientRect();
-                  const s = getComputedStyle(el);
-                  return r.width && r.height && s.visibility !== 'hidden' && s.display !== 'none'; })
-                .map(el => ({label: (el.getAttribute('aria-label') || el.innerText || el.value || '').trim().slice(0, 200),
-                             tag: el.tagName})).filter(el => el.label).slice(0, 200)""")
+            controls = await _eval(frame, CONTROLS_JS)
             evidence["frames"].append(dict(frame=frame.url[:200], controls=controls))
         try:
             screenshot = root / (stem + ".png")

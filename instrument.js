@@ -76,6 +76,36 @@
     Object.defineProperty(owner, name, { ...d, value: w });
   }
 
+  // Like wrapMethod, but also ships the return value (first VALUE_CAP per API per frame),
+  // so the analysis can look for it in outgoing requests. Python stores only match tokens.
+  const VALUE_CAP = 10;
+  const valueCounts = new Map();
+  function wrapMethodValue(obj, name, label, argfn, valfn) {
+    if (!obj) return;
+    const [owner, d] = findDesc(obj, name);
+    if (!d || typeof d.value !== 'function') return;
+    const orig = d.value;
+    const w = { [name](...a) {
+      let ret;
+      try { ret = orig.apply(this, a); }
+      catch (err) { try { log(label, argfn ? argfn(this, a) : undefined); } catch (e) {} throw err; }
+      try {
+        const args = argfn ? argfn(this, a) : {};
+        const v = valfn(this, a, ret);
+        if (v !== undefined) {
+          const c = (valueCounts.get(label) || 0) + 1;
+          valueCounts.set(label, c);
+          if (c <= VALUE_CAP) args.value = v;
+        }
+        log(label, args);
+      } catch (e) {}
+      return ret;
+    } }[name];
+    Object.defineProperty(w, 'length', { value: orig.length });
+    fakes.set(w, nativeToString.call(orig));
+    Object.defineProperty(owner, name, { ...d, value: w });
+  }
+
   function wrapAccessor(obj, name, getLabel, setLabel, setArgfn) {
     if (!obj) return;
     const [owner, d] = findDesc(obj, name);
@@ -100,7 +130,8 @@
   const P = (ctor) => (typeof window[ctor] === 'function' ? window[ctor].prototype : null);
 
   // ---------------- Canvas ----------------
-  wrapMethod(P('HTMLCanvasElement'), 'toDataURL', 'Canvas.toDataURL', (c, a) => ({ w: c.width, h: c.height, type: a[0] || 'image/png' }));
+  wrapMethodValue(P('HTMLCanvasElement'), 'toDataURL', 'Canvas.toDataURL', (c, a) => ({ w: c.width, h: c.height, type: a[0] || 'image/png' }),
+    (c, a, r) => (typeof r === 'string' && r.length <= 500000 ? r : undefined));
   wrapMethod(P('HTMLCanvasElement'), 'toBlob', 'Canvas.toBlob', (c, a) => ({ w: c.width, h: c.height, type: a[1] || 'image/png' }));
   wrapMethod(P('HTMLCanvasElement'), 'getContext', 'Canvas.getContext', (c, a) => ({ type: str(a[0], 20), w: c.width, h: c.height }));
   for (const ctor of ['CanvasRenderingContext2D', 'OffscreenCanvasRenderingContext2D']) {
@@ -110,13 +141,17 @@
     wrapMethod(pr, 'strokeText', 'Canvas2D.strokeText', (c, a) => ({ text: str(a[0], 100), font: c.font }));
     wrapMethod(pr, 'measureText', 'Canvas2D.measureText', (c, a) => ({ font: c.font, text: str(a[0], 30) }));
     wrapMethod(pr, 'isPointInPath', 'Canvas2D.isPointInPath');
+    // Englehardt & Narayanan exclude scripts that save/restore the context (animations).
+    wrapMethod(pr, 'save', 'Canvas2D.save');
+    wrapMethod(pr, 'restore', 'Canvas2D.restore');
   }
   wrapMethod(P('OffscreenCanvas'), 'convertToBlob', 'Canvas.convertToBlob', (c) => ({ w: c.width, h: c.height }));
 
   // ---------------- WebGL ----------------
   for (const ctor of ['WebGLRenderingContext', 'WebGL2RenderingContext']) {
     const pr = P(ctor);
-    wrapMethod(pr, 'getParameter', 'WebGL.getParameter', (c, a) => ({ p: a[0] }));
+    wrapMethodValue(pr, 'getParameter', 'WebGL.getParameter', (c, a) => ({ p: a[0] }),
+      (c, a, r) => ((a[0] === 37445 || a[0] === 37446) && typeof r === 'string' ? r.slice(0, 500) : undefined));
     wrapMethod(pr, 'getExtension', 'WebGL.getExtension', (c, a) => ({ name: str(a[0], 60) }));
     wrapMethod(pr, 'getSupportedExtensions', 'WebGL.getSupportedExtensions');
     wrapMethod(pr, 'getShaderPrecisionFormat', 'WebGL.getShaderPrecisionFormat');
@@ -167,6 +202,41 @@
   wrapMethod(P('Storage'), 'removeItem', 'Storage.removeItem', (c, a) => ({ store: storeKind(c), key: str(a[0], 100) }));
   wrapMethod(P('IDBFactory'), 'open', 'IndexedDB.open', (c, a) => ({ name: str(a[0], 100) }));
   wrapAccessor(document, 'cookie', 'Document.cookie.get', 'Document.cookie.set', (v) => ({ value: str(v, 300) }));
+
+  // ---------------- Behavioural signals ----------------
+  // Registration of input/motion listeners per script (not the events themselves).
+  const BEHAVIOR = new Set(['mousemove', 'mousedown', 'mouseup', 'pointermove', 'pointerdown', 'keydown', 'keyup',
+    'keypress', 'touchstart', 'touchmove', 'touchend', 'wheel', 'scroll', 'devicemotion', 'deviceorientation']);
+  const targetName = (t) => (t === window ? 'window' : t === document ? 'document' : str(t && t.nodeName, 20));
+  (() => {
+    const [owner, d] = findDesc(P('EventTarget'), 'addEventListener');
+    if (!d || typeof d.value !== 'function') return;
+    const orig = d.value;
+    const w = { addEventListener(type, ...rest) {
+      try {
+        const t = String(type);
+        if (BEHAVIOR.has(t)) log('Event.' + t, { target: targetName(this) });
+        if (typeof HTMLCanvasElement === 'function' && this instanceof HTMLCanvasElement) log('Canvas.addEventListener', { type: str(t, 30) });
+      } catch (e) {}
+      return orig.call(this, type, ...rest);
+    } }.addEventListener;
+    Object.defineProperty(w, 'length', { value: orig.length });
+    fakes.set(w, nativeToString.call(orig));
+    Object.defineProperty(owner, 'addEventListener', { ...d, value: w });
+  })();
+  for (const n of ['ondevicemotion', 'ondeviceorientation']) {
+    wrapAccessor(window, n, null, 'Event.' + n.slice(2), () => ({ target: 'window', via: 'property' }));
+  }
+  for (const n of ['onmousemove', 'onkeydown', 'onkeyup', 'ontouchmove']) {
+    wrapAccessor(document, n, null, 'Event.' + n.slice(2), () => ({ target: 'document', via: 'property' }));
+  }
+  for (const n of ['Accelerometer', 'Gyroscope', 'LinearAccelerationSensor', 'GravitySensor', 'Magnetometer',
+                   'AbsoluteOrientationSensor', 'RelativeOrientationSensor', 'AmbientLightSensor']) {
+    const O = window[n];
+    if (typeof O !== 'function') continue;
+    const W = new Proxy(O, { construct(t, a, nt) { try { log('Sensor.' + n); } catch (e) {} return Reflect.construct(t, a, nt); } });
+    try { Object.defineProperty(window, n, { value: W, writable: true, configurable: true }); } catch (e) {}
+  }
 
   window.addEventListener('pagehide', flush, true);
 })();

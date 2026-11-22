@@ -6,12 +6,17 @@
 Techniques (per script, per frame, per page visit), after Englehardt & Narayanan (CCS'16)
 as adapted by FP-Inspector (S&P'21):
   canvas        text drawn with >=10 distinct chars AND image read back from a >=16x16
-                canvas (toDataURL/toBlob non-lossy, or getImageData >=16x16)
+                canvas (toDataURL/toBlob non-lossy, or getImageData >=16x16), AND the script
+                never calls save/restore or adds a canvas event listener (E&N animation exclusion)
   canvas_font   measureText with >=50 distinct fonts
   webrtc        createDataChannel + createOffer
   audio         createOscillator + createDynamicsCompressor + a readback
   webgl         getParameter(UNMASKED_VENDOR/RENDERER_WEBGL)  [extra, not in E&N]
   attr_enum     >=12 distinct navigator/screen attributes read  [weak signal]
+
+Also written: fp_exfil.csv (canvas/WebGL values found in later requests), id_sharing.csv
+(identifier-like cookie values sent to another registrable domain) and behavior.csv
+(scripts registering input/motion listeners or Sensor APIs). See exfil.py.
 """
 import argparse
 import json
@@ -21,6 +26,7 @@ from pathlib import Path
 
 import pandas as pd
 
+import exfil as exfil_mod
 from navigation import measurement_error
 from consent import consent_record
 
@@ -32,7 +38,16 @@ COMPARISON_COLUMNS = [
     "run", "site", "fp_pairs_baseline", "fp_pairs_surviving", "fp_pairs_new", "survival",
     "tp_domains_baseline", "tp_domains_run", "fp_calls_baseline", "fp_calls_run",
     "blocked_requests", "consent_method", "consent_action", "consent_outcome", "gpc",
+    "exfil_pairs_baseline", "exfil_pairs_surviving", "exfil_survival",
 ]
+BEHAVIOR_FAMILY = {
+    "mousemove": "pointer", "mousedown": "pointer", "mouseup": "pointer", "pointermove": "pointer",
+    "pointerdown": "pointer", "keydown": "keyboard", "keyup": "keyboard", "keypress": "keyboard",
+    "touchstart": "touch", "touchmove": "touch", "touchend": "touch", "wheel": "scroll", "scroll": "scroll",
+    "devicemotion": "motion", "deviceorientation": "motion",
+}
+BEHAVIOR_COLUMNS = ["run", "site", "phase_group", "script_domain", "third_party", "families", "n_families", "events"]
+ANIMATION = ("Canvas2D.save", "Canvas2D.restore", "Canvas.addEventListener")
 
 
 def category(api):
@@ -40,9 +55,17 @@ def category(api):
         return "storage"
     if api == "Navigator.sendBeacon":
         return "beacon"
-    if api in ("Canvas.getContext",):
+    if api.startswith(("Event.", "Sensor.")):
+        return "behavior"
+    if api in ("Canvas.getContext", *ANIMATION):
         return "other"
     return "fingerprinting"
+
+
+def behavior_family(api):
+    if api.startswith("Sensor."):
+        return "motion"
+    return BEHAVIOR_FAMILY.get(api[len("Event."):]) if api.startswith("Event.") else None
 
 
 def techniques(calls):
@@ -57,7 +80,8 @@ def techniques(calls):
     readback = any((a.get("w") or 0) >= 16 and (a.get("h") or 0) >= 16 and a.get("type") not in LOSSY
                    for a in by["Canvas.toDataURL"] + by["Canvas.toBlob"]) or \
         any((a.get("sw") or 0) >= 16 and (a.get("sh") or 0) >= 16 for a in by["Canvas2D.getImageData"])
-    if len(chars) >= 10 and readback:
+    animates = any(by[name] for name in ANIMATION)
+    if len(chars) >= 10 and readback and not animates:
         found.add("canvas")
     if len({a.get("font") for a in by["Canvas2D.measureText"]}) >= 50:
         found.add("canvas_font")
@@ -108,7 +132,22 @@ def detect(api):
     return pd.DataFrame(rows, columns=["run", "site", "phase_group", "script_domain", "script_url", "third_party", "technique"])
 
 
-def per_site(d, det):
+def behavior(api):
+    """Scripts registering behavioural (input/motion) listeners or Sensor APIs."""
+    if not len(api):
+        return pd.DataFrame(columns=BEHAVIOR_COLUMNS)
+    b = api.assign(family=api["api"].map(behavior_family)).dropna(subset=["family"])
+    if not len(b):
+        return pd.DataFrame(columns=BEHAVIOR_COLUMNS)
+    b = b.assign(phase_group=b["phase"].map(lambda p: "pre" if p in PRE_PHASES else "post"),
+                 script_domain=b["script_domain"].replace("", "(inline/unknown)").fillna("(inline/unknown)"))
+    out = b.groupby(["run", "site", "phase_group", "script_domain", "third_party"]).agg(
+        families=("family", lambda s: ",".join(sorted(set(s)))), n_families=("family", "nunique"),
+        events=("api", lambda s: ",".join(sorted({a.split(".", 1)[1] for a in s})))).reset_index()
+    return out[BEHAVIOR_COLUMNS]
+
+
+def per_site(d, det, exfil=None, sharing=None, beh=None):
     req, api, ck = d["requests"], d["api"], d["cookies"]
     api = api.assign(cat=api["api"].map(category))
     g = ["run", "site"]
@@ -140,10 +179,27 @@ def per_site(d, det):
         out[t] = sub.groupby(g)["script_domain"].nunique() if len(sub) else 0
     pre = det[det.phase_group == "pre"] if len(det) else det
     out["fp_scripts_pre_consent"] = pre.groupby(g)["script_url"].nunique() if len(pre) else 0
+    ex = exfil if exfil is not None and len(exfil) else None
+    out["fp_exfil_receivers"] = ex.groupby(g)["receiver_domain"].nunique() if ex is not None else 0
+    out["fp_exfil_tp_receivers"] = (ex[ex.receiver_third_party == 1].groupby(g)["receiver_domain"].nunique()
+                                    if ex is not None else 0)
+    sh = sharing if sharing is not None and len(sharing) else None
+    out["id_sharing_receivers"] = sh.groupby(g)["receiver_domain"].nunique() if sh is not None else 0
+    bh = beh if beh is not None and len(beh) else None
+    if bh is not None:
+        tpb = bh[bh.third_party == 1]
+        per_domain = tpb.groupby(g + ["script_domain"])["families"].agg(
+            lambda s: len(set(",".join(s).split(","))))
+        out["behavior_tp_domains"] = tpb.groupby(g)["script_domain"].nunique()
+        out["behavior_tp_multi_family"] = (per_domain >= 2).groupby(level=g).sum()
+    else:
+        out["behavior_tp_domains"] = 0
+        out["behavior_tp_multi_family"] = 0
     cons = d["visits"][d["visits"].phase == "after_consent"].set_index(g)["consent"]
     records = cons.map(consent_record).reindex(out.index).map(consent_record)
     for field in ("method", "action", "outcome", "reason"):
         out["consent_" + field] = records.map(lambda r: r.get(field))
+    out["consent_pay_or_ok"] = records.map(lambda r: int(r.get("pay_or_ok") is True))
     out["gpc"] = records.map(lambda r: {True: "enabled", False: "disabled"}.get(r.get("gpc"), "unknown"))
     out["comparison_eligible"] = ((out["ok"] == 1) & (out["measurement_ok"] == 1)
                                   & out["consent_outcome"].isin(["confirmed", "not_requested"])).astype(int)
@@ -156,10 +212,20 @@ def per_site(d, det):
     return out.reset_index()
 
 
-def compare(ps, det, baseline):
-    """Survival of (script eTLD+1, technique) pairs vs. the baseline, post-consent phases."""
+def compare(ps, det, baseline, exfil=None):
+    """Survival of (script eTLD+1, technique) pairs vs. the baseline, post-consent phases.
+
+    exfil_survival does the same for (receiver eTLD+1, value kind) pairs: fingerprint
+    values that actually left the browser."""
     key = lambda df: set(zip(df.script_domain, df.technique))
     post = det[det.phase_group == "post"] if len(det) else det
+    ex = exfil[exfil.phase != "landing"] if exfil is not None and len(exfil) else None
+
+    def ex_key(run, site):
+        if ex is None:
+            return set()
+        sub = ex[(ex.run == run) & (ex.site == site)]
+        return set(zip(sub.receiver_domain, sub.kind))
     ok = ps[ps.comparison_eligible == 1]
     rows = []
     for run in sorted(set(ok.run) - {baseline}):
@@ -169,7 +235,10 @@ def compare(ps, det, baseline):
             r = key(post[(post.run == run) & (post.site == site)]) if len(post) else set()
             pb = ps[(ps.run == baseline) & (ps.site == site)].iloc[0]
             pr = ps[(ps.run == run) & (ps.site == site)].iloc[0]
+            eb, er = ex_key(baseline, site), ex_key(run, site)
             rows.append(dict(run=run, site=site, fp_pairs_baseline=len(b), fp_pairs_surviving=len(b & r),
+                             exfil_pairs_baseline=len(eb), exfil_pairs_surviving=len(eb & er),
+                             exfil_survival=(len(eb & er) / len(eb)) if eb else None,
                              fp_pairs_new=len(r - b),
                              survival=(len(b & r) / len(b)) if b else None,
                              tp_domains_baseline=pb.tp_domains, tp_domains_run=pr.tp_domains,
@@ -191,14 +260,26 @@ def main():
     d = load(a.dbs)
     det = detect(d["api"]) if len(d["api"]) else pd.DataFrame(
         columns=["run", "site", "phase_group", "script_domain", "script_url", "third_party", "technique"])
-    ps = per_site(d, det)
-    cmp_ = compare(ps, det, a.baseline)
+    ex_rows, sh_rows = [], []
+    for path in a.dbs:
+        e, s = exfil_mod.analyze_db(path)
+        ex_rows += e
+        sh_rows += s
+    ex = pd.DataFrame(ex_rows, columns=exfil_mod.EXFIL_COLUMNS)
+    sh = pd.DataFrame(sh_rows, columns=exfil_mod.SHARING_COLUMNS)
+    beh = behavior(d["api"])
+    ps = per_site(d, det, exfil=ex, sharing=sh, beh=beh)
+    cmp_ = compare(ps, det, a.baseline, exfil=ex)
     ps.to_csv(out / "per_site.csv", index=False)
     det.drop_duplicates().to_csv(out / "fp_scripts.csv", index=False)
     cmp_.to_csv(out / "comparison.csv", index=False)
+    ex.to_csv(out / "fp_exfil.csv", index=False)
+    sh.to_csv(out / "id_sharing.csv", index=False)
+    beh.to_csv(out / "behavior.csv", index=False)
     coverage = ps.groupby(["run", "consent_action", "consent_outcome"], dropna=False).agg(
         site_runs=("site", "size"), usable_navigation=("measurement_ok", "sum"),
-        eligible_site_runs=("comparison_eligible", "sum")).reset_index()
+        eligible_site_runs=("comparison_eligible", "sum"),
+        pay_or_ok=("consent_pay_or_ok", "sum")).reset_index()
     coverage.to_csv(out / "consent_coverage.csv", index=False)
     print("\n== Consent outcomes (all site/runs, including exclusions) ==")
     print(coverage.to_string(index=False))
@@ -216,7 +297,10 @@ def main():
                                  median_fp_calls=("fp_calls", "median"),
                                  sites_with_fp=("fp_scripts", lambda s: int((s > 0).sum())),
                                  sites_fp_pre_consent=("fp_scripts_pre_consent", lambda s: int((s > 0).sum())),
-                                 blocked_requests=("blocked_requests", "sum"))
+                                 blocked_requests=("blocked_requests", "sum"),
+                                 sites_fp_exfil=("fp_exfil_tp_receivers", lambda s: int((s > 0).sum())),
+                                 sites_id_sharing=("id_sharing_receivers", lambda s: int((s > 0).sum())),
+                                 sites_behavior_tp=("behavior_tp_domains", lambda s: int((s > 0).sum())))
     for t in TECHNIQUES:
         summ[f"sites_{t}"] = ok.groupby("run")[t].apply(lambda s: int((s > 0).sum()))
     print(summ.to_string())
@@ -231,8 +315,12 @@ def main():
                                       pairs_surviving=("fp_pairs_surviving", "sum"), pairs_new=("fp_pairs_new", "sum"),
                                       median_tp_domains_run=("tp_domains_run", "median"))
         agg["survival_rate"] = (agg.pairs_surviving / agg.pairs_baseline.where(agg.pairs_baseline > 0)).round(3)
+        ex_agg = cmp_.groupby("run")[["exfil_pairs_baseline", "exfil_pairs_surviving"]].sum()
+        agg["exfil_survival_rate"] = (ex_agg.exfil_pairs_surviving
+                                      / ex_agg.exfil_pairs_baseline.where(ex_agg.exfil_pairs_baseline > 0)).round(3)
         print(agg.to_string())
-    print(f"\nCSV written to {out}/ (per_site.csv, fp_scripts.csv, comparison.csv, consent_coverage.csv)")
+    print(f"\nCSV written to {out}/ (per_site.csv, fp_scripts.csv, comparison.csv, consent_coverage.csv, "
+          "fp_exfil.csv, id_sharing.csv, behavior.csv)")
 
 
 if __name__ == "__main__":

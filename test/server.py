@@ -16,7 +16,7 @@ class H(http.server.BaseHTTPRequestHandler):
             self.wfile.write(body); return
         if host == "news.test" and path == "/cmp.js":
             f, ctype = ROOT / "cmp.js", "application/javascript"
-        elif host in ("broken.test", "unknown.test", "incomplete.test"):
+        elif host in ("broken.test", "unknown.test", "incomplete.test", "paywall.test"):
             f, ctype = ROOT / "consent_failure.html", "text/html"
         elif host == "news.test":
             f = ROOT / ("index.html" if path in ("/",) else "page.html")
@@ -31,4 +31,7 @@ class H(http.server.BaseHTTPRequestHandler):
         body = f.read_bytes()
         self.send_response(200); self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+    def do_POST(self):  # beacons
+        self.rfile.read(int(self.headers.get("Content-Length") or 0))
+        self.send_response(204); self.end_headers()
 http.server.ThreadingHTTPServer(("127.0.0.1", int(sys.argv[1]) if len(sys.argv) > 1 else 8765), H).serve_forever()

@@ -9,7 +9,11 @@ if (host === 'broken.test') {
   window.Cookiebot = { hasResponse: true,
     consent: { preferences: true, statistics: true, marketing: true } };
 }
-if (host === 'incomplete.test') {
+if (host === 'paywall.test') {
+  // Pay-or-OK wall: accept, or pay to reject (as seen on The Guardian).
+  banner.innerHTML = '<button onclick="this.parentNode.remove()">Accept all</button>' +
+    '<button onclick="location.href=\'/subscribe\'">Reject all and subscribe (€5/month)</button>';
+} else if (host === 'incomplete.test') {
   banner.innerHTML = '<button onclick="this.parentNode.textContent=\'Settings failed to load\'">Manage settings</button>';
 } else {
   // unknown.test has a clickable button but exposes no supported state reader.

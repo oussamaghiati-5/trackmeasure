@@ -82,7 +82,8 @@ def main():
         print("consent failures and unknown state ...")
         consent_sites = td / "sites_consent.csv"
         consent_sites.write_text("domain,category\nhttp://broken.test/,test\n"
-                                 "http://unknown.test/,test\nhttp://incomplete.test/,test\n")
+                                 "http://unknown.test/,test\nhttp://incomplete.test/,test\n"
+                                 "http://paywall.test/,test\n")
         extra = ["--sites", str(consent_sites), "--dwell", "1", "--subpages", "0", "--consent-wait", "1"]
         run(*crawl, *extra, "--run", "baseline")
         run(*crawl, *extra, "--run", "optout", "--consent", "reject", "--gpc")
@@ -128,7 +129,7 @@ def main():
               "failed navigations are flagged unusable in per_site.csv")
 
         for host, outcome in (("broken.test", "failed"), ("unknown.test", "unknown"),
-                              ("incomplete.test", "failed")):
+                              ("incomplete.test", "failed"), ("paywall.test", "failed")):
             site = f"http://{host}/"
             row = ps[(ps["run"] == "optout") & (ps["site"] == site)].iloc[0]
             check(row["ok"] == 1 and row["measurement_ok"] == 1,
@@ -145,9 +146,13 @@ def main():
         check(acc_ps["consent_outcome"] == "confirmed", "working acceptance is verified")
         oo_coverage = coverage[coverage["run"] == "optout"].set_index("consent_outcome")
         check(int(oo_coverage.loc["confirmed", "site_runs"]) == 1
-              and int(oo_coverage.loc["failed", "site_runs"]) == 2
+              and int(oo_coverage.loc["failed", "site_runs"]) == 3
               and int(oo_coverage.loc["unknown", "site_runs"]) == 1,
               "consent coverage reports confirmed, failed and unknown cases")
+        pay = ps[(ps["run"] == "optout")].set_index("site")["consent_pay_or_ok"]
+        check(pay.get("http://paywall.test/") == 1 and pay.drop("http://paywall.test/").sum() == 0,
+              "pay-or-OK wall is classified separately, other failures are not")
+        check(int(oo_coverage.loc["failed", "pay_or_ok"]) == 1, "coverage counts pay-or-OK walls")
 
         # 1. All 6 techniques detected in the baseline post-consent phases
         b = fps[(fps["run"] == "baseline") & (fps["phase_group"] == "post")]
@@ -175,6 +180,37 @@ def main():
         acc_fps = fps[(fps["run"] == "accept") & (fps["phase_group"] == "post")]
         check("ads.test" in acc_fps["script_domain"].values,
               "accept: ads.test canvas detected (consent-respecting script fires)")
+
+        # Exfiltration: the canvas value leaves in a beacon body; blocked tracker sends nothing.
+        exf = pd.read_csv(f"{out}/fp_exfil.csv")
+        b_ex = exf[(exf["run"] == "baseline") & (exf["site"] == SITE_KEY)]
+        check(((b_ex["kind"] == "canvas") & (b_ex["receiver_domain"] == "tracker.test")
+               & (b_ex["encoding"] == "base64_slice")).any(),
+              "baseline: canvas value found in a request to tracker.test")
+        if (b_ex["kind"] == "webgl_renderer").any():
+            print("  OK  baseline: WebGL renderer string found in a request (WebGL available)")
+        else:
+            print("  --  WebGL renderer not exfiltrated (no WebGL in this browser); not asserted")
+        check(not (exf["run"] == "blocker").any(), "blocker: no fingerprint value leaves the browser")
+        check(float(cmp[cmp["run"] == "blocker"]["exfil_survival"].iloc[0]) == 0.0,
+              "blocker: exfiltration survival = 0.0")
+        check(float(cmp[cmp["run"] == "optout"]["exfil_survival"].iloc[0]) == 1.0,
+              "optout: exfiltration survival = 1.0 (tracker ignores consent)")
+
+        # ID sharing: the first-party _trk cookie is sent to the tracker's domain.
+        shr = pd.read_csv(f"{out}/id_sharing.csv")
+        check(((shr["run"] == "baseline") & (shr["cookie_name"] == "_trk")
+               & (shr["receiver_domain"] == "tracker.test")).any(),
+              "baseline: _trk identifier shared with tracker.test")
+        check(not ((shr["cookie_name"] == "consent")).any(), "consent cookie not reported as an identifier")
+
+        # Behavioural listeners registered by the tracker.
+        beh = pd.read_csv(f"{out}/behavior.csv")
+        tb = beh[(beh["run"] == "baseline") & (beh["script_domain"] == "tracker.test")]
+        check(len(tb) and {"keyboard", "pointer"} <= set(",".join(tb["families"]).split(",")),
+              "baseline: tracker.test registers pointer and keyboard listeners")
+        check(int(ps[(ps["run"] == "baseline") & (ps["site"] == SITE_KEY)]["behavior_tp_multi_family"].iloc[0]) >= 1,
+              "per_site counts third parties with >=2 behavioural families")
 
         # 5. Respawn --clear cookies: _trk token survives (backed up in localStorage)
         rcon = sqlite3.connect(rdb)

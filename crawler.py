@@ -14,6 +14,7 @@ Examples:
 """
 import argparse
 import asyncio
+import hashlib
 import json
 import random
 import shutil
@@ -27,6 +28,7 @@ from urllib.parse import urldefrag, urlparse
 from playwright.async_api import async_playwright
 
 import consent
+import exfil
 from common import HERE, etld1, host_of, launch, load_sites, open_db, site_url
 from navigation import measurement_error, navigation_error
 from extension_state import wait_for_extensions
@@ -34,6 +36,7 @@ from extension_state import wait_for_extensions
 INSTRUMENT = (HERE / "instrument.js").read_text()
 SKIP_EXT = (".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".mp4", ".mp3", ".xml", ".rss", ".svg", ".webp")
 SKIP_WORDS = ("logout", "signout", "sign-out", "login", "signin", "sign-in", "register", "cart", "checkout", "mailto:", "tel:")
+POST_CAP = 64 * 1024  # bytes of request body kept for exfiltration matching
 
 
 class SiteState:
@@ -67,10 +70,19 @@ class SiteState:
         except Exception:
             frame_url = None
         dom = etld1(url)
+        post = None
+        if req.method != "GET":
+            try:
+                buf = req.post_data_buffer
+            except Exception:
+                buf = None
+            if buf:
+                post = buf[:POST_CAP].decode("utf-8", "replace")
         cur = self.db.execute(
-            "INSERT INTO requests(visit_id,url,host,domain,third_party,rtype,method,frame_url,ts) VALUES (?,?,?,?,?,?,?,?,?)",
-            (self.visit_id, url[:2000], host_of(url), dom, int(dom != self.site_domain),
-             req.resource_type, req.method, frame_url, time.time()))
+            "INSERT INTO requests(visit_id,url,host,domain,third_party,rtype,method,frame_url,ts,post_data) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (self.visit_id, url[:8000], host_of(url), dom, int(dom != self.site_domain),
+             req.resource_type, req.method, frame_url, time.time(), post))
         self.req_rows[req] = cur.lastrowid
 
     def on_request_failed(self, req):
@@ -88,15 +100,25 @@ class SiteState:
             frame_url = source["frame"].url
         except Exception:
             frame_url = None
-        rows = []
+        rows, values = [], []
         for ev in batch:
             script = ev.get("script") or ""
             sdom = etld1(script) if script.startswith("http") else ""
+            args, ts = ev.get("args"), (ev.get("ts") or 0) / 1000
+            if isinstance(args, dict) and "value" in args:
+                # Keep only match tokens and a short digest, never the raw canvas image.
+                value = args.pop("value")
+                kind = exfil.value_kind(ev.get("api"), args)
+                if isinstance(value, str):
+                    args["value_sha256"] = hashlib.sha256(value.encode("utf-8", "surrogatepass")).hexdigest()[:16]
+                for enc, tok, ci in exfil.value_tokens(kind, value) if kind else ():
+                    values.append((self.visit_id, script[:1000], sdom, kind, enc, tok, int(ci), ts))
             rows.append((self.visit_id, frame_url, script[:1000], sdom,
                          int(bool(sdom) and sdom != self.site_domain), ev.get("api"),
-                         json.dumps(ev.get("args")) if ev.get("args") is not None else None,
-                         (ev.get("ts") or 0) / 1000))
+                         json.dumps(args) if args is not None else None, ts))
         self.db.executemany("INSERT INTO api_calls VALUES (?,?,?,?,?,?,?,?)", rows)
+        if values:
+            self.db.executemany("INSERT INTO fp_values VALUES (?,?,?,?,?,?,?,?)", values)
 
 
 async def interact(page, dwell, rng):
@@ -297,6 +319,7 @@ async def main():
     for (site,) in db.execute("SELECT DISTINCT site FROM visits WHERE run=?", (args.run,)).fetchall():
         if site not in done:
             db.execute("DELETE FROM api_calls WHERE visit_id IN (SELECT id FROM visits WHERE run=? AND site=?)", (args.run, site))
+            db.execute("DELETE FROM fp_values WHERE visit_id IN (SELECT id FROM visits WHERE run=? AND site=?)", (args.run, site))
             db.execute("DELETE FROM requests WHERE visit_id IN (SELECT id FROM visits WHERE run=? AND site=?)", (args.run, site))
             db.execute("DELETE FROM visits WHERE run=? AND site=?", (args.run, site))
             db.execute("DELETE FROM cookies WHERE run=? AND site=?", (args.run, site))

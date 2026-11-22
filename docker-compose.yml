@@ -1,6 +1,10 @@
 services:
   crawler:
-    build: .
+    build:
+      context: .
+      args:
+        PW_UID: ${PW_UID:-1001}
+        PW_GID: ${PW_GID:-1001}
     # --init: reap zombies (Chromium spawns sub-processes that may become zombies)
     # shm_size instead of ipc: host, which would share the host IPC namespace.
     init: true

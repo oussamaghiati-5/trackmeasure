@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS visits(
   phase TEXT, started REAL, ended REAL, status INTEGER, error TEXT, consent TEXT);
 CREATE TABLE IF NOT EXISTS requests(
   id INTEGER PRIMARY KEY, visit_id INT, url TEXT, host TEXT, domain TEXT, third_party INT,
-  rtype TEXT, method TEXT, frame_url TEXT, failure TEXT, ts REAL);
+  rtype TEXT, method TEXT, frame_url TEXT, failure TEXT, ts REAL, post_data TEXT);
 CREATE TABLE IF NOT EXISTS api_calls(
   visit_id INT, frame_url TEXT, script_url TEXT, script_domain TEXT, third_party INT,
   api TEXT, args TEXT, ts REAL);
@@ -78,8 +78,12 @@ CREATE TABLE IF NOT EXISTS cookies(
   third_party INT, http_only INT, secure INT, same_site TEXT);
 CREATE TABLE IF NOT EXISTS sites_done(
   run TEXT, site TEXT, ok INT, error TEXT, seconds REAL, PRIMARY KEY(run, site));
+CREATE TABLE IF NOT EXISTS fp_values(
+  visit_id INT, script_url TEXT, script_domain TEXT, kind TEXT, encoding TEXT, token TEXT,
+  ci INT, ts REAL);
 CREATE INDEX IF NOT EXISTS ix_api_visit ON api_calls(visit_id);
 CREATE INDEX IF NOT EXISTS ix_req_visit ON requests(visit_id);
+CREATE INDEX IF NOT EXISTS ix_val_visit ON fp_values(visit_id);
 """
 
 
@@ -87,6 +91,8 @@ def open_db(path):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path)
     db.executescript(SCHEMA)
+    if not any(r[1] == "post_data" for r in db.execute("PRAGMA table_info(requests)")):
+        db.execute("ALTER TABLE requests ADD COLUMN post_data TEXT")  # pre-exfiltration databases
     db.execute("PRAGMA journal_mode=WAL")
     return db
 

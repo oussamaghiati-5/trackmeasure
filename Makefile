@@ -4,10 +4,13 @@ COMPOSE_TEST = docker compose -f docker-compose.yml -f docker-compose.test.yml
 DB          = data/crawl.sqlite
 RESPAWN_DB  = data/respawn.sqlite
 RESULTS     = results
+# Container user = host user, so bind-mounted data/ and results/ are writable.
+export PW_UID := $(shell id -u)
+export PW_GID := $(shell id -g)
 SITE        ?= theguardian.com
 ACTION      ?= reject
 
-.PHONY: build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout accept respawn analyze
+.PHONY: build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout accept respawn analyze rejectonly gpconly baseline3 stats validation-sample
 
 dirs:
 	mkdir -p data ext results
@@ -93,6 +96,28 @@ accept: dirs
 	    --consent accept \
 	    --reuse-urls-from $(DB):baseline
 
+# Separate the two opt-out signals that `optout` combines (reject + GPC).
+rejectonly: dirs
+	$(COMPOSE_VPN) run --rm crawler \
+	    python crawler.py --sites sites.csv --run rejectonly \
+	    --out $(DB) --workers 4 \
+	    --consent reject \
+	    --reuse-urls-from $(DB):baseline
+
+gpconly: dirs
+	$(COMPOSE_VPN) run --rm crawler \
+	    python crawler.py --sites sites.csv --run gpconly \
+	    --out $(DB) --workers 4 \
+	    --gpc \
+	    --reuse-urls-from $(DB):baseline
+
+# Third identical baseline: estimates the noise floor's own variability.
+baseline3: dirs
+	$(COMPOSE_VPN) run --rm crawler \
+	    python crawler.py --sites sites.csv --run baseline3 \
+	    --out $(DB) --workers 4 \
+	    --reuse-urls-from $(DB):baseline
+
 respawn: dirs
 	$(COMPOSE_VPN) run --rm crawler \
 	    python respawn.py --sites respawn_sites.csv --clear cookies \
@@ -104,6 +129,15 @@ respawn: dirs
 analyze: dirs
 	$(COMPOSE) run --rm crawler \
 	    python analyze.py $(DB) --baseline baseline --outdir $(RESULTS)
+
+# Paired tests vs the baseline2 noise floor (after analyze).
+stats: dirs
+	$(COMPOSE) run --rm crawler python scripts/stats.py $(RESULTS)/comparison.csv --out $(RESULTS)/stats.csv
+
+# Stratified sample of detections to label by hand; score with scripts/validation.py score.
+validation-sample: dirs
+	$(COMPOSE) run --rm crawler python scripts/validation.py sample $(RESULTS)/fp_scripts.csv \
+	    --out $(RESULTS)/validation_sample.csv
 
 # --- Helpers ---
 # Headful run example (run from inside the container or on the host with X11):

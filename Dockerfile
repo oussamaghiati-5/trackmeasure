@@ -17,11 +17,19 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Match pwuser to the host user so the bind-mounted data/ and results/ are writable
+# (the Makefile passes `id -u`/`id -g`; -o allows a uid already used in the image).
+ARG PW_UID=1001
+ARG PW_GID=1001
+RUN if [ "$(id -u pwuser)" != "$PW_UID" ] || [ "$(id -g pwuser)" != "$PW_GID" ]; then \
+      groupmod -o -g "$PW_GID" pwuser && usermod -o -u "$PW_UID" -g "$PW_GID" pwuser; \
+    fi
+
 # Copy source (data/ and ext/ are mounted at runtime; excluded via .dockerignore)
 # --chown: Chromium must be able to read (and write generated rulesets into) unpacked extensions.
 COPY --chown=pwuser:pwuser . /app
 
-# Run as the non-root user pre-created by the base image (UID 1000).
+# Run as the non-root user pre-created by the base image (uid set above).
 # This avoids the --no-sandbox flag that root would force on Chromium.
 USER pwuser
 
