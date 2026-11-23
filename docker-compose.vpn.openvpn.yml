@@ -1,0 +1,37 @@
+# Custom OpenVPN overlay for an EU exit. Configure .env before use.
+services:
+  gluetun:
+    image: qmcgaw/gluetun@sha256:cbafe0945d0fe5a3c55ca64d43a85c5db270458f4c645ee65797b527f6f57a64
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      VPN_SERVICE_PROVIDER: custom
+      VPN_TYPE: openvpn
+      OPENVPN_CUSTOM_CONFIG: /gluetun/custom.ovpn
+      OPENVPN_USER: ${OPENVPN_USER:?Set OPENVPN_USER in .env}
+      OPENVPN_PASSWORD: ${OPENVPN_PASSWORD:?Set OPENVPN_PASSWORD in .env}
+      DNS_UPSTREAM_RESOLVER_TYPE: doh
+      DNS_UPSTREAM_RESOLVERS: google
+      BLOCK_ADS: "off"
+      BLOCK_SURVEILLANCE: "off"
+      BLOCK_MALICIOUS: "off"
+    volumes:
+      - type: bind
+        source: ${OPENVPN_CONFIG_PATH:?Set OPENVPN_CONFIG_PATH in .env}
+        target: /gluetun/custom.ovpn
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+  crawler:
+    network_mode: "service:gluetun"
+    depends_on:
+      gluetun:
+        condition: service_healthy

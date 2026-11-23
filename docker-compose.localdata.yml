@@ -1,0 +1,9 @@
+# Mount the live SQLite batch from a local disk outside OneDrive.
+services:
+  crawler:
+    volumes:
+      - type: bind
+        source: ${DIRECT_DATA_PATH:?Set DIRECT_DATA_PATH in .env}
+        target: /app/data/full_direct_20261122
+        bind:
+          create_host_path: false

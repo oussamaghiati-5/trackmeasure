@@ -4,6 +4,8 @@ COMPOSE_TEST = docker compose -f docker-compose.yml -f docker-compose.test.yml
 DB          = data/crawl.sqlite
 RESPAWN_DB  = data/respawn.sqlite
 RESULTS     = results
+STUDY_SITES ?= data/sites_ranked.csv
+STUDY_BATCH ?= study
 SITE        ?= theguardian.com
 ACTION      ?= reject
 
@@ -52,58 +54,38 @@ consent-check: dirs build
 
 # --- Full crawl runs (use COMPOSE_VPN; ensure .env is configured) ---
 baseline: dirs
-	$(COMPOSE_VPN) run --rm crawler \
-	    python crawler.py --sites sites.csv --run baseline \
-	    --out $(DB) --workers 4
+	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes baseline
 
 baseline2: dirs
-	$(COMPOSE_VPN) run --rm crawler \
-	    python crawler.py --sites sites.csv --run baseline2 \
-	    --out $(DB) --workers 4 \
-	    --reuse-urls-from $(DB):baseline
+	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes baseline2
 
 # blockers = ubol + pbadger (sequential, shared DB)
 blockers: ubol pbadger
 
 ubol: dirs
-	$(COMPOSE_VPN) run --rm crawler \
-	    python crawler.py --sites sites.csv --run ubol \
-	    --out $(DB) --workers 4 \
-	    --extension ext/ubol \
-	    --reuse-urls-from $(DB):baseline
+	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes ubol
 
 pbadger: dirs
-	$(COMPOSE_VPN) run --rm crawler \
-	    python crawler.py --sites sites.csv --run pbadger \
-	    --out $(DB) --workers 4 \
-	    --extension ext/privacybadger \
-	    --reuse-urls-from $(DB):baseline
+	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes pbadger
 
 optout: dirs
-	$(COMPOSE_VPN) run --rm crawler \
-	    python crawler.py --sites sites.csv --run optout \
-	    --out $(DB) --workers 4 \
-	    --consent reject --gpc \
-	    --reuse-urls-from $(DB):baseline
+	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes optout
 
 accept: dirs
-	$(COMPOSE_VPN) run --rm crawler \
-	    python crawler.py --sites sites.csv --run accept \
-	    --out $(DB) --workers 4 \
-	    --consent accept \
-	    --reuse-urls-from $(DB):baseline
+	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes accept
 
 respawn: dirs
+	$(COMPOSE) run --rm crawler python scripts/pick_respawn_sites.py data/$(STUDY_BATCH)/crawl.sqlite --run baseline --out data/$(STUDY_BATCH)/respawn_sites.csv
 	$(COMPOSE_VPN) run --rm crawler \
-	    python respawn.py --sites respawn_sites.csv --clear cookies \
-	    --out $(RESPAWN_DB) --workers 2
+	    xvfb-run -a python respawn.py --sites data/$(STUDY_BATCH)/respawn_sites.csv --clear cookies \
+	    --out data/$(STUDY_BATCH)/respawn.sqlite --workers 1 --headful
 	$(COMPOSE_VPN) run --rm crawler \
-	    python respawn.py --sites respawn_sites.csv --clear all \
-	    --out $(RESPAWN_DB) --workers 2
+	    xvfb-run -a python respawn.py --sites data/$(STUDY_BATCH)/respawn_sites.csv --clear all \
+	    --out data/$(STUDY_BATCH)/respawn.sqlite --workers 1 --headful
 
 analyze: dirs
 	$(COMPOSE) run --rm crawler \
-	    python analyze.py $(DB) --baseline baseline --outdir $(RESULTS)
+	    python analyze.py data/$(STUDY_BATCH)/crawl.sqlite --baseline baseline --outdir results/$(STUDY_BATCH)
 
 # --- Helpers ---
 # Headful run example (run from inside the container or on the host with X11):

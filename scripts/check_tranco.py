@@ -27,6 +27,7 @@ from common import etld1, load_sites   # noqa: E402  (after path setup)
 
 TRANCO_API = "https://tranco-list.eu/api/lists/date/{date}"
 TRANCO_ZIP = "https://tranco-list.eu/top-1m.csv.zip"
+TRANCO_ID = "https://tranco-list.eu/top-1m-id"
 UA = "trackmeasure-research/1.0 (academic measurement study)"
 
 
@@ -39,7 +40,7 @@ def _get(url, timeout=120):
 def fetch_list_id(for_date: str) -> str:
     """Return the Tranco list ID for a given date (YYYY-MM-DD), or '' on error."""
     try:
-        data = json.loads(_get(TRANCO_API.format(date=for_date), timeout=15))
+        data = json.loads(_get(TRANCO_API.format(date=for_date.replace("-", "")), timeout=15))
         return data.get("list_id") or data.get("listId") or ""
     except Exception:
         return ""
@@ -48,9 +49,13 @@ def fetch_list_id(for_date: str) -> str:
 def download_tranco() -> tuple[str, bytes]:
     """Download latest Tranco zip. Returns (list_id, raw_bytes)."""
     today = date.today().isoformat()
-    list_id = fetch_list_id(today)
+    list_id = _get(TRANCO_ID, timeout=15).decode().strip()
+    if not list_id:
+        raise RuntimeError("Tranco did not return a permanent list ID")
     print(f"Downloading Tranco list (date={today}) ...", file=sys.stderr)
     raw = _get(TRANCO_ZIP)
+    if _get(TRANCO_ID, timeout=15).decode().strip() != list_id:
+        raise RuntimeError("Tranco's latest list changed during download; retry")
     return list_id, raw
 
 

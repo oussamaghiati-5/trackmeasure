@@ -2,7 +2,7 @@
 
 Updated: 16 November 2026. This is the handoff point for continuing the group project.
 
-**Start here:** test consent on a small variety of websites, finalize the website list, and align the full-run commands before starting the complete experiment. Long crawls should be run manually, then their output reviewed.
+**Start here:** test consent on a small variety of websites, confirm the ranked website list and run the container checks before starting the complete experiment. Long crawls should be run manually, then their output reviewed.
 
 ## What is already implemented
 
@@ -25,7 +25,9 @@ Updated: 16 November 2026. This is the handoff point for continuing the group pr
 | The Guardian | Navigation completed, but rejection did not. The saved banner offered “Accept all” or “Reject all and subscribe” (€5/month), with no free reject-all control shown. The crawler did not enter the subscription flow. |
 | Earlier five-site pilot | The Guardian, Le Monde and Reddit completed browsing; IKEA and Slickdeals returned HTTP 403 errors. This pilot preceded the consent improvements and is diagnostic, not a representative effectiveness study. |
 
-**The complete website-set experiment has not run.** Passing fixtures and one real Cookiebot check do not establish broad consent coverage.
+**The complete website-set experiment has not run.** Passing fixtures and one real Cookiebot check do not establish broad consent coverage. On 22 November, the host unit suite and full local smoke test passed. A dated Tranco list (ID `46YLX`) retained 149 of 150 seed sites; `wirecutter.com` was absent. The downloaded list and ranked CSV are under ignored `data/` on the machine where this check ran.
+
+A separate five-site direct-Morocco exploratory batch completed all six conditions on 22 November. Its blocker and noise-floor results are in [NASROU_REPORT.md](NASROU_REPORT.md). Neither consent action was confirmed on any of its five sites, so it does not answer the opt-out question. The full EU VPN study still needs a local WireGuard configuration.
 
 ## Remaining work, in order
 
@@ -50,15 +52,15 @@ Replace `SITE` to test another website. Each check creates timestamped folders u
 ### 2. Finalize and freeze the website list
 
 - [ ] Agree on the final sites/categories as a group and record the selection method.
-- [ ] Exercise [scripts/check_tranco.py](scripts/check_tranco.py), which checks the seed sites against a popularity ranking. Preserve the exact ranking archive, date and matching list ID.
-- [ ] Wire the chosen output into the actual crawl commands. **The current full-run Make targets still read `sites.csv`, not the generated ranked list.**
-- [ ] Put generated input files in a mounted location such as `data/`. A new CSV written at the repository root after an image build is not automatically visible inside the crawler container.
+- [x] Exercise [scripts/check_tranco.py](scripts/check_tranco.py) against the dated 22 November list (ID `46YLX`); preserve its archive and ranked CSV under `data/`.
+- [x] Allow the ranked CSV in the full-run commands with `STUDY_SITES=data/sites_ranked.csv`. The study runner copies and hashes it in the mounted batch directory.
+- [ ] Agree as a group that the 149-site ranked output is the final study list and document this selection in the paper.
 
 ### 3. Prepare consistent full-run commands
 
-- [ ] Align the full-run settings with the tested setup. The current Make targets still use older defaults: headless browsing, four workers, and no consent-failure artifacts.
+- [x] Align the full-run Make targets with the tested headful, one-worker setup and consent-failure artifacts using `scripts/run_study.py`.
 - [ ] Choose and record browser mode, worker count, dwell time, subpage count, timeouts, consent wait, language and timezone. Keep the same settings across conditions.
-- [ ] Keep the same verified VPN exit across a batch; record/check it for full runs as the pilot helper does.
+- [x] The study runner records/checks the same VPN exit before and after every condition.
 - [ ] Record software/extension versions and observed extension settings, and enable consent diagnostics.
 - [ ] Use a fresh full-study database and preserve the old pilot. Reusing a completed run label can skip sites and leave old evidence in place.
 - [ ] Reuse baseline subpage URLs across conditions and verify that comparable visits actually occurred.

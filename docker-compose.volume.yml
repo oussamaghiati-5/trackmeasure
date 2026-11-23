@@ -1,0 +1,11 @@
+# Keep live SQLite files on Docker's Linux filesystem; export after the writer exits.
+services:
+  crawler:
+    volumes:
+      - direct_study_data:/app/data/full_direct_20261122
+      - eu_study_data:/app/data/full_eu_20261122
+volumes:
+  direct_study_data:
+    name: trackmeasure_direct_study_data
+  eu_study_data:
+    name: trackmeasure_eu_study_data

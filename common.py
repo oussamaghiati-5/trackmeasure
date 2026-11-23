@@ -87,7 +87,10 @@ def open_db(path):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path)
     db.executescript(SCHEMA)
-    db.execute("PRAGMA journal_mode=WAL")
+    # A crawl uses one SQLite connection even with multiple browser workers.
+    # DELETE journaling also survives reopening the DB from a new container on
+    # Windows/OneDrive bind mounts, where WAL sidecars can fail with disk I/O.
+    db.execute("PRAGMA journal_mode=DELETE")
     return db
 
 

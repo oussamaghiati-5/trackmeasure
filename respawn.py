@@ -4,14 +4,15 @@
 Per site, three browsers on the same machine/IP:
   A1  profile A, fingerprint F1: visit, snapshot cookies + localStorage + IndexedDB
   A2  --clear cookies : same profile A, cookies deleted, revisit   -> stateful respawning
-      --clear all     : brand-new profile, same F1, revisit        -> fingerprint/server-side respawning
+      --clear all     : brand-new profile, same F1, revisit        -> fresh-profile candidate
   B   control: brand-new profile, different fingerprint F2 (viewport, DPR, locale, timezone,
       hardwareConcurrency, deviceMemory, canvas noise), same IP
 
 An identifier-like token (>=8 alnum chars incl. a digit, not a timestamp) found in an A1 cookie
 counts as respawned if it reappears in an A2 cookie (any name) and appears nowhere in B.
-"Nowhere in B" rules out constants shared by all users; with --clear all and the same IP,
-it also rules out pure IP keying, leaving browser-attribute (fingerprint) derivation.
+"Nowhere in B" rules out constants observed in this one control visit. A fresh-profile
+match is a candidate for fingerprint-correlated or server-side reassignment, not proof
+of fingerprint derivation. Repeat visits and token validation are needed.
 
   python respawn.py --sites respawn_sites.csv --clear cookies --out data/respawn.sqlite
   python respawn.py --sites respawn_sites.csv --clear all     --out data/respawn.sqlite
@@ -31,6 +32,7 @@ from urllib.parse import unquote
 from playwright.async_api import async_playwright
 
 from common import etld1, launch, load_sites, site_url
+from navigation import navigation_error
 
 TOKEN = re.compile(r"[A-Za-z0-9]{8,}")
 
@@ -106,10 +108,10 @@ async def snapshot(ctx):
 
 async def visit(ctx, url, dwell, timeout):
     page = ctx.pages[0] if ctx.pages else await ctx.new_page()
-    try:
-        await page.goto(url, wait_until="load", timeout=timeout * 1000)
-    except Exception:
-        pass
+    response = await page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
+    problem = navigation_error(response.status if response else None)
+    if problem:
+        raise RuntimeError(f"{url}: {problem}")
     try:
         await page.mouse.wheel(0, 800)
     except Exception:
@@ -124,6 +126,7 @@ async def check_site(pw, args, db, domain):
     dirs = [Path(tempfile.mkdtemp(prefix="tm_resp_")) for _ in range(3)]
     common = dict(headless=not args.headful, proxy=args.proxy, extra_args=args.chromium_arg)
     snaps = {}
+    ctx = None
     try:
         ctx = await launch(pw, dirs[0], **common, **F1)
         snaps["A1"] = await visit(ctx, url, args.dwell, args.timeout)
@@ -141,6 +144,11 @@ async def check_site(pw, args, db, domain):
         snaps["B"] = await visit(ctx, url, args.dwell, args.timeout)
         await ctx.close()
     finally:
+        if ctx is not None:
+            try:
+                await ctx.close()
+            except Exception:
+                pass
         for d in dirs:
             shutil.rmtree(d, ignore_errors=True)
 
@@ -157,7 +165,7 @@ async def check_site(pw, args, db, domain):
         if args.clear == "cookies":
             verdict = "stateful (value kept in " + a1s[tok].split(":")[0] + ")" if tok in a1s else "no stored copy: fingerprint, cache/ETag or SW (re-run with --clear all)"
         else:
-            verdict = "fingerprint-derived"
+            verdict = "fresh-profile match absent in one control (candidate)"
         rows.append((domain, args.clear, tok, a1c[tok], a2c[tok], a1s.get(tok), third, verdict))
     db.executemany("INSERT INTO respawned VALUES (?,?,?,?,?,?,?,?)", rows)
     return len(rows)

@@ -6,6 +6,7 @@ data/
 ext/
 results/
 __pycache__/
+.venv/
 _metadata/
 *.pyc
 .env

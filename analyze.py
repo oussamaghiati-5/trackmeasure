@@ -77,7 +77,9 @@ def techniques(calls):
 def load(dbs):
     frames = {k: [] for k in ("visits", "requests", "api", "cookies", "done")}
     for path in dbs:
-        con = sqlite3.connect(path)
+        # Crawl processes are finished before analysis. An immutable read keeps
+        # SQLite from trying to create -shm files on read-only/OneDrive mounts.
+        con = sqlite3.connect(Path(path).resolve().as_uri() + "?immutable=1", uri=True)
         frames["visits"].append(pd.read_sql("SELECT * FROM visits", con))
         frames["requests"].append(pd.read_sql(
             "SELECT r.visit_id, r.domain, r.third_party, r.failure, v.run, v.site, v.phase "

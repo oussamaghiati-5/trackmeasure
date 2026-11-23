@@ -2,6 +2,8 @@
 import io
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
@@ -10,6 +12,24 @@ from scripts import verify_vpn as vpn
 
 
 class VPNPreflightTests(unittest.TestCase):
+    def test_message_reads_same_process_twice_on_windows_and_linux(self):
+        code = ("import sys; print('VPN_CHECK {\"step\": 1}', flush=True); "
+                "sys.stdin.readline(); print('VPN_CHECK {\"step\": 2}', flush=True)")
+        process = subprocess.Popen([sys.executable, "-u", "-c", code],
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        try:
+            self.assertEqual(vpn.message(process, timeout=5), {"step": 1})
+            process.stdin.write("next\n")
+            process.stdin.flush()
+            self.assertEqual(vpn.message(process, timeout=5), {"step": 2})
+            self.assertEqual(process.wait(timeout=5), 0)
+        finally:
+            if process.poll() is None:
+                process.terminate()
+                process.wait(timeout=5)
+            process.stdin.close()
+            process.stdout.close()
+
     def exercise(self, ready, stopped=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

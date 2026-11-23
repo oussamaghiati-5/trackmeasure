@@ -2,6 +2,7 @@ data/
 ext/
 results/
 __pycache__/
+.venv/
 .git/
 _metadata/
 *.pyc

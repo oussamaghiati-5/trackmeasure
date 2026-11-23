@@ -64,10 +64,10 @@ Then run `make consent-check SITE=theguardian.com ACTION=reject` (or `ACTION=acc
 Per site, three browsers on the same IP:
 
 - **A1**: profile A, fingerprint F1. Snapshot cookies, localStorage, IndexedDB.
-- **A2**: revisit with F1 after `--clear cookies` (same profile: *stateful* respawning) or `--clear all` (brand-new profile: *fingerprint-derived* respawning).
+- **A2**: revisit with F1 after `--clear cookies` (same profile: *stateful* respawning) or `--clear all` (brand-new profile: fresh-profile candidate check).
 - **B**: control with a different fingerprint F2 (viewport, DPR, locale, timezone, hardwareConcurrency, deviceMemory, canvas noise).
 
-A token is *respawned* if an ID-like value in an A1 cookie reappears in an A2 cookie and appears nowhere in B.
+A token is a *respawn candidate* if an ID-like value in an A1 cookie reappears in an A2 cookie and appears nowhere in B. A single fresh-profile match does not prove fingerprint derivation; server-side behavior, token parsing and visit variability need further checks.
 
 ### 5. Analysis (`analyze.py`)
 Detects fingerprinting per (script, frame, visit) using heuristics after Englehardt & Narayanan (CCS'16) as adapted by FP-Inspector:
@@ -110,14 +110,31 @@ The crawl executes untrusted third-party JavaScript from ad-heavy sites, so run 
 cp .env.example .env            # set your private WireGuard file's absolute path
 make extensions                # installs pinned MV3 packages; portable on macOS/Linux
 make verify-blockers           # actual extension startup/blocking, local fixture, no internet
-python scripts/check_tranco.py  # record the printed Tranco list ID in the paper
+python scripts/check_tranco.py --out data/sites_ranked.csv --save-zip data/tranco_latest.zip
 
 make smoke                      # local fixture, no internet, no VPN
-make baseline baseline2 blockers optout accept
-python scripts/pick_respawn_sites.py data/crawl.sqlite --run baseline   # writes respawn_sites.csv
+make baseline baseline2 blockers optout accept STUDY_SITES=data/sites_ranked.csv
 make respawn
 make analyze
 ```
+
+For the full study, first finalize the site list and save it under `data/` (for
+example, `python scripts/check_tranco.py --out data/sites_ranked.csv
+--save-zip data/tranco_latest.zip`). Record the exact Tranco list ID and list
+selection rules in the paper. The Make targets now use `scripts/run_study.py`:
+they copy and hash the site list, record fixed browser settings and the VPN
+exit in `results/study/manifest.json`, check the exit before and after each
+condition, run headfully with one worker, and save failed-consent diagnostics.
+Use `STUDY_BATCH=<new-name>` for a changed input or experimental setup.
+Outputs are in `data/<batch>/` and `results/<batch>/`. A completed command can
+still contain failed sites; inspect `per_site.csv` and `consent_coverage.csv`
+before reporting any result. `make respawn` selects candidates from that
+batch's baseline and writes its input where the container can read it.
+For a diagnostic run without a VPN, `python scripts/run_study.py --sites
+data/exploratory_input.csv --batch exploratory_name --network direct --modes
+baseline baseline2 ubol pbadger optout accept` records the direct exit and keeps
+its results separate. Treat consent actions without confirmed saved state as
+diagnostic observations. This direct mode does not replace the EU VPN study.
 
 ### Real blocker setup
 
@@ -132,6 +149,8 @@ In the pinned packages, observed uBOL defaults are **optimal** for all URLs with
 ### VPN setup (each teammate)
 
 Generate your own WireGuard configuration for a fixed EU server (for example, a Proton VPN Free Netherlands server). Select Linux, leave port forwarding and VPN ad/tracker blocking off, and download the `.conf` outside this repository. Set `WIREGUARD_CONFIG_PATH` in your local `.env` to its absolute path, and `VPN_EXPECTED_COUNTRY=NL` for the Netherlands. Share code and results, never private keys or configuration files. Keep all experimental conditions on the same exit; separate teammates' exits should be recorded as separate batches.
+
+An accountless OpenVPN alternative is supported by `docker-compose.vpn.openvpn.yml`. Download a fixed EU `.ovpn` profile from [VPNBook](https://www.vpnbook.com/freevpn/openvpn), replace the `remote` hostname with its resolved IPv4 address (required by Gluetun's custom-provider parser), and put its absolute path in `OPENVPN_CONFIG_PATH` in `.env`. Set `VPN_COMPOSE_FILE=docker-compose.vpn.openvpn.yml`, `OPENVPN_USER`, `OPENVPN_PASSWORD`, and `VPN_EXPECTED_COUNTRY=DE` (or the selected EU country). Obtain the current public credentials from VPNBook's page; they change periodically. The profile and `.env` stay out of Git. The free server may be slow or unavailable, so verify the exit and run all comparison conditions on the same endpoint. This OpenVPN path has the same Gluetun network isolation as the WireGuard overlay and uses DNS over HTTPS to accommodate providers that block DNS over TLS.
 
 The VPN overlay uses Gluetun's [custom WireGuard configuration mount](https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/custom.md). Only Gluetun receives the file, read-only; the crawler shares its network but receives no VPN secrets. A missing path fails instead of creating an empty directory. The image is pinned by digest, VPN DNS blocklists are disabled to avoid adding an extra blocker to every condition, and `.conf` files are excluded from both Git and the crawler build context.
 
@@ -160,11 +179,15 @@ Compose uses `security/seccomp_profile.json`, based on [Playwright v1.63.0's pro
 
 Without Docker: `pip install -r requirements.txt && python -m playwright install --with-deps chromium`.
 
-**Timing.** Defaults are 10 s dwell, 3 subpages and up to 10 s consent wait, about 1.5-2.5 min per site. With `--workers 4`, 150 sites take roughly 1-1.5 h per run.
+**Timing.** The direct crawler defaults are 10 s dwell, 3 subpages and up to 10 s consent wait. The full-study runner uses headful browsers with configurable `--workers` (1–4), 5 s dwell, one subpage and up to 20 s consent wait. Keep the worker count fixed within a batch. Budget time from a pilot on the final setup; the six conditions and retries can take hours.
+
+After a condition finishes, run `python scripts/paired_uncertainty.py results/BATCH/comparison.csv` to write `paired_uncertainty.json`. It compares each condition with the repeat baseline on common sites with detected baseline pairs and gives a 95% site-bootstrap interval for the difference in pair survival. This quantifies variation across measured sites; it does not resolve sampling or fingerprint-heuristic errors.
+
+On this Windows/Docker setup, the live SQLite database became corrupt on both OneDrive and local Windows bind mounts. Use `docker-compose.volume.yml` to keep the live batch database on Docker's Linux filesystem, and export a copy to the workspace only after the crawler exits. Inspect the run's `.log` file while it writes; open the exported SQLite file after completion. `scripts/resume_local_batch.py` resumes a frozen batch with the volume overlay and runs the offline analysis on that same volume.
 
 ## Smoke test
 
-`make smoke` (or `python test/smoke.py`) starts the fixture server, runs every crawl mode and both respawn modes, and asserts: all 6 techniques detected on `tracker.test`; blocker survival 0.0 with blocked requests > 0; opt-out survival 1.0 (the fixture tracker ignores consent); respawn finds `_trk` (localStorage-backed) and, with `--clear all`, `_fpid` as fingerprint-derived.
+`make smoke` (or `python test/smoke.py`) starts the fixture server, runs every crawl mode and both respawn modes, and asserts: all 6 techniques detected on `tracker.test`; blocker survival 0.0 with blocked requests > 0; opt-out survival 1.0 (the fixture tracker ignores consent); respawn finds `_trk` (localStorage-backed) and, with `--clear all`, the fixture's known fingerprint-derived `_fpid` token.
 
 `make smoke` first runs the regression tests (`python -m unittest discover -s test -p 'test_*.py'`). The browser smoke test also visits deliberate HTTP 404/503 pages and checks they are recorded as failures and excluded from comparisons. Consent fixtures cover a confirmed decision, a button that leaves consent enabled, a click with no readable state, and an incomplete settings flow. Their raw observations are retained while unverified consent comparisons are excluded. Regression tests cover legacy records, default versus saved decisions, API-to-button fallback, conflicting evidence, and state loss after navigation.
 
@@ -172,9 +195,11 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 See [IMPROVEMENTS.md](IMPROVEMENTS.md) for the group handoff, verified results and ordered tasks before the full experiment.
 
-`make preflight`, `make smoke`, and the offline real-blocker check pass in the container (headless `channel="chromium"`, non-root, sandbox enabled). Both pinned real MV3 extensions initialize and block the controlled known-domain request. The VPN preflight also passed with a Netherlands exit: HTTPS and direct IPv4 access stopped when Gluetun stopped, and the same exit returned on recovery. IPv6 was unavailable before and after stopping; IPv6 tunnel operation was not verified. The Tranco and respawn-candidate scripts are not yet exercised.
+`make preflight`, `make smoke`, and the offline real-blocker check pass in the container (headless `channel="chromium"`, non-root, sandbox enabled). Both pinned real MV3 extensions initialize and block the controlled known-domain request. The VPN preflight also passed with a Netherlands exit: HTTPS and direct IPv4 access stopped when Gluetun stopped, and the same exit returned on recovery. IPv6 was unavailable before and after stopping; IPv6 tunnel operation was not verified. The Tranco ranking check was exercised on 2026-11-22; respawn-candidate selection on real crawl data remains pending.
 
-The five-site diagnostic pilot completed on 2026-11-16, before the cross-frame consent update. The Guardian, Le Monde and Reddit completed baseline and all five comparison conditions; IKEA failed on a homepage reload with HTTP 403 and Slickdeals failed on landing with HTTP 403. All three reject actions failed to complete; all three accept actions clicked a control but remained unconfirmed. These consent conditions are excluded from verified comparisons. uBOL and Privacy Badger initialized and recorded 69 and 6 blocked requests respectively across the three sites. These are diagnostic observations, not representative effectiveness estimates or proof that detected API activity is tracking. Artifacts are in `data/pilot/` and `results/pilot/`.
+The five-site diagnostic pilot completed on 2026-11-16, before the cross-frame consent update. The Guardian, Le Monde and Reddit completed baseline and all five comparison conditions; IKEA failed on a homepage reload with HTTP 403 and Slickdeals failed on landing with HTTP 403. All three reject actions failed to complete; all three accept actions clicked a control but remained unconfirmed. These consent conditions are excluded from verified comparisons. uBOL and Privacy Badger initialized and recorded 69 and 6 blocked requests respectively across the three sites. These are diagnostic observations, not representative effectiveness estimates or proof that detected API activity is tracking. Artifacts are in `data/pilot/` and `results/pilot/`. On 2026-11-22, the ranked-site check retained 149 sites against Tranco list `46YLX`; the full real-site run remains pending.
+
+A separate five-site exploratory batch on 2026-11-22 completed all six conditions through a direct Moroccan exit. The repeat baseline retained 7/8 detected fingerprinting pairs; uBOL and Privacy Badger each retained 2/8. Neither consent condition had a confirmed choice, so neither supports an opt-out conclusion. See [NASROU_REPORT.md](NASROU_REPORT.md) and the ignored `results/exploratory_nasrou3/` artifacts. This convenience sample is not the planned 149-site EU study.
 
 After the consent updates, the user ran `make verify-consent` successfully, including all nine browser fixtures, and a real Cookiebot rejection check confirmed the saved choice after reload. A fresh Guardian check still did not complete rejection; its saved banner offered a paid subscription option instead of a free reject-all button. Broader real-site coverage and a repeat of the full smoke test remain pending.
 

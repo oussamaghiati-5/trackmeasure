@@ -8,14 +8,25 @@ import datetime
 import json
 import os
 from pathlib import Path
-import select
+import queue
 import subprocess
 import sys
+import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+_local_env = {}
+if (ROOT / ".env").exists():
+    for _line in (ROOT / ".env").read_text(encoding="utf-8").splitlines():
+        if "=" in _line and not _line.lstrip().startswith("#"):
+            _key, _value = _line.split("=", 1)
+            _local_env[_key.strip()] = _value.strip()
 BASE = ["docker", "compose", "-f", "docker-compose.yml"]
-VPN = BASE + ["-f", "docker-compose.vpn.yml"]
+_data_overlay = os.environ.get("MEASUREMENT_DATA_OVERLAY", _local_env.get("MEASUREMENT_DATA_OVERLAY"))
+if _data_overlay:
+    BASE += ["-f", _data_overlay]
+_vpn_overlay = os.environ.get("VPN_COMPOSE_FILE", _local_env.get("VPN_COMPOSE_FILE"))
+VPN = BASE + ["-f", _vpn_overlay or "docker-compose.vpn.yml"]
 MARKER = "VPN_CHECK "
 PROBE = r'''
 import concurrent.futures, json, socket, sys, urllib.request
@@ -61,12 +72,21 @@ def run(args, timeout=180):
 
 def message(process, timeout=75):
     """Read marked JSON without waiting forever on a stuck container."""
+    if not hasattr(process, "_message_queue"):
+        process._message_queue = queue.Queue()
+        def reader():
+            for line in process.stdout:
+                process._message_queue.put(line)
+            process._message_queue.put(None)
+        threading.Thread(target=reader, daemon=True).start()
+    lines = process._message_queue
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        if not select.select([process.stdout], [], [], max(0, deadline - time.monotonic()))[0]:
+        try:
+            line = lines.get(timeout=max(0, deadline - time.monotonic()))
+        except queue.Empty:
             break
-        line = process.stdout.readline()
-        if not line:
+        if line is None:
             raise RuntimeError("Crawler check exited before returning a result")
         if line.startswith(MARKER):
             return json.loads(line[len(MARKER):])
