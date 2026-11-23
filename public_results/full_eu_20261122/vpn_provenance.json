@@ -1,0 +1,11 @@
+{
+  "provider": "VPNBook",
+  "server": "de220.vpnbook.com",
+  "protocol": "udp25000",
+  "expected_country": "DE",
+  "resolver_change": {
+    "before": "Cloudflare DNS over HTTPS",
+    "after": "Google DNS over HTTPS",
+    "reason": "Cloudflare DoH timeouts caused VPN healthcheck restarts during optout; interrupted optout was reset"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "accept": {
+    "sites": 0,
+    "survival": null,
+    "repeat_survival": null,
+    "difference_pp": null,
+    "ci95_pp": null,
+    "tp_domain_sites": 1,
+    "tp_domain_median_delta": 57,
+    "tp_domain_ci95": [
+      57,
+      57
+    ]
+  },
+  "optout": {
+    "sites": 1,
+    "survival": 1.0,
+    "repeat_survival": 1.0,
+    "difference_pp": 0.0,
+    "ci95_pp": [
+      0.0,
+      0.0
+    ],
+    "tp_domain_sites": 2,
+    "tp_domain_median_delta": 6.0,
+    "tp_domain_ci95": [
+      1.0,
+      11.0
+    ]
+  },
+  "pbadger": {
+    "sites": 57,
+    "survival": 0.7552083333333334,
+    "repeat_survival": 0.953125,
+    "difference_pp": -19.791666666666664,
+    "ci95_pp": [
+      -31.651376146789,
+      -8.64864864864865
+    ],
+    "tp_domain_sites": 91,
+    "tp_domain_median_delta": 0,
+    "tp_domain_ci95": [
+      -2,
+      0
+    ]
+  },
+  "ubol": {
+    "sites": 56,
+    "survival": 0.675392670157068,
+    "repeat_survival": 0.9528795811518325,
+    "difference_pp": -27.748691099476442,
+    "ci95_pp": [
+      -40.0,
+      -16.26506024096386
+    ],
+    "tp_domain_sites": 90,
+    "tp_domain_median_delta": -6.5,
+    "tp_domain_ci95": [
+      -8.5,
+      -4.0
+    ]
+  }
+}

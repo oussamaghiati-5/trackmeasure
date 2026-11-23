@@ -1,0 +1,47 @@
+{
+  "sites_sha256": "c25daf3095a39e961057c15e7c318d364f22a1322b8a6a29c1f9af0e4665a3fa",
+  "site_count": 149,
+  "settings": [
+    "--workers",
+    "2",
+    "--headful",
+    "--subpages",
+    "1",
+    "--dwell",
+    "5",
+    "--timeout",
+    "45",
+    "--site-timeout",
+    "180",
+    "--consent-wait",
+    "20",
+    "--locale",
+    "en-US",
+    "--timezone",
+    "Europe/Amsterdam",
+    "--seed",
+    "0"
+  ],
+  "exit": {
+    "country": "DE",
+    "ip": "redacted"
+  },
+  "network": "vpn",
+  "source_sha256": {
+    "crawler.py": "8a7d8000f32b7cdbf52dd031ab120d2c6ca1c2a2fc9f09a935f74def9c43c439",
+    "instrument.js": "10cdde6b8879dc523df162e161b6ded2d38136377acd410a3a2113a11624eb2e",
+    "consent.py": "05ed040c8cae1c5c4aa947f47d47518a944e89cf3868a985f74f4b499a682829",
+    "analyze.py": "48ef340b4bc1f0c610f706d7c45ebd07fc947bdf2623e43d11a08bd4bae84fb7",
+    "respawn.py": "932facc4c336fae1e4f0057c59ee67087d617096bc46651fae5e54441af6039e",
+    "common.py": "a60980708cd8716c0e50cab22c29dc166a51d81ace3b8c91668a0c519a32922c",
+    "navigation.py": "b94e0459f4e22bb035b718386d6ce8d817b392b6f794ae5adfe84369eac4ff83",
+    "extension_state.py": "6ad372656f8b839540058f8ede71020e6d5e258f7754308cf11991f4a9710a4c",
+    "requirements.txt": "690cf85e3c382719e68fc76b47cf2bd2b3fabb8b74bfd0fcb96fba407f603735",
+    "extensions.lock.json": "3ac08ecf792bde5e7b8b1288022b4cc275a6fb63dc108f59fef749c8c35d97d8",
+    "Dockerfile": "ab8cd9be4fabff83d8fc1558ba969bf5c369ad4361521903c814c8b5a5332ad3",
+    "docker-compose.yml": "be4d60a2c84cbade9ecc2006bf2cf1d015b2c21ada7759458b08b2a6dc8c32d6",
+    "docker-compose.vpn.yml": "a16aa3ed76699c6314d04c71b8da4770105ea4345ef387cf25aec6c14cf43006",
+    "scripts/run_study.py": "09e7ebb9b36d5c427d6a05c99607b1ec9a934d051c3c4047e173a5a34aff72f3"
+  },
+  "started_at": "2026-11-22T15:59:49.795533+00:00"
+}
