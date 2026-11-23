@@ -110,12 +110,12 @@ exfil.py                  value-level evidence: fingerprint exfiltration, identi
 sites.csv                 150-site seed list (news / e-commerce / social+affiliate)
 scripts/
   get_extensions.sh/.py   install the hash-pinned Chromium MV3 packages into ext/
-extensions.lock.json      official package URLs, versions and SHA-256 checksums
   check_tranco.py         cross-check sites.csv against a dated Tranco list
   pick_respawn_sites.py   choose respawn candidates from the baseline cookies table
   stats.py                paired tests vs the baseline2 noise floor (make stats)
   validation.py           sample detections for manual labelling, score precision
-paper/                    draft paper (ACM sigconf); make -C paper pdf
+extensions.lock.json      official package URLs, versions and SHA-256 checksums
+paper/                    anonymised draft paper (ACM sigconf); make -C paper pdf
 test/                     local fixture: publisher, aggressive tracker, consent-respecting
                           tracker, MV3 test blocker, and smoke.py (end-to-end assertions)
 Dockerfile  docker-compose.yml  docker-compose.vpn.yml  Makefile  requirements.txt
@@ -191,15 +191,27 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 ## Status
 
-See [IMPROVEMENTS.md](IMPROVEMENTS.md) for the group handoff, verified results and ordered tasks before the full experiment.
+**Where we are (23 November 2026): methodology stage.** The tooling is built and verified on local fixtures; no real-site experiment has run yet. We will run the full crawl once the group has agreed on the methodology. The paper draft holds placeholders (`[TBD]`) for every result. See [IMPROVEMENTS.md](IMPROVEMENTS.md) for the detailed handoff and ordered tasks.
 
-On 18 November 2026, after the methodology additions (exfiltration, identifier sharing, behavioural listeners, E&N canvas exclusion, pay-or-OK, `rejectonly`/`gpconly`/`baseline3`, stats and validation scripts, host-uid container user), `make preflight`, `make smoke` (76 unit tests plus the browser smoke test), `make verify-consent` and `make verify-blockers` all passed on a uid-1000 Linux host. These are fixture checks only.
+| Area | State |
+|---|---|
+| Crawler, instrumentation, analysis | Done. Includes the 18 Nov additions: fingerprint exfiltration, identifier sharing, behavioural listeners, E&N canvas exclusion, pay-or-OK, `rejectonly`/`gpconly`/`baseline3`, `make stats`, `make validation-sample`, host-uid container user |
+| Isolation (container, sandbox, seccomp, VPN) | Done and verified: `make preflight` and `make preflight-vpn` pass (Netherlands exit; IPv6 through the tunnel not verified) |
+| Blockers | Pinned uBOL and Privacy Badger initialise and block the controlled request (`make verify-blockers`) |
+| Consent verification | `make verify-consent` passes all nine fixtures; one real Cookiebot rejection confirmed after reload |
+| Tests | `make smoke` passes (76 unit tests plus the browser smoke test), last on 18 Nov on a uid-1000 Linux host |
+| Five-site pilot | Ran 16 Nov, diagnostic only, before the consent and canvas-rule updates (details below) |
+| Site list, Tranco cross-check, respawn subset | Not done: `check_tranco.py` and `pick_respawn_sites.py` not yet exercised |
+| Full experiment (150 sites, all runs) | Not run |
+| Paper (`paper/`) | Draft compiles (5 pages, acmart sigconf). Authors anonymised for now (`anonymous` class option); results are placeholders; three citations marked `VERIFY` plus two missing references (behavioural tracking, pay-or-OK) |
 
-`make preflight`, `make smoke`, and the offline real-blocker check pass in the container (headless `channel="chromium"`, non-root, sandbox enabled). Both pinned real MV3 extensions initialize and block the controlled known-domain request. The VPN preflight also passed with a Netherlands exit: HTTPS and direct IPv4 access stopped when Gluetun stopped, and the same exit returned on recovery. IPv6 was unavailable before and after stopping; IPv6 tunnel operation was not verified. The Tranco and respawn-candidate scripts are not yet exercised.
+**Next steps:** agree on the methodology as a group, then
+1. Test consent on 5-10 varied real sites (including a TCF site), and re-check the Guardian for `pay_or_ok`.
+2. Finalise the site list with `check_tranco.py`, making sure enough sites expose TCF or Cookiebot state so the verified opt-out comparison has enough sites.
+3. Re-run the pilot with the current code, then the full runs, `make analyze stats validation-sample`, and manual labelling.
+4. Fill the paper's results, verify citations and add authors.
 
-The five-site diagnostic pilot completed on 2026-11-16, before the cross-frame consent update. The Guardian, Le Monde and Reddit completed baseline and all five comparison conditions; IKEA failed on a homepage reload with HTTP 403 and Slickdeals failed on landing with HTTP 403. All three reject actions failed to complete; all three accept actions clicked a control but remained unconfirmed. These consent conditions are excluded from verified comparisons. uBOL and Privacy Badger initialized and recorded 69 and 6 blocked requests respectively across the three sites. These are diagnostic observations, not representative effectiveness estimates or proof that detected API activity is tracking. Artifacts are in `data/pilot/` and `results/pilot/`.
-
-After the consent updates, the user ran `make verify-consent` successfully, including all nine browser fixtures, and a real Cookiebot rejection check confirmed the saved choice after reload. A fresh Guardian check still did not complete rejection; its saved banner offered a paid subscription option instead of a free reject-all button. Broader real-site coverage and a repeat of the full smoke test remain pending.
+**Pilot details (16 Nov 2026).** The Guardian, Le Monde and Reddit completed baseline and all five comparison conditions; IKEA failed on a homepage reload with HTTP 403 and Slickdeals failed on landing with HTTP 403. All three reject actions failed to complete; all three accept actions clicked a control but remained unconfirmed, so these consent conditions are excluded from verified comparisons. uBOL and Privacy Badger recorded 69 and 6 blocked requests across the three sites. These are diagnostic observations, not effectiveness estimates. Artifacts are in `data/pilot/` and `results/pilot/`. A later Guardian check still did not complete rejection: its banner offered a paid subscription instead of a free reject-all button, which the new pay-or-OK classification is meant to label.
 
 ## Pitfalls (read before the real crawl)
 
