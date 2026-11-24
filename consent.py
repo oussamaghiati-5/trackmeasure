@@ -1,12 +1,16 @@
 """Consent-banner automation: reject (opt-out) or accept via CMP JS APIs, falling back to
 clicking buttons by accessible name (EN/FR/DE/ES/IT/PT/NL), incl. two-layer banners.
-Choices are confirmed only from readable TCF or Cookiebot state, not button clicks."""
+Choices are confirmed only from readable TCF or Cookiebot state, not button clicks.
+Stored states can be re-assessed offline (reassess) and checked against the consent
+cookies saved at the end of a visit (cookie_verdict, combine_outcome)."""
 import asyncio
+import base64
 import hashlib
 import json
 from pathlib import Path
 import re
 import time
+import urllib.parse
 
 REJECT = re.compile(
     r"^\s*(reject( all)?( cookies)?|refuse( all)?|decline( all)?|deny( all)?|disagree|"
@@ -120,6 +124,34 @@ async def read_page_state(page):
     return result
 
 
+# "Accept all" must grant at least this many of TCF purposes 1-10. Publishers
+# need not declare every purpose, and purpose 11 only exists from TCF 2.2 on.
+ACCEPT_MIN_PURPOSES = 9
+
+
+def tcf_matches(action, tcf):
+    """Does a saved TCF v2 state match the requested choice? None if unreadable.
+
+    After "reject all", CMPs often return an empty purpose map: missing purpose
+    IDs mean "no consent", so {} is a valid rejection. The vendor map covers the
+    whole Global Vendor List, including vendors the site never asked about, so
+    after "accept all" many entries stay false; vendors are judged by whether
+    any consent was given, not by requiring every entry to be true.
+    """
+    pc, vc = tcf.get("purposeConsents"), tcf.get("vendorConsents")
+    features = tcf.get("specialFeatureOptins")
+    maps = (pc, vc, features)
+    if not all(isinstance(m, dict) for m in maps):
+        return None
+    if not all(type(v) is bool for m in maps for v in m.values()):
+        return None
+    if action == "reject":
+        # No purpose, vendor or special-feature consent may remain.
+        return not any(pc.values()) and not any(vc.values()) and not any(features.values())
+    granted = sum(pc.get(str(i)) is True for i in range(1, 11))
+    return granted >= ACCEPT_MIN_PURPOSES and any(vc.values())
+
+
 def assess_choice(action, completed, state, *, require_action_event=True):
     """Verify observed CMP flags. This does not establish tracking compliance.
 
@@ -145,19 +177,11 @@ def assess_choice(action, completed, state, *, require_action_event=True):
     checks = []
     tcf = state.get("tcf")
     if isinstance(tcf, dict):
-        pc, vc = tcf.get("purposeConsents"), tcf.get("vendorConsents")
         event_ok = tcf.get("eventStatus") == "useractioncomplete" or (
             not require_action_event and tcf.get("eventStatus") == "tcloaded")
-        maps_known = (isinstance(pc, dict) and bool(pc) and isinstance(vc, dict)
-                      and all(type(v) is bool for v in [*pc.values(), *vc.values()]))
-        if tcf.get("gdprApplies") is True and tcf.get("cmpStatus") == "loaded" and event_ok and maps_known:
-            values = [*pc.values(), *vc.values()]
-            # Rejection must also leave no explicit special-feature opt-ins.
-            features = tcf.get("specialFeatureOptins")
-            if isinstance(features, dict) and all(type(v) is bool for v in features.values()):
-                matches = all(v is expected for v in values)
-                if action == "reject":
-                    matches = matches and not any(features.values())
+        if tcf.get("gdprApplies") is True and tcf.get("cmpStatus") == "loaded" and event_ok:
+            matches = tcf_matches(action, tcf)
+            if matches is not None:
                 checks.append(("TCF", matches))
     cb = state.get("cookiebot")
     if isinstance(cb, dict) and cb.get("hasResponse") is True:
@@ -189,6 +213,164 @@ def consent_record(value):
     elif result.get("outcome") not in ("confirmed", "failed", "unknown"):
         result.update(outcome="unknown", reason="No recorded consent verification")
     return result
+
+
+def reassess(record):
+    """Re-apply the current verification rules to a stored consent record.
+
+    The crawler stores every frame's CMP state, so verification can be repeated
+    offline when the rules change. Stored reload checks can still downgrade a
+    confirmation. The crawl-time verdict is kept as outcome_at_crawl.
+    """
+    if not isinstance(record, dict) or record.get("action") not in ("accept", "reject") \
+            or "states" not in record:
+        return record
+    action = record["action"]
+    outcome, reason = assess_choice(action, bool(record.get("action_completed")), record)
+    for check in record.get("checks") or []:
+        if outcome != "confirmed":
+            break
+        o, r = assess_choice(action, True, check, require_action_event=False)
+        if o != "confirmed":
+            outcome, reason = o, f"{check.get('phase', 'recheck')}: {r}"
+    return dict(record, outcome=outcome, reason=reason,
+                outcome_at_crawl=record.get("outcome"), reason_at_crawl=record.get("reason"))
+
+
+# --- Offline verification from consent cookies stored at the end of a site visit ---
+# IAB TCF v2 core segment bit offsets (TCF v2.2 technical specification).
+_TCF_SPECIAL_FEATURES = 140   # 12 bits
+_TCF_PURPOSES = 152           # 24 bits
+_TCF_VENDOR_SECTION = 213     # MaxVendorId(16), IsRangeEncoding(1), ...
+
+
+def decode_tcf(tc_string):
+    """Decode the consent fields of a TCF v2 TC string's core segment.
+
+    Returns {purposes: [...], special_features: [...], vendors: n_consented} or
+    None if the string is not a readable v2 core segment.
+    """
+    try:
+        core = tc_string.split(".")[0]
+        core += "=" * (-len(core) % 4)
+        raw = base64.urlsafe_b64decode(core)
+    except (ValueError, AttributeError, TypeError):
+        return None
+    bits = "".join(f"{b:08b}" for b in raw)
+
+    def read(offset, length):
+        chunk = bits[offset:offset + length]
+        if len(chunk) != length:
+            raise ValueError("truncated TC string")
+        return int(chunk, 2)
+
+    try:
+        if read(0, 6) != 2:
+            return None
+        purposes = [i + 1 for i in range(24) if bits[_TCF_PURPOSES + i] == "1"]
+        features = [i + 1 for i in range(12) if bits[_TCF_SPECIAL_FEATURES + i] == "1"]
+        max_vendor = read(_TCF_VENDOR_SECTION, 16)
+        pos = _TCF_VENDOR_SECTION + 17
+        if read(_TCF_VENDOR_SECTION + 16, 1) == 0:      # bit field
+            field = bits[pos:pos + max_vendor]
+            if len(field) != max_vendor:
+                return None
+            vendors = field.count("1")
+        else:                                           # range entries
+            entries, pos, vendors = read(pos, 12), pos + 12, 0
+            for _ in range(entries):
+                is_range = read(pos, 1)
+                start = read(pos + 1, 16)
+                pos += 17
+                end = start
+                if is_range:
+                    end, pos = read(pos, 16), pos + 16
+                vendors += max(0, end - start + 1)
+    except ValueError:
+        return None
+    return dict(purposes=purposes, special_features=features, vendors=vendors)
+
+
+def tcf_cookie_verdict(tc_string):
+    d = decode_tcf(tc_string)
+    if d is None:
+        return None
+    if not d["purposes"] and not d["special_features"] and d["vendors"] == 0:
+        return "reject"
+    if sum(1 for p in d["purposes"] if p <= 10) >= ACCEPT_MIN_PURPOSES and d["vendors"] > 0:
+        return "accept"
+    return "mixed"
+
+
+def onetrust_cookie_verdict(consent_value, alert_closed):
+    """OptanonConsent exists before any interaction; OptanonAlertBoxClosed marks a choice."""
+    if not alert_closed or not consent_value:
+        return None
+    groups = re.search(r"groups=([^&;]+)", urllib.parse.unquote(consent_value))
+    if not groups:
+        return None
+    # C0001 = strictly necessary, always on. Other groups are optional purposes.
+    optional = [g.split(":")[1] for g in groups.group(1).split(",")
+                if ":" in g and not g.startswith("C0001")]
+    if optional and all(flag == "0" for flag in optional):
+        return "reject"
+    if optional and all(flag == "1" for flag in optional):
+        return "accept"
+    return "mixed"
+
+
+def cookiebot_cookie_verdict(value):
+    if not value:
+        return None
+    text = urllib.parse.unquote(value)
+    flags = {k: v == "true" for k, v in re.findall(r"(preferences|statistics|marketing):(true|false)", text)}
+    if len(flags) != 3:
+        return None
+    if not any(flags.values()):
+        return "reject"
+    return "accept" if all(flags.values()) else "mixed"
+
+
+def cookie_verdict(cookies):
+    """cookies: {name: value} stored for one site/run. -> (verdict, sources) or (None, [])."""
+    found = []
+    if cookies.get("euconsent-v2"):
+        v = tcf_cookie_verdict(cookies["euconsent-v2"])
+        if v:
+            found.append(("TCF cookie", v))
+    if cookies.get("OptanonConsent"):
+        v = onetrust_cookie_verdict(cookies["OptanonConsent"], cookies.get("OptanonAlertBoxClosed"))
+        if v:
+            found.append(("OneTrust cookie", v))
+    if cookies.get("CookieConsent"):
+        v = cookiebot_cookie_verdict(cookies["CookieConsent"])
+        if v:
+            found.append(("Cookiebot cookie", v))
+    if not found:
+        return None, []
+    verdicts = {v for _, v in found}
+    return (verdicts.pop() if len(verdicts) == 1 else "conflict"), [name for name, _ in found]
+
+
+def combine_outcome(action, live_outcome, live_reason, verdict):
+    """Merge the live CMP-API outcome with the stored-cookie verdict.
+
+    A cookie that matches the request confirms it unless the live API saw the
+    opposite saved choice. A cookie showing another state contradicts a live
+    confirmation (unknown) and otherwise marks the choice as failed.
+    """
+    if action not in ("accept", "reject") or verdict is None:
+        return live_outcome, live_reason
+    if verdict == "conflict":
+        return "unknown", "Stored consent cookies disagree"
+    if verdict == action:
+        if live_outcome == "failed" and "does not match" in (live_reason or ""):
+            return "unknown", "Stored cookie and live CMP API disagree"
+        source = "live API and stored cookie" if live_outcome == "confirmed" else "stored cookie"
+        return "confirmed", f"Saved choice matches request: {source}"
+    if live_outcome == "confirmed":
+        return "unknown", "Stored cookie and live CMP API disagree"
+    return "failed", f"Stored consent cookie shows a {verdict} state"
 
 
 async def click_matching(page, pattern):

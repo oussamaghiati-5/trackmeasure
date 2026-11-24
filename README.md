@@ -6,12 +6,12 @@ Course research project (web/device tracking, *Defensive: Detection/Transparency
 
 ## Research questions
 
-1. How common are fingerprinting (canvas, canvas-font, WebRTC, audio, WebGL, attribute enumeration), storage abuse and cookie respawning on ~150 popular news, e-commerce and social/affiliate sites?
-2. How much of it survives a content blocker (uBlock Origin Lite, Privacy Badger)?
-3. Does rejecting consent through the site's CMP (plus a Global Privacy Control signal) actually stop it? Accepting is measured as the upper bound.
-4. Do identifiers respawn after cookies are cleared, including identifiers re-derived purely from the browser fingerprint?
+1. **Who fingerprints, and why?** How common is fingerprinting (canvas, canvas-font, WebRTC, audio, WebGL, attribute enumeration) on ~150 popular news, e-commerce and social/affiliate sites, and which share is security/anti-fraud, advertising/analytics, or unknown, including vendors hidden behind first-party URLs?
+2. **Does saying no stop it?** With the saved consent state verified, does rejecting consent through the site's CMP (plus a Global Privacy Control signal) change fingerprinting, cookies and third-party contacts? Accepting is measured as the upper bound.
+3. **What do blockers stop?** How much of each purpose survives a content blocker (uBlock Origin Lite, Privacy Badger)?
+4. Do identifiers respawn after cookies are cleared, including identifiers re-derived purely from the browser fingerprint? (Protocol implemented; not run on the EU batch.)
 
-Related work: FPTrace (fingerprinting bypasses opt-outs), Englehardt & Narayanan CCS'16 (detection heuristics), FP-Inspector S&P'21, Fouad et al. (cookie respawning, including fingerprint-based).
+Related work: Papadogiannakis et al. WWW'21 (tracking despite consent), FPTrace WWW'25 and FP-tracer PoPETs'24 (is fingerprinting used for tracking), FP-Redemption DIMVA'21 and Senol et al. WWW'24 (security fingerprinting), DuckDuckGo Tracker Radar (domain purposes), Englehardt & Narayanan CCS'16 (detection heuristics), FP-Inspector S&P'21, Fouad et al. PoPETs'22 (cookie respawning, including fingerprint-based).
 
 ## How it works
 
@@ -54,6 +54,10 @@ Consent outcomes are `confirmed`, `failed`, or `unknown`; baseline/blocker runs 
 
 Confirmed choices are checked again on the homepage reload and each subpage. A missing/loading CMP is polled with a two-second retry budget (individual API reads also have timeouts); this accommodates APIs that initialize after page load. Rechecks never repeat consent actions. A readable opposite choice or conflicting supported reports downgrade confirmation immediately; persistently missing state becomes unknown. The action, attempts, evidence, subsequent checks (including polling count/time), outcome/reason, and GPC flag are stored in the existing consent JSON. Confirmation describes the observed CMP state, not a guarantee about tracking behavior or legal compliance. Failed/unknown consent does not make a successfully loaded website a navigation failure; raw observations stay available, but these site/runs are excluded from verified consent comparisons. Old requested-consent recordings without verification are unknown; the crawler's normal resume behavior still skips completed crawls, so use a new run label or database to collect fresh consent evidence.
 
+**TCF rule (fixed 2026-11-24).** A rejection may leave no purpose, vendor or special-feature consent. An empty purpose map `{}` after `useractioncomplete` counts as a rejection, because missing purpose IDs mean no consent. An acceptance must grant at least 9 of purposes 1–10 and at least one vendor. The vendor map spans the whole Global Vendor List, so after "accept all" the vendors a site never asked about stay false. The previous rule required every entry to be true and wrongly failed 33 acceptances.
+
+**Re-assessment and stored cookies.** `analyze.py` re-applies the current rules to every stored CMP state (`consent.reassess`), so no new crawl is needed. It also decodes the consent cookies stored at the end of the visit (`consent.cookie_verdict`): IAB TCF `euconsent-v2`, covering purposes, special features and vendor consents in bit-field or range encoding; OneTrust `OptanonConsent`, counted only with `OptanonAlertBoxClosed`; and Cookiebot `CookieConsent`. The final `consent_outcome` combines both sources (`consent.combine_outcome`): either may confirm, and a contradiction makes the outcome unknown. `per_site.csv` keeps `consent_outcome_live`, `consent_cookie` and `consent_outcome_at_crawl`. On the EU batch, verified rejections rose from 2 to 36 and verified acceptances from 1 to 44, and the cookie decoder matches the live API on 20 of 20 visits. To cross-check against IAB's reference library, see `scripts/check_tcf_official.mjs`.
+
 Verification references: [TCF CMP API](https://github.com/InteractiveAdvertisingBureau/GDPR-Transparency-and-Consent-Framework/blob/master/TCFv2/IAB%20Tech%20Lab%20-%20CMP%20API%20v2.md), [Cookiebot browser API](https://www.cookiebot.com/en/developer/).
 
 To test the frame handling, run `make verify-consent`. It rebuilds the image, runs the consent unit tests, and tests nine local browser cases with external networking disabled: parent TCF with a cross-origin accept/reject button that removes its frame, a settings step, a child Cookiebot API, deliberate loss of its saved choice, delayed API loading, unchanged defaults, conflicting reports and a no-op API/button. Positive cases must retain confirmation after reload; clearing stored consent must downgrade confirmation to unknown. Fixture pages use intercepted HTTPS URLs and the child uses a `SameSite=None; Secure; Partitioned` cookie, following [Chrome's iframe cookie guidance](https://developer.chrome.com/docs/modern-web-guidance/guides/security/security). Browser cookie protections are left enabled. These are synthetic checks, not evidence of real-site coverage.
@@ -85,18 +89,44 @@ Headline metric: **survival** of (script eTLD+1, technique) pairs vs the baselin
 
 Outputs in `results/`: `per_site.csv` (requests, third-party domains, blocked requests, FP calls, storage ops, cookies, per-technique counts, pre-consent FP scripts, consent action/method/outcome/reason, GPC, TCF purposes, and comparison eligibility), `fp_scripts.csv` (every detected script, including diagnostic observations), `comparison.csv` (eligible paired survival vs baseline), and `consent_coverage.csv` (counts of all site/runs by consent action and outcome, including exclusions). Coverage counts eligible site/runs, not the number of matched baseline pairs. GPC is recorded as enabled/disabled/unknown; the `optout` treatment remains rejection plus GPC, so do not attribute its effect to rejection alone.
 
+### 6. Purpose labelling (`purpose.py`, `scripts/label_purposes.py`, `scripts/purpose_results.py`)
+A detection says *that* a script fingerprints, not *why*. Each script, defined as (site, script domain, path template), gets a purpose from an evidence ladder:
+
+1. **Vendor signatures.** 35 third-party patterns such as HUMAN, DataDome, AWS WAF, reCAPTCHA, Forter, IAS, Prebid and AppsFlyer, plus 8 first-party path signatures for bot managers served from the site's own domain: Kasada, Akamai `/akam/`, Cloudflare `/cdn-cgi/challenge-platform/`, Fastly `/_fs-ch-…/` and DataDome `tags.js`.
+2. **DuckDuckGo Tracker Radar categories.** These apply to third-party scripts only, and the subset is pinned in `reference/tracker_radar_subset.json`. The 0–3 fingerprinting score measures API use, not intent, and is not used as a purpose.
+3. **Path clusters and vendor cookies.** The same path template served on ≥2 sites, or a first-party path signature, marks a **hidden first-party vendor**. Vendor cookies such as `_abck`, `_px3`, `datadome`, `KP_UIDz` and `_fs_ch_*` raise the confidence.
+4. **Page context and behaviour (FP-Redemption-style, low confidence).** A script present only on login or checkout pages, or present on every page while probing `navigator.webdriver` with strong techniques, is labelled anti-fraud/anti-bot.
+5. Otherwise the purpose is **Unknown**.
+
+Each label has `purpose_primary`, `purpose_secondary`, `party` (First-party / Third-party / Hidden first-party vendor), `page_context`, `confidence` (High / Medium / Low) and `evidence`. `purpose_results.py` re-runs the blocker and verified-consent comparisons per purpose group with site-bootstrap intervals. It also runs validity checks: agreement between Tracker Radar and the signatures (Cohen's κ), automation-probe rates by purpose, and technique strength by purpose. Finally it writes a stratified 80-script manual-validation sheet. Two annotators fill the sheet ([`docs/annotation_guide.md`](docs/annotation_guide.md)), and `make agreement` reports κ, detector precision per technique and label precision per purpose.
+
+```sh
+make tracker-radar STUDY_BATCH=full_eu_20261122   # network, once; output is committed
+make purpose STUDY_BATCH=full_eu_20261122         # offline: labels + purpose results + validation sheet
+make agreement STUDY_BATCH=full_eu_20261122       # after two annotators fill the sheet
+```
+
 GPC records the observed `navigator.globalPrivacyControl` value on the final page, not just the CLI flag. The consent JSON also retains `gpc_requested`, the observation source, and the actual initialized extension metadata/settings. Privacy Badger enables GPC itself even when the crawler was not passed `--gpc`; treat its run as the extension's full default behavior, not blocking alone.
 
 ## Repository layout
 
 ```
 crawler.py  instrument.js  consent.py  respawn.py  analyze.py  common.py
+purpose.py                purpose-labelling rules (signatures, Tracker Radar map, context rules)
 sites.csv                 150-site seed list (news / e-commerce / social+affiliate)
+reference/                pinned Tracker Radar subset used for labelling (CC BY-NC-SA 4.0)
+docs/annotation_guide.md  two-annotator validation protocol
 scripts/
   get_extensions.sh/.py   install the hash-pinned Chromium MV3 packages into ext/
 extensions.lock.json      official package URLs, versions and SHA-256 checksums
   check_tranco.py         cross-check sites.csv against a dated Tranco list
   pick_respawn_sites.py   choose respawn candidates from the baseline cookies table
+  paired_uncertainty.py   site-bootstrap intervals against the repeat baseline
+  fetch_tracker_radar.py  fetch Tracker Radar entries for a batch's script domains
+  label_purposes.py       script inventory + purpose labels + hidden-vendor clusters
+  purpose_results.py      results by purpose, validity checks, validation sample
+  purpose_agreement.py    Cohen's kappa and precision from the annotated sample
+  dump_tc_strings.py / check_tcf_official.mjs   cross-check the TCF decoder with IAB's library
 test/                     local fixture: publisher, aggressive tracker, consent-respecting
                           tracker, MV3 test blocker, and smoke.py (end-to-end assertions)
 Dockerfile  docker-compose.yml  docker-compose.vpn.yml  Makefile  requirements.txt
@@ -195,7 +225,13 @@ On this Windows/Docker setup, the live SQLite database became corrupt on both On
 
 The six-condition EU study batch `full_eu_20261122` completed on 2026-11-22. Its shareable, privacy-reduced outputs are in [`public_results/full_eu_20261122/`](public_results/full_eu_20261122/). The full local batch remains under ignored `results/` and its SQLite database under ignored `data/`; neither should be committed as-is.
 
-The baseline yielded 93 usable visits out of 149 attempts. In paired comparisons with repeat-baseline variation, observed domain–technique pair survival decreased by 27.7 percentage points with uBlock Origin Lite (56 sites) and 19.8 points with Privacy Badger (57 sites). Consent choices were confirmed for only two rejection attempts and one acceptance attempt, so the batch does not support a general consent-effect estimate. See [`PAPER_DRAFT.md`](PAPER_DRAFT.md) for the research-paper draft and [`ETUDE_RAPPORT.md`](ETUDE_RAPPORT.md) for the detailed French report.
+The baseline yielded 93 usable visits out of 149 attempts; 64 sites ran fingerprinting-pattern scripts. Results after the 2026-11-24 update (consent verifier fix and purpose labelling):
+
+- **Who fingerprints:** 63% of the 237 baseline (site, script, technique) pairs are security or anti-fraud and 11% are advertising or analytics. Security vendors produce 84% of strong-technique pairs. 27% of pairs come from bot managers hidden behind first-party URLs (Akamai, Cloudflare, Kasada, DataDome, Fastly).
+- **Consent:** 36 verified rejections and 44 verified acceptances (30 sites both ways). On those 30 sites, rejecting cut third-party domains (median 22 against 63) and third-party cookies (1 against 35), but fingerprinting survival did not change: +1.7 points against the repeat baseline, 95% CI −6.4 to +11.9. 10 of 36 sites kept ad/analytics fingerprinting patterns after a verified rejection, almost all of them weak signals.
+- **Blockers:** uBlock Origin Lite reduced ad/analytics fingerprinting by 88 points but security fingerprinting by only 20 (overall −27.5). Privacy Badger: −40 and −14 (overall −19.9).
+
+See [`PAPER_DRAFT.md`](PAPER_DRAFT.md) for the research-paper draft, [`NASROU_REPORT.md`](NASROU_REPORT.md) for the change log, and [`ETUDE_RAPPORT.md`](ETUDE_RAPPORT.md) for the detailed French report.
 
 To recreate the shareable bundle from the private batch, run:
 

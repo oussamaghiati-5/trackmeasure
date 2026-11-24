@@ -24,8 +24,14 @@ Primary batch: `full_eu_20261122`, with a Germany network exit. The input list h
 - Repeat baseline retained 183/192 detected pairs (95.3%) over 91 sites and introduced 11 new pairs. It is the short-term variation control.
 - Relative to repeat baseline, paired site-bootstrap change in pair survival was −27.7 percentage points for uBlock Origin Lite (95% interval [−40.0, −16.3], 56 paired sites) and −19.8 points for Privacy Badger (95% interval [−31.7, −8.6], 57 sites).
 - Paired median change in contacted third-party domains was −6.5 with uBlock (90 sites; interval [−8.5, −4]) and 0 with Privacy Badger (91 sites; interval [−2, 0]). Blocked-request totals were 3,624 and 2,376, respectively; they are request counts, not counts of trackers/identifiers prevented.
-- Consent verification: reject+GPC had 2 confirmed, 36 failed, 53 unknown among 91 usable navigations. Accept had 1 confirmed, 65 failed, 26 unknown among 92 usable navigations. Only one paired site remained for each action. **No general consent-effect estimate is supported.** Reject and GPC are combined, so separate effects are not identifiable.
-- Main defensible claim: in this sample and configuration, both tested blockers changed measured fingerprinting-related domain–technique patterns relative to repeat-baseline variation; uBlock showed a larger reduction. This does not prove all tracking was prevented or establish a universal extension ranking.
+- Consent verification, **updated 2026-11-24.** The crawl-time verifier confirmed only 2 rejections and 1 acceptance, because of two bugs: an empty TCF purpose map after rejection was treated as unreadable, and acceptance required every Global Vendor List vendor to be true. After the fix (`consent.tcf_matches`), offline re-assessment of the stored states (`consent.reassess`) and decoding of the stored consent cookies (`consent.cookie_verdict`), there are **36 verified rejections and 44 verified acceptances, 30 sites both ways.** Do not repeat the old "n = 1 per action" claim. Reject and GPC are still combined.
+- Consent result: a verified rejection cuts third-party domains (median 22 against 63 after accept, 30 sites) and third-party cookies (1 against 35), but does **not** reduce fingerprinting: +1.7 pp vs the repeat baseline, 95% CI [−6.4, +11.9].
+- Purpose labels (`purpose.py`, `scripts/label_purposes.py`, `scripts/purpose_results.py`):
+  - 63% of baseline pairs are security or anti-fraud and 11% ads/analytics; security vendors produce 84% of strong-technique pairs.
+  - 27% of pairs come from hidden first-party vendors.
+  - uBlock: ads/analytics −88 pp, security −19.8 pp.
+  - 10 of 36 verified-reject sites keep ad/analytics fingerprinting patterns, almost all weak.
+- Main defensible claims: consent and blockers act on different fingerprinting populations. Most strong fingerprinting is bot and fraud management. Purpose labels are evidence-based estimates with confidence levels, and the manual two-annotator validation is still pending.
 
 ## Important files
 
@@ -38,6 +44,7 @@ Primary batch: `full_eu_20261122`, with a Germany network exit. The input list h
 - `analyze.py` — heuristic fingerprinting-related technique detection and per-site comparisons.
 - `crawler.py`, `instrument.js`, `consent.py`, `navigation.py`, `extension_state.py` — crawler, browser instrumentation, consent verification, navigation validation and extension readiness.
 - `scripts/paired_uncertainty.py` — paired bootstrap summaries.
+- `purpose.py` holds the purpose-labelling rules. `scripts/label_purposes.py` → `script_purposes.csv`, `hidden_vendor_clusters.csv`. `scripts/purpose_results.py` → `purpose_results.json`, `purpose_survival.csv` and the validation sheet. `scripts/purpose_agreement.py` and `docs/annotation_guide.md` cover manual validation. `reference/tracker_radar_subset.json` holds pinned Tracker Radar data. Use `make purpose STUDY_BATCH=full_eu_20261122`.
 - Main private batch outputs: `results/full_eu_20261122/analysis.log`, `per_site.csv`, `comparison.csv`, `paired_uncertainty.json`, `consent_coverage.csv`, `fp_scripts.csv`, `manifest.json`, `vpn_provenance.json`.
 - The corresponding `data/full_eu_20261122/crawl.sqlite` is local/ignored and may contain cookie values. Do not publish it without a privacy-safe export.
 
@@ -59,8 +66,11 @@ The project relates to this prior work through browser-based measurement, behavi
 ## Remaining work / strongest improvements
 
 1. Convert `PAPER_DRAFT.md` to the required ACM AsiaCCS template; fill in authors/course details and verify all citations and final numbers.
-2. If time allows, conduct and document a small, reproducible manual review of sampled detected scripts to characterize likely false positives. Do not invent precision/recall: there is no labeled ground truth yet. This can be a human code/artifact review, without manually browsing sites.
-3. Consider a follow-up crawler run only if necessary and feasible: separate rejection from GPC, improve CMP coverage, and predefine a threshold for minimum confirmed paired choices. Current consent data cannot support effectiveness claims.
+2. Two team members annotate `results/full_eu_20261122/validation/annotation_sheet.csv` independently (`docs/annotation_guide.md`), then run `make agreement` and report κ and precision per technique and per purpose in paper Section 4.5. Do not invent precision or recall. Recall is not estimable from this sample.
+3. A follow-up crawl, if feasible:
+   - separate rejection from GPC;
+   - capture request bodies to test whether fingerprint values leave the browser (FP-tracer- or FPTrace-style);
+   - crawl login and checkout pages for stronger page-context evidence.
 4. If evaluating blocker costs, measure page completion/rendering or another predefined compatibility/performance metric on real sites; current fixture verification only checks extension setup and controlled blocking.
 5. Preserve the access failures, denominators, uncertainty intervals, and heuristic caveats in the final paper.
 

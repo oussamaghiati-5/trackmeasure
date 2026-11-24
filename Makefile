@@ -9,7 +9,7 @@ STUDY_BATCH ?= study
 SITE        ?= theguardian.com
 ACTION      ?= reject
 
-.PHONY: build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout accept respawn analyze
+.PHONY: uncertainty tracker-radar purpose agreement build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout accept respawn analyze
 
 dirs:
 	mkdir -p data ext results
@@ -86,6 +86,27 @@ respawn: dirs
 analyze: dirs
 	$(COMPOSE) run --rm crawler \
 	    python analyze.py data/$(STUDY_BATCH)/crawl.sqlite --baseline baseline --outdir results/$(STUDY_BATCH)
+
+# Consent re-assessment needs no crawl: analyze.py re-checks stored CMP states and cookies.
+uncertainty:
+	python3 scripts/paired_uncertainty.py results/$(STUDY_BATCH)/comparison.csv
+
+# --- Purpose labelling (security vs ads/analytics vs unknown) ---
+# Network step, run once per batch; the subset is committed under reference/.
+tracker-radar:
+	python3 scripts/fetch_tracker_radar.py results/$(STUDY_BATCH) --db data/$(STUDY_BATCH)/crawl.sqlite \
+	    --out reference/tracker_radar_subset.json
+
+# Offline: inventory + labels + purpose-split results + 80-script validation sheet.
+purpose:
+	python3 scripts/label_purposes.py data/$(STUDY_BATCH)/crawl.sqlite results/$(STUDY_BATCH) \
+	    --radar reference/tracker_radar_subset.json
+	python3 scripts/purpose_results.py results/$(STUDY_BATCH) --sites data/$(STUDY_BATCH)/sites.csv
+
+# After two annotators fill results/$(STUDY_BATCH)/validation/annotation_sheet.csv
+agreement:
+	python3 scripts/purpose_agreement.py results/$(STUDY_BATCH)/validation/annotation_sheet.csv \
+	    results/$(STUDY_BATCH)/validation/annotation_key.csv
 
 # --- Helpers ---
 # Headful run example (run from inside the container or on the host with X11):

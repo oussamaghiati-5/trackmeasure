@@ -6,6 +6,38 @@
 **Statut :** les six conditions ont été exécutées; la base exportée a passé `PRAGMA quick_check`.
 **Public visé :** collègues qui vont examiner les résultats et préparer le rapport académique.
 
+## 0. Mise à jour du 24 novembre 2026 : finalité du fingerprinting et consentement vérifié
+
+Cette mise à jour répond à la question du professeur : comment distinguer le fingerprinting « normal » (sécurité, anti-fraude) de celui utilisé pour le pistage ? Elle ne demande aucune nouvelle collecte, car tout est recalculé à partir de la base du batch `full_eu_20261122`.
+
+**Méthode.** Chaque script détecté reçoit une finalité selon une échelle de preuves (`purpose.py`) :
+
+1. signatures de fournisseurs connus, y compris les chemins first-party de gestionnaires anti-bots (Kasada, Akamai, Cloudflare, Fastly, DataDome) ;
+2. catégories DuckDuckGo Tracker Radar, pour les tiers uniquement ;
+3. regroupement des chemins communs à plusieurs sites (fournisseurs cachés en first-party) et cookies des fournisseurs ;
+4. contexte de page et comportement, à la manière de FP-Redemption, avec une confiance faible ;
+5. sinon `Unknown`.
+
+Chaque label porte une finalité principale et secondaire, une partie (first-party, tiers, fournisseur caché), une confiance et ses preuves.
+
+**Consentement.** Deux erreurs du vérificateur ont été corrigées :
+
+- après un refus total, la liste vide des finalités TCF était traitée comme « illisible » ;
+- après une acceptation, le vérificateur exigeait que tous les fournisseurs de la liste mondiale soient acceptés.
+
+Les cookies de consentement stockés (TCF, OneTrust, Cookiebot) sont aussi décodés. Résultat : **36 refus et 44 acceptations vérifiés**, contre 2 et 1 auparavant, dont 30 sites vérifiés dans les deux sens. Le décodeur concorde avec l'API du CMP sur 20 visites sur 20.
+
+**Résultats principaux**
+
+- **Fingerprinting par finalité.** 63 % des paires détectées relèvent de la sécurité ou de l'anti-fraude et 11 % de la publicité ou de l'analytics. Les fournisseurs de sécurité produisent 84 % des paires à technique forte, et 27 % des paires viennent de fournisseurs cachés derrière des URL first-party.
+- **Commerce.** Sur 22 sites exploitables, 20 font du fingerprinting de sécurité ; un seul montre un motif publicitaire ou analytics.
+- **Refus vérifié.** Il supprime les tiers (médiane de 22 domaines contre 63 après acceptation) et les cookies tiers (1 contre 35), mais **pas le fingerprinting** : +1,7 point par rapport à la répétition de référence, IC 95 % [−6,4 ; +11,9]. Après un refus vérifié, 10 sites sur 36 exécutent encore des scripts publicitaires ou analytics à motif de fingerprinting, presque tous à signal faible. Le fingerprinting fort restant après un refus vient à 19 paires sur 21 de fournisseurs de sécurité.
+- **Bloqueurs.** uBlock Origin Lite supprime le fingerprinting publicitaire et analytics (−88 points) mais très peu le fingerprinting de sécurité (−20 points). Le chiffre global de −27,7 points mélangeait ces deux effets.
+
+**Validité.** Signatures et Tracker Radar concordent sur 8 domaines sur 12 (κ = 0,49). Les scripts de sécurité testent `navigator.webdriver` dans 93 % des cas, contre 68 % pour les scripts publicitaires et analytics (p < 10⁻⁵). Il reste à faire annoter l'échantillon stratifié de 80 scripts par deux personnes (`docs/annotation_guide.md`, puis `make agreement`).
+
+Les sections suivantes décrivent le protocole d'origine. Les chiffres de consentement qu'elles citent (2 refus, 1 acceptation) correspondent à l'ancien vérificateur.
+
 ## 1. Résumé
 
 TrackMeasure observe des appels à des API de navigateur associées à des techniques de fingerprinting, les requêtes réseau et l’état du consentement, puis compare plusieurs conditions de navigation. La liste d’étude comprend 149 domaines : 50 sites d’actualité, 50 de commerce, 37 sociaux et 12 d’affiliation.

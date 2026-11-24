@@ -1,4 +1,5 @@
 """Consent evidence and comparison eligibility, including legacy recordings."""
+import base64
 import json
 import contextlib
 import io
@@ -17,7 +18,7 @@ import test_measurements as measurements
 
 def tcf_state(accepted=False, event="useractioncomplete"):
     return {"tcf": {"cmpStatus": "loaded", "gdprApplies": True, "eventStatus": event,
-                    "purposeConsents": {"1": accepted, "3": accepted},
+                    "purposeConsents": {str(i): accepted for i in range(1, 11)},
                     "vendorConsents": {"1": accepted}, "specialFeatureOptins": {"1": False}}}
 
 
@@ -33,7 +34,7 @@ class ConsentEvidence(unittest.TestCase):
     def test_non_applicable_missing_and_incomplete_tcf_are_unknown(self):
         states = [{}, {"tcf": "timeout"}, {"tcf": {}}]
         for key, value in (("gdprApplies", False), ("cmpStatus", "loading"),
-                           ("purposeConsents", {}), ("vendorConsents", None),
+                           ("purposeConsents", None), ("vendorConsents", None),
                            ("specialFeatureOptins", None)):
             state = tcf_state()
             state["tcf"][key] = value
@@ -71,6 +72,105 @@ class ConsentEvidence(unittest.TestCase):
         for record in (None, "{broken", "[]", json.dumps({"action": "reject", "method": "click"})):
             self.assertEqual(consent.consent_record(record)["outcome"], "unknown")
         self.assertEqual(consent.assess_choice("reject", True, {"usp": "1YYY"})[0], "unknown")
+
+
+def tc_string(purposes=(), features=(), vendors=(), max_vendor=None, ranges=None):
+    """Encode a minimal TCF v2 core segment (fields the decoder does not read are zero)."""
+    bits = ["000010", "0" * 134]                         # Version 2, then header fields
+    bits.append("".join("1" if i + 1 in features else "0" for i in range(12)))
+    bits.append("".join("1" if i + 1 in purposes else "0" for i in range(24)))
+    bits.append("0" * 24 + "0" + "0" * 12)              # LI transparency, one-treatment, CC
+    max_vendor = max_vendor if max_vendor is not None else max(vendors, default=0)
+    bits.append(f"{max_vendor:016b}")
+    if ranges is None:
+        bits.append("0" + "".join("1" if i + 1 in vendors else "0" for i in range(max_vendor)))
+    else:
+        bits.append("1" + f"{len(ranges):012b}")
+        for start, end in ranges:
+            bits.append(("1" + f"{start:016b}" + f"{end:016b}") if end != start else ("0" + f"{start:016b}"))
+    s = "".join(bits)
+    s += "0" * (-len(s) % 8)
+    raw = bytes(int(s[i:i + 8], 2) for i in range(0, len(s), 8))
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+class ConsentVerificationFixes(unittest.TestCase):
+    """Regression tests for the two verifier bugs found in the EU batch review."""
+
+    def test_empty_purpose_map_after_user_action_is_a_rejection(self):
+        state = tcf_state()
+        state["tcf"].update(purposeConsents={}, vendorConsents={})
+        self.assertEqual(consent.assess_choice("reject", True, state)[0], "confirmed")
+        self.assertEqual(consent.assess_choice("accept", True, state)[0], "failed")
+
+    def test_accept_all_with_unasked_global_vendors_false_is_confirmed(self):
+        state = tcf_state(True)
+        state["tcf"]["purposeConsents"] = {str(i): True for i in range(1, 12)}
+        state["tcf"]["vendorConsents"] = {"1": True, "2": False, "3": True, "4": False}
+        self.assertEqual(consent.assess_choice("accept", True, state)[0], "confirmed")
+        self.assertEqual(consent.assess_choice("reject", True, state)[0], "failed")
+
+    def test_accept_needs_most_purposes_and_some_vendor(self):
+        state = tcf_state(True)
+        state["tcf"]["purposeConsents"] = {str(i): i <= 5 for i in range(1, 11)}
+        self.assertEqual(consent.assess_choice("accept", True, state)[0], "failed")
+        state["tcf"]["purposeConsents"] = {str(i): True for i in range(1, 11)}
+        state["tcf"]["vendorConsents"] = {"1": False}
+        self.assertEqual(consent.assess_choice("accept", True, state)[0], "failed")
+
+    def test_reject_with_a_remaining_vendor_consent_fails(self):
+        state = tcf_state()
+        state["tcf"]["vendorConsents"] = {"1": False, "2": True}
+        self.assertEqual(consent.assess_choice("reject", True, state)[0], "failed")
+
+    def test_reassess_updates_stored_record_and_keeps_crawl_verdict(self):
+        state = tcf_state()
+        state["tcf"].update(purposeConsents={}, vendorConsents={})
+        record = dict(action="reject", action_completed=True, states=[state],
+                      outcome="unknown", reason="old rule")
+        new = consent.reassess(record)
+        self.assertEqual((new["outcome"], new["outcome_at_crawl"]), ("confirmed", "unknown"))
+        reload_state = tcf_state(True)
+        record["checks"] = [dict(states=[reload_state], phase="home_reload")]
+        self.assertEqual(consent.reassess(record)["outcome"], "failed")
+        self.assertIn("home_reload", consent.reassess(record)["reason"])
+        legacy = dict(action="reject", outcome="confirmed")
+        self.assertIs(consent.reassess(legacy), legacy)
+
+    def test_tcf_decoder_bitfield_and_range_encoding(self):
+        d = consent.decode_tcf(tc_string(purposes=range(1, 12), vendors=(2, 5, 9)))
+        self.assertEqual((d["purposes"], d["vendors"]), (list(range(1, 12)), 3))
+        d = consent.decode_tcf(tc_string(purposes=(1, 2), features=(1,), max_vendor=900,
+                                         ranges=[(10, 19), (700, 700)]))
+        self.assertEqual((d["purposes"], d["special_features"], d["vendors"]), ([1, 2], [1], 11))
+        self.assertIsNone(consent.decode_tcf("not-a-tc-string"))
+        self.assertEqual(consent.tcf_cookie_verdict(tc_string(max_vendor=50)), "reject")
+        self.assertEqual(consent.tcf_cookie_verdict(tc_string(purposes=range(1, 11), vendors=(7,))), "accept")
+        self.assertEqual(consent.tcf_cookie_verdict(tc_string(purposes=(1,), vendors=(7,))), "mixed")
+
+    def test_onetrust_and_cookiebot_cookie_verdicts(self):
+        rejected = "isGpcEnabled=1&groups=C0001%3A1%2CC0002%3A0%2CC0004%3A0"
+        accepted = "groups=C0001%3A1%2CC0002%3A1%2CC0004%3A1"
+        self.assertIsNone(consent.onetrust_cookie_verdict(rejected, None))
+        self.assertEqual(consent.onetrust_cookie_verdict(rejected, "2026-11-22T10:00:00.000Z"), "reject")
+        self.assertEqual(consent.onetrust_cookie_verdict(accepted, "x"), "accept")
+        cb = "{stamp:%27x%27%2Cnecessary:true%2Cpreferences:false%2Cstatistics:false%2Cmarketing:false}"
+        self.assertEqual(consent.cookiebot_cookie_verdict(cb), "reject")
+        self.assertEqual(consent.cookie_verdict({"CookieConsent": cb}), ("reject", ["Cookiebot cookie"]))
+        both = {"CookieConsent": cb, "OptanonConsent": accepted, "OptanonAlertBoxClosed": "x"}
+        self.assertEqual(consent.cookie_verdict(both)[0], "conflict")
+
+    def test_combining_live_and_cookie_evidence(self):
+        mismatch = "Saved CMP choice does not match the requested action"
+        cases = [(("unknown", "x", "reject"), "confirmed"),
+                 (("confirmed", "x", "reject"), "confirmed"),
+                 (("failed", mismatch, "reject"), "unknown"),
+                 (("confirmed", "x", "accept"), "unknown"),
+                 (("unknown", "x", "mixed"), "failed"),
+                 (("unknown", "x", "conflict"), "unknown"),
+                 (("unknown", "x", None), "unknown")]
+        for (live, reason, verdict), expected in cases:
+            self.assertEqual(consent.combine_outcome("reject", live, reason, verdict)[0], expected)
 
 
 class ConsentFlow(unittest.IsolatedAsyncioTestCase):

@@ -22,6 +22,12 @@ COPY_FILES = (
     "paired_uncertainty.json",
 )
 URL_PATTERN = re.compile(r"https?://[^\s,;]+", re.IGNORECASE)
+# Purpose-labelling outputs (scripts/label_purposes.py, scripts/purpose_results.py).
+# Optional: copied when present. Script URLs and per-site path templates are dropped
+# from the label table; cluster templates are shared by >= 2 sites and kept.
+PURPOSE_COPY = ("purpose_results.json", "purpose_survival.csv", "purpose_prevalence.csv",
+                "purpose_consent_sites.csv", "hidden_vendor_clusters.csv")
+PURPOSE_DROP = ("example_url", "template")
 
 
 def read_json(path):
@@ -62,6 +68,17 @@ def sanitize_per_site(source, destination):
                 writer.writerow(row)
 
 
+def sanitize_purposes(source, destination):
+    with source.open(newline="", encoding="utf-8-sig") as stream:
+        reader = csv.DictReader(stream)
+        fields = [field for field in reader.fieldnames or () if field not in PURPOSE_DROP]
+        with destination.open("w", newline="", encoding="utf-8") as output:
+            writer = csv.DictWriter(output, fieldnames=fields, lineterminator="\n")
+            writer.writeheader()
+            for row in reader:
+                writer.writerow({field: row.get(field, "") for field in fields})
+
+
 def export(batch, sites, destination, overwrite=False):
     if destination.exists():
         if not destination.is_dir():
@@ -81,6 +98,11 @@ def export(batch, sites, destination, overwrite=False):
     (destination / "sites.csv").write_bytes(sites.read_bytes())
     sanitize_per_site(batch / "per_site.csv", destination / "per_site.csv")
     sanitize_fingerprint_scripts(batch / "fp_scripts.csv", destination / "fp_scripts.csv")
+    purpose_files = [name for name in PURPOSE_COPY if (batch / name).is_file()]
+    for name in purpose_files:
+        (destination / name).write_bytes((batch / name).read_bytes())
+    if (batch / "script_purposes.csv").is_file():
+        sanitize_purposes(batch / "script_purposes.csv", destination / "script_purposes.csv")
 
     manifest = read_json(batch / "manifest.json")
     exit_info = manifest.get("exit")
@@ -113,13 +135,16 @@ This directory contains selected aggregate and per-site outputs for the complete
 - `per_site.csv`: measurement status and per-site metrics for each condition; URLs in error messages are redacted.
 - `comparison.csv`: site-paired domain–technique pair and third-party-domain comparisons.
 - `paired_uncertainty.json`: paired bootstrap estimates and intervals.
-- `consent_coverage.csv`: attempted, confirmed, failed, and unknown consent outcomes.
+- `consent_coverage.csv`: attempted, confirmed, failed, and unknown consent outcomes. Outcomes combine the stored CMP API state (re-assessed with the current rules) with the consent cookies stored at the end of the visit; `confirmed_at_crawl` shows the crawl-time count.
 - `fp_scripts.csv`: detected script domains and techniques; script URLs are deliberately omitted because their paths or query strings can contain session tokens.
 - `sites.csv`: frozen list of domains used as input.
+- `script_purposes.csv`: one row per fingerprinting script (site, script domain, path template) with its purpose label, party (first-party, third-party or hidden first-party vendor), page context, confidence and evidence; script URLs and path templates omitted.
+- `hidden_vendor_clusters.csv`: path templates served by two or more sites, attributed to vendors (e.g. bot managers behind first-party URLs).
+- `purpose_prevalence.csv`, `purpose_survival.csv`, `purpose_consent_sites.csv`, `purpose_results.json`: results split by purpose (security/anti-fraud, ads/analytics, other/unknown), with site-bootstrap intervals for blocker and verified-consent survival.
 - `manifest.json`: crawl settings and source hashes; exact VPN exit IP removed.
 - `vpn_provenance.json`: public provider/region and resolver-change summary; credential-bearing profile hashes and exact timestamps omitted.
 
-Raw crawl databases and crawl logs are not included. The database can contain cookie values and the logs may contain request details. Error-message URLs are also redacted. Use the repository scripts and the private local batch to reproduce or inspect raw observations. These results describe the accessible sites and this crawler configuration; heuristic API detections are not ground-truth proof of tracking.
+Raw crawl databases and crawl logs are not included. The database can contain cookie values and the logs may contain request details. Error-message URLs are also redacted. Use the repository scripts and the private local batch to reproduce or inspect raw observations. These results describe the accessible sites and this crawler configuration; heuristic API detections are not ground-truth proof of tracking, and purpose labels are evidence-based estimates (see `confidence` and `evidence`), not vendor-confirmed facts.
 """
     (destination / "README.md").write_text(readme, encoding="utf-8")
 

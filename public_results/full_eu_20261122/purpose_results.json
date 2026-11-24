@@ -1,0 +1,556 @@
+{
+  "prevalence": {
+    "usable_baseline_sites": 93,
+    "sites_with_fp": 64,
+    "sites_by_group": {
+      "Security": 42,
+      "Ads/analytics": 17,
+      "Other/unknown": 28
+    },
+    "sites_only_security": 21,
+    "sites_with_ads_analytics_fp_before_consent": 17,
+    "sites_with_security_fp_before_consent": 40,
+    "pairs_total": 237,
+    "pairs_by_purpose": {
+      "Anti-fraud/security": 149,
+      "Unknown": 58,
+      "Advertising": 15,
+      "Analytics": 11,
+      "Functional": 2,
+      "CDN": 2
+    },
+    "pairs_by_party": {
+      "Third-party": 97,
+      "First-party": 77,
+      "Hidden first-party vendor": 63
+    },
+    "strong_pairs_by_group": {
+      "Security": 76,
+      "Other/unknown": 11,
+      "Ads/analytics": 3
+    },
+    "weak_pairs_by_group": {
+      "Security": 73,
+      "Other/unknown": 51,
+      "Ads/analytics": 23
+    },
+    "labelled_share_of_pairs": 0.7553,
+    "labelled_share_of_strong_pairs": 0.8778,
+    "confidence_of_labelled_pairs": {
+      "High": 95,
+      "Medium": 64,
+      "Low": 20
+    },
+    "by_category": {
+      "affiliate": {
+        "usable": 7,
+        "with_fp": 3,
+        "with_security_fp": 1,
+        "with_ads_analytics_fp": 2,
+        "only_security": 1
+      },
+      "ecommerce": {
+        "usable": 22,
+        "with_fp": 21,
+        "with_security_fp": 20,
+        "with_ads_analytics_fp": 1,
+        "only_security": 10
+      },
+      "news": {
+        "usable": 42,
+        "with_fp": 26,
+        "with_security_fp": 12,
+        "with_ads_analytics_fp": 11,
+        "only_security": 6
+      },
+      "social": {
+        "usable": 22,
+        "with_fp": 14,
+        "with_security_fp": 9,
+        "with_ads_analytics_fp": 3,
+        "only_security": 4
+      }
+    }
+  },
+  "survival": {
+    "ubol": {
+      "All": {
+        "sites_with_pairs": 56,
+        "pairs_baseline": 200,
+        "pairs_surviving": 135,
+        "survival": 0.675,
+        "repeat_survival": 0.95,
+        "difference_pp": -27.499999999999993,
+        "ci95_pp": [
+          -40.186915887850475,
+          -16.161616161616166
+        ],
+        "pairs_new": 20
+      },
+      "Security": {
+        "sites_with_pairs": 31,
+        "pairs_baseline": 116,
+        "pairs_surviving": 89,
+        "survival": 0.7672413793103449,
+        "repeat_survival": 0.9655172413793104,
+        "difference_pp": -19.82758620689655,
+        "ci95_pp": [
+          -34.710743801652896,
+          -7.216494845360821
+        ],
+        "pairs_new": 9
+      },
+      "Ads/analytics": {
+        "sites_with_pairs": 16,
+        "pairs_baseline": 25,
+        "pairs_surviving": 3,
+        "survival": 0.12,
+        "repeat_survival": 1.0,
+        "difference_pp": -88.0,
+        "ci95_pp": [
+          -100.0,
+          -72.72727272727273
+        ],
+        "pairs_new": 3
+      },
+      "Other/unknown": {
+        "sites_with_pairs": 27,
+        "pairs_baseline": 59,
+        "pairs_surviving": 43,
+        "survival": 0.7288135593220338,
+        "repeat_survival": 0.8983050847457628,
+        "difference_pp": -16.949152542372893,
+        "ci95_pp": [
+          -32.6530612244898,
+          -3.6363636363636376
+        ],
+        "pairs_new": 8
+      }
+    },
+    "pbadger": {
+      "All": {
+        "sites_with_pairs": 57,
+        "pairs_baseline": 201,
+        "pairs_surviving": 151,
+        "survival": 0.7512437810945274,
+        "repeat_survival": 0.9502487562189055,
+        "difference_pp": -19.90049751243781,
+        "ci95_pp": [
+          -31.465517241379317,
+          -9.708737864077676
+        ],
+        "pairs_new": 35
+      },
+      "Security": {
+        "sites_with_pairs": 32,
+        "pairs_baseline": 117,
+        "pairs_surviving": 97,
+        "survival": 0.8290598290598291,
+        "repeat_survival": 0.9658119658119658,
+        "difference_pp": -13.675213675213671,
+        "ci95_pp": [
+          -25.0,
+          -2.4193548387096864
+        ],
+        "pairs_new": 17
+      },
+      "Ads/analytics": {
+        "sites_with_pairs": 16,
+        "pairs_baseline": 25,
+        "pairs_surviving": 15,
+        "survival": 0.6,
+        "repeat_survival": 1.0,
+        "difference_pp": -40.0,
+        "ci95_pp": [
+          -64.51612903225806,
+          -13.043478260869568
+        ],
+        "pairs_new": 10
+      },
+      "Other/unknown": {
+        "sites_with_pairs": 27,
+        "pairs_baseline": 59,
+        "pairs_surviving": 39,
+        "survival": 0.6610169491525424,
+        "repeat_survival": 0.8983050847457628,
+        "difference_pp": -23.728813559322038,
+        "ci95_pp": [
+          -40.625,
+          -7.462686567164178
+        ],
+        "pairs_new": 8
+      }
+    },
+    "optout": {
+      "All": {
+        "sites_with_pairs": 19,
+        "pairs_baseline": 59,
+        "pairs_surviving": 53,
+        "survival": 0.8983050847457628,
+        "repeat_survival": 0.8813559322033898,
+        "difference_pp": 1.6949152542372947,
+        "ci95_pp": [
+          -6.382978723404264,
+          11.904761904761907
+        ],
+        "pairs_new": 26
+      },
+      "Security": {
+        "sites_with_pairs": 11,
+        "pairs_baseline": 36,
+        "pairs_surviving": 31,
+        "survival": 0.8611111111111112,
+        "repeat_survival": 0.8888888888888888,
+        "difference_pp": -2.777777777777768,
+        "ci95_pp": [
+          -10.71428571428572,
+          0.0
+        ],
+        "pairs_new": 6
+      },
+      "Ads/analytics": {
+        "sites_with_pairs": 9,
+        "pairs_baseline": 16,
+        "pairs_surviving": 15,
+        "survival": 0.9375,
+        "repeat_survival": 1.0,
+        "difference_pp": -6.25,
+        "ci95_pp": [
+          -23.076923076923073,
+          0.0
+        ],
+        "pairs_new": 3
+      },
+      "Other/unknown": {
+        "sites_with_pairs": 6,
+        "pairs_baseline": 7,
+        "pairs_surviving": 7,
+        "survival": 1.0,
+        "repeat_survival": 0.5714285714285714,
+        "difference_pp": 42.85714285714286,
+        "ci95_pp": [
+          0.0,
+          80.0
+        ],
+        "pairs_new": 17
+      }
+    },
+    "accept": {
+      "All": {
+        "sites_with_pairs": 24,
+        "pairs_baseline": 64,
+        "pairs_surviving": 59,
+        "survival": 0.921875,
+        "repeat_survival": 0.890625,
+        "difference_pp": 3.125,
+        "ci95_pp": [
+          0.0,
+          8.21917808219178
+        ],
+        "pairs_new": 47
+      },
+      "Security": {
+        "sites_with_pairs": 14,
+        "pairs_baseline": 43,
+        "pairs_surviving": 39,
+        "survival": 0.9069767441860465,
+        "repeat_survival": 0.9069767441860465,
+        "difference_pp": 0.0,
+        "ci95_pp": [
+          0.0,
+          0.0
+        ],
+        "pairs_new": 7
+      },
+      "Ads/analytics": {
+        "sites_with_pairs": 9,
+        "pairs_baseline": 12,
+        "pairs_surviving": 12,
+        "survival": 1.0,
+        "repeat_survival": 1.0,
+        "difference_pp": 0.0,
+        "ci95_pp": [
+          0.0,
+          0.0
+        ],
+        "pairs_new": 23
+      },
+      "Other/unknown": {
+        "sites_with_pairs": 7,
+        "pairs_baseline": 9,
+        "pairs_surviving": 8,
+        "survival": 0.8888888888888888,
+        "repeat_survival": 0.6666666666666666,
+        "difference_pp": 22.22222222222222,
+        "ci95_pp": [
+          0.0,
+          50.0
+        ],
+        "pairs_new": 17
+      }
+    }
+  },
+  "consent": {
+    "verified_reject_sites": 36,
+    "verified_accept_sites": 44,
+    "dual_verified_sites": 30,
+    "reject_source": {
+      "Saved choice matches request: live API and stored cookie": 20,
+      "Saved choice matches request: stored cookie": 9,
+      "Saved choice matches request: TCF": 7
+    },
+    "accept_source": {
+      "Saved choice matches request: live API and stored cookie": 24,
+      "Saved choice matches request: TCF": 10,
+      "Saved choice matches request: stored cookie": 10
+    },
+    "after_reject_sites_with_Security": 12,
+    "after_reject_sites_with_Ads/analytics": 10,
+    "after_reject_sites_with_Other/unknown": 22,
+    "after_reject_sites_with_any_fp": 29,
+    "after_reject_ads_analytics_sites": [
+      "buzzfeed.com",
+      "dictionary.com",
+      "elpais.com",
+      "huffpost.com",
+      "mirror.co.uk",
+      "techcrunch.com",
+      "theverge.com",
+      "vice.com",
+      "washingtonpost.com",
+      "weather.com"
+    ],
+    "after_reject_ads_analytics_vendors": [
+      "Ad-recovery network (html-load family)",
+      "Adobe Experience Platform tags",
+      "AnyClip / Prebid",
+      "AppsFlyer",
+      "GumGum",
+      "HubSpot analytics",
+      "Integral Ad Science",
+      "Mantis brand safety",
+      "Prebid / header bidding",
+      "X (Twitter) Ads pixel"
+    ],
+    "dual_pairs_Security": {
+      "accept": 39,
+      "reject": 37,
+      "sites_accept": 12,
+      "sites_reject": 11
+    },
+    "dual_pairs_Ads/analytics": {
+      "accept": 23,
+      "reject": 11,
+      "sites_accept": 11,
+      "sites_reject": 7
+    },
+    "dual_pairs_Other/unknown": {
+      "accept": 16,
+      "reject": 20,
+      "sites_accept": 15,
+      "sites_reject": 18
+    },
+    "dual_tp_domains_median": {
+      "accept": 63.0,
+      "reject": 22.0
+    },
+    "dual_tp_cookies_median": {
+      "accept": 35.0,
+      "reject": 1.0
+    },
+    "dual_tp_domains_accept_gt_reject_sites": 30
+  },
+  "validity": {
+    "signature_vs_tracker_radar": {
+      "domains": 12,
+      "kappa": 0.489,
+      "raw_agreement": 0.667,
+      "disagreements": {
+        "stripe.network": {
+          "signature": "Anti-fraud/security",
+          "tracker_radar": "Functional"
+        },
+        "adobedtm.com": {
+          "signature": "Analytics",
+          "tracker_radar": "Advertising"
+        },
+        "cloudflare.com": {
+          "signature": "Anti-fraud/security",
+          "tracker_radar": "Analytics"
+        },
+        "hs-analytics.net": {
+          "signature": "Analytics",
+          "tracker_radar": "Advertising"
+        }
+      }
+    },
+    "tracker_radar_coverage": {
+      "third_party_script_domains": 59,
+      "found": 54,
+      "with_purpose_category": 18
+    },
+    "webdriver_probe_by_group": {
+      "Security": {
+        "scripts": 142,
+        "read_navigator_webdriver": 132,
+        "rate": 0.93,
+        "ci95": [
+          0.8752,
+          0.9613
+        ]
+      },
+      "Ads/analytics": {
+        "scripts": 65,
+        "read_navigator_webdriver": 44,
+        "rate": 0.677,
+        "ci95": [
+          0.5561,
+          0.778
+        ]
+      },
+      "Other/unknown": {
+        "scripts": 4,
+        "read_navigator_webdriver": 1,
+        "rate": 0.25,
+        "ci95": [
+          0.0456,
+          0.6994
+        ]
+      },
+      "fisher_p_security_vs_ads": 9.243464339083723e-06
+    },
+    "strong_technique_by_group": {
+      "Security": {
+        "scripts": 142,
+        "with_strong_technique": 112,
+        "rate": 0.789
+      },
+      "Ads/analytics": {
+        "scripts": 65,
+        "with_strong_technique": 8,
+        "rate": 0.123
+      },
+      "Other/unknown": {
+        "scripts": 4,
+        "with_strong_technique": 0,
+        "rate": 0.0
+      }
+    },
+    "tracker_radar_fp_score_by_purpose": {
+      "Advertising": 2.35,
+      "Analytics": 2.71,
+      "Anti-fraud/security": 1.76,
+      "CDN": 2.0,
+      "Functional": 3.0,
+      "Unknown": 1.56
+    }
+  },
+  "hidden_first_party_vendors": {
+    "scripts": 96,
+    "sites": 42,
+    "vendors": {
+      "Akamai Bot Manager (sensor, random path)": 53,
+      "Akamai Bot Manager": 10,
+      "Cloudflare Bot Management": 10,
+      "Fastly bot challenge": 5,
+      "Kasada bot defence": 5,
+      "DataDome first-party": 3,
+      "Ad-recovery network (html-load family) (first-party fallback)": 3,
+      "HUMAN (PerimeterX) first-party": 3,
+      "Groupon device profiling": 3,
+      "unattributed": 1
+    },
+    "clusters": [
+      {
+        "template": "/akam/{n}/{hex}",
+        "n_sites": 10,
+        "vendor": "Akamai Bot Manager",
+        "purpose": "Anti-fraud/security"
+      },
+      {
+        "template": "/cdn-cgi/challenge-platform/scripts/jsd/main.js",
+        "n_sites": 5,
+        "vendor": "Cloudflare Bot Management",
+        "purpose": "Anti-fraud/security"
+      },
+      {
+        "template": "/cdn-cgi/challenge-platform/scripts/precursor/main.js",
+        "n_sites": 5,
+        "vendor": "Cloudflare Bot Management",
+        "purpose": "Anti-fraud/security"
+      },
+      {
+        "template": "/tags.js",
+        "n_sites": 5,
+        "vendor": "DataDome first-party",
+        "purpose": "Anti-fraud/security"
+      },
+      {
+        "template": "/{rand}/assets/script.js",
+        "n_sites": 3,
+        "vendor": "Fastly bot challenge",
+        "purpose": "Anti-fraud/security"
+      },
+      {
+        "template": "/{uuid}",
+        "n_sites": 4,
+        "vendor": "Ad-recovery network (html-load family) (first-party fallback)",
+        "purpose": "Advertising"
+      },
+      {
+        "template": "/{uuid}/{uuid}/ips.js",
+        "n_sites": 5,
+        "vendor": "Kasada bot defence",
+        "purpose": "Anti-fraud/security"
+      }
+    ]
+  },
+  "labels": {
+    "scripts": 348,
+    "by_purpose": {
+      "Anti-fraud/security": 149,
+      "Unknown": 128,
+      "Advertising": 51,
+      "Analytics": 14,
+      "CDN": 4,
+      "Functional": 2
+    },
+    "by_confidence": {
+      "Low": 144,
+      "High": 114,
+      "Medium": 90
+    },
+    "by_party": {
+      "Third-party": 143,
+      "First-party": 109,
+      "Hidden first-party vendor": 96
+    }
+  },
+  "annotation_sample": {
+    "n": 80,
+    "strata": {
+      "canvas | Hidden first-party vendor": 12,
+      "attr_enum | Third-party": 11,
+      "webgl | First-party": 9,
+      "canvas | Third-party": 9,
+      "attr_enum | First-party": 8,
+      "webgl | Third-party": 8,
+      "canvas | First-party": 6,
+      "attr_enum | Hidden first-party vendor": 5,
+      "audio | Hidden first-party vendor": 4,
+      "webgl | Hidden first-party vendor": 2,
+      "webrtc | Third-party": 2,
+      "audio | Third-party": 1,
+      "webrtc | Hidden first-party vendor": 1,
+      "canvas_font | Hidden first-party vendor": 1,
+      "webrtc | First-party": 1
+    },
+    "rule_labels_in_sample": {
+      "Anti-fraud/security": 38,
+      "Unknown": 30,
+      "Advertising": 8,
+      "Analytics": 3,
+      "Functional": 1
+    }
+  }
+}

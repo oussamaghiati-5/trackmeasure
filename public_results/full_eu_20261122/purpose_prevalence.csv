@@ -1,0 +1,37 @@
+purpose_primary,party,technique,pairs
+Advertising,Third-party,attr_enum,8
+Advertising,Third-party,webgl,7
+Analytics,Third-party,attr_enum,5
+Analytics,Third-party,audio,2
+Analytics,Third-party,canvas,1
+Analytics,Third-party,webgl,3
+Anti-fraud/security,First-party,attr_enum,4
+Anti-fraud/security,First-party,canvas,10
+Anti-fraud/security,First-party,canvas_font,2
+Anti-fraud/security,First-party,webgl,8
+Anti-fraud/security,First-party,webrtc,2
+Anti-fraud/security,Hidden first-party vendor,attr_enum,20
+Anti-fraud/security,Hidden first-party vendor,audio,10
+Anti-fraud/security,Hidden first-party vendor,canvas,14
+Anti-fraud/security,Hidden first-party vendor,canvas_font,3
+Anti-fraud/security,Hidden first-party vendor,webgl,13
+Anti-fraud/security,Hidden first-party vendor,webrtc,3
+Anti-fraud/security,Third-party,attr_enum,13
+Anti-fraud/security,Third-party,audio,7
+Anti-fraud/security,Third-party,canvas,14
+Anti-fraud/security,Third-party,canvas_font,5
+Anti-fraud/security,Third-party,webgl,15
+Anti-fraud/security,Third-party,webrtc,6
+CDN,Third-party,attr_enum,1
+CDN,Third-party,webgl,1
+Functional,First-party,webgl,1
+Functional,Third-party,webgl,1
+Unknown,First-party,attr_enum,18
+Unknown,First-party,audio,2
+Unknown,First-party,canvas,5
+Unknown,First-party,canvas_font,2
+Unknown,First-party,webgl,22
+Unknown,First-party,webrtc,1
+Unknown,Third-party,attr_enum,2
+Unknown,Third-party,canvas,1
+Unknown,Third-party,webgl,5

@@ -22,7 +22,7 @@ from pathlib import Path
 import pandas as pd
 
 from navigation import measurement_error
-from consent import consent_record
+from consent import combine_outcome, consent_record, cookie_verdict, reassess
 
 PRE_PHASES = {"landing"}
 POST_PHASES = {"after_consent", "home_reload", "subpage"}
@@ -143,9 +143,21 @@ def per_site(d, det):
     pre = det[det.phase_group == "pre"] if len(det) else det
     out["fp_scripts_pre_consent"] = pre.groupby(g)["script_url"].nunique() if len(pre) else 0
     cons = d["visits"][d["visits"].phase == "after_consent"].set_index(g)["consent"]
-    records = cons.map(consent_record).reindex(out.index).map(consent_record)
-    for field in ("method", "action", "outcome", "reason"):
+    # Stored CMP states are re-assessed with the current rules (see consent.reassess).
+    records = cons.map(consent_record).reindex(out.index).map(consent_record).map(reassess)
+    for field in ("method", "action"):
         out["consent_" + field] = records.map(lambda r: r.get(field))
+    out["consent_outcome_live"] = records.map(lambda r: r.get("outcome"))
+    out["consent_outcome_at_crawl"] = records.map(lambda r: r.get("outcome_at_crawl", r.get("outcome")))
+    jars = ({key: dict(zip(c["name"], c["value"])) for key, c in ck.groupby(g)}
+            if len(ck) and {"name", "value"} <= set(ck.columns) else {})
+    cookie = [cookie_verdict(jars.get(key, {})) for key in out.index]
+    out["consent_cookie"] = [v for v, _ in cookie]
+    out["consent_cookie_source"] = ["+".join(s) for _, s in cookie]
+    combined = [combine_outcome(r.get("action"), r.get("outcome"), r.get("reason"), v)
+                for r, (v, _) in zip(records, cookie)]
+    out["consent_outcome"] = [o for o, _ in combined]
+    out["consent_reason"] = [r for _, r in combined]
     out["gpc"] = records.map(lambda r: {True: "enabled", False: "disabled"}.get(r.get("gpc"), "unknown"))
     out["comparison_eligible"] = ((out["ok"] == 1) & (out["measurement_ok"] == 1)
                                   & out["consent_outcome"].isin(["confirmed", "not_requested"])).astype(int)
@@ -153,7 +165,8 @@ def per_site(d, det):
         lambda t: ",".join(map(str, t.get("purposesConsented", []))) if isinstance(t, dict) else t)
     num = [c for c in out.columns if c not in (
         "ok", "error", "seconds", "measurement_error", "consent_method", "consent_action",
-        "consent_outcome", "consent_reason", "gpc", "tcf_purposes")]
+        "consent_outcome", "consent_reason", "consent_outcome_live", "consent_outcome_at_crawl",
+        "consent_cookie", "consent_cookie_source", "gpc", "tcf_purposes")]
     out[num] = out[num].fillna(0).astype(int)
     return out.reset_index()
 
@@ -200,7 +213,10 @@ def main():
     cmp_.to_csv(out / "comparison.csv", index=False)
     coverage = ps.groupby(["run", "consent_action", "consent_outcome"], dropna=False).agg(
         site_runs=("site", "size"), usable_navigation=("measurement_ok", "sum"),
-        eligible_site_runs=("comparison_eligible", "sum")).reset_index()
+        eligible_site_runs=("comparison_eligible", "sum"),
+        live_api_confirmed=("consent_outcome_live", lambda s: int((s == "confirmed").sum())),
+        confirmed_at_crawl=("consent_outcome_at_crawl", lambda s: int((s == "confirmed").sum())),
+    ).reset_index()
     coverage.to_csv(out / "consent_coverage.csv", index=False)
     print("\n== Consent outcomes (all site/runs, including exclusions) ==")
     print(coverage.to_string(index=False))

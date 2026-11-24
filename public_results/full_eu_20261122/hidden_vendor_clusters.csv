@@ -1,0 +1,8 @@
+template,n_sites,n_domains,sites,domains,first_party_members,vendor,purpose
+/akam/{n}/{hex},10,10,"accuweather.com,elcorteingles.es,lowes.com,nbcnews.com,overstock.com,walmart.com,washingtonpost.com,weather.com,zalando.de,zara.com","accuweather.com,elcorteingles.es,lowes.com,nbcnews.com,overstock.com,walmart.com,washingtonpost.com,weather.com,zalando.de,zara.com",10,Akamai Bot Manager,Anti-fraud/security
+/cdn-cgi/challenge-platform/scripts/jsd/main.js,5,5,"cdiscount.com,dictionary.com,fandom.com,gamespot.com,groupon.com","cdiscount.com,dictionary.com,fandom.com,gamespot.com,groupon.com",5,Cloudflare Bot Management,Anti-fraud/security
+/cdn-cgi/challenge-platform/scripts/precursor/main.js,5,5,"apnews.com,medium.com,newegg.com,politico.com,wired.com","apnews.com,medium.com,newegg.com,politico.com,wired.com",5,Cloudflare Bot Management,Anti-fraud/security
+/tags.js,5,4,"airbnb.com,elpais.com,forbes.com,soundcloud.com,wayfair.com","airbnb.com,datadome.co,elpais.com,soundcloud.com",3,DataDome first-party,Anti-fraud/security
+/{rand}/assets/script.js,3,3,"bloomberg.com,newsweek.com,wikihow.com","bloomberg.com,newsweek.com,wikihow.com",3,Fastly bot challenge,Anti-fraud/security
+/{uuid},4,4,"bild.de,mirror.co.uk,tomsguide.com,welt.de","bild.de,mirror.co.uk,tomsguide.com,welt.de",4,Ad-recovery network (html-load family) (first-party fallback),Advertising
+/{uuid}/{uuid}/ips.js,5,5,"chewy.com,costco.com,nike.com,otto.de,twitch.tv","chewy.com,costco.com,nike.com,otto.de,twitchcdn.net",4,Kasada bot defence,Anti-fraud/security

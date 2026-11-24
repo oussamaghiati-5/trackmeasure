@@ -1,5 +1,50 @@
 # Nasrou branch: improvement report
 
+## Update of 24 November 2026: purpose labelling and consent fix
+
+This update follows the review of the EU batch, which found that the detector said *that* scripts fingerprint but not *why*, and that the consent question had been dropped because of verifier bugs. It needs no new crawl. Everything is recomputed from `data/full_eu_20261122/crawl.sqlite`.
+
+**Changes**
+
+- `consent.py` has two fixes and new offline checks:
+  - **Fix 1.** An empty TCF purpose map after a user action is now a rejection, where it used to be "unknown".
+  - **Fix 2.** An acceptance no longer requires every vendor on the Global Vendor List to be true. It needs at least 9 of purposes 1–10 and at least one vendor.
+  - **New: `reassess`.** Re-checks stored CMP states with the current rules.
+  - **New: `decode_tcf` and `cookie_verdict`.** Decode the stored TCF, OneTrust and Cookiebot consent cookies.
+  - **New: `combine_outcome`.** Merges the live-API and cookie evidence.
+
+  `analyze.py` uses all of these, and 8 regression tests were added.
+- `purpose.py` and `scripts/label_purposes.py` label each fingerprinting script with a purpose, using vendor signatures, Tracker Radar categories, page context, hidden-vendor path clusters and vendor cookies. They output a primary and secondary purpose, party, confidence and evidence. 14 tests were added.
+- `scripts/fetch_tracker_radar.py` fetches a pinned Tracker Radar subset, committed in `reference/`.
+- `scripts/purpose_results.py` gives blocker and consent results per purpose with bootstrap intervals, runs validity checks, and writes the 80-script validation sheet. `scripts/purpose_agreement.py` and `docs/annotation_guide.md` cover the two-annotator κ and precision step.
+- The public bundle is refreshed with the purpose tables and without URLs. `PAPER_DRAFT.md` is reframed around the three research questions: who fingerprints and why, does rejecting stop it, and what blockers stop. The README is updated.
+
+**Results (EU batch)**
+
+| | Before | After |
+|---|---|---|
+| Verified rejections / acceptances | 2 / 1 | 36 / 44 (30 sites both ways) |
+| Purpose of baseline fingerprinting pairs | not known | 63% security, 11% ads/analytics, 26% unknown/other |
+| Strong-technique pairs from security vendors | not known | 84% |
+| Pairs from hidden first-party vendors | counted as "first-party" | 27% (Akamai, Cloudflare, Kasada, DataDome, Fastly) |
+| uBlock Origin Lite vs repeat baseline | −27.7 pp overall | ads/analytics −88.0 pp, security −19.8 pp |
+| Verified reject vs repeat baseline | not estimable | +1.7 pp [−6.4, +11.9]: no reduction |
+| Third-party domains after accept vs reject (30 sites) | not estimable | median 63 vs 22 |
+
+**Validity:**
+
+- Vendor signatures and Tracker Radar agree on 8 of 12 shared domains (κ = 0.49). The disagreements are secondary purposes.
+- 93% of security scripts probe `navigator.webdriver`, against 68% of ad/analytics scripts (p < 10⁻⁵).
+
+**Still open:**
+
+- Two annotators must fill the 80-script sheet to get κ and precision per technique and per purpose.
+- The TCF decoder should be checked against IAB's library (`scripts/check_tcf_official.mjs`). It already matches the live API on 20 of 20 visits.
+
+Host unit suite: 90 tests pass.
+
+---
+
 Date: 22 November 2026. Changes are uncommitted.
 
 ## Original project and research problem

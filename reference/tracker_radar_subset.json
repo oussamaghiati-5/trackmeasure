@@ -1,0 +1,5083 @@
+{
+ "_meta": {
+  "fetched": "2026-11-24T14:38:18Z",
+  "licence": "Tracker Radar data: CC BY-NC-SA 4.0, DuckDuckGo. Subset for research use.",
+  "tds_built_with": {
+   "tracker-radar": "9ce6785f8b474c0d182c2f4cc5064288ab30615663a1c33a411894b011a0b470-6253f5a053513120c61ad8221dc30a0e2cdbfeb9",
+   "tracker-surrogates": "2575c6e058fb02420399fe459418319af2fb93a7"
+  },
+  "tds_url": "https://staticcdn.duckduckgo.com/trackerblocking/v6/current/extension-tds.json",
+  "tracker_radar_commit": "a358daca7f84a2d8275f0b8dca460231dd902886",
+  "tracker_radar_url": "https://raw.githubusercontent.com/duckduckgo/tracker-radar/{commit}/domains/{region}/{domain}.json"
+ },
+ "blocklist": {
+  "1rx.io": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "RhythmOne",
+   "prevalence": 0.0546
+  },
+  "2mdn.net": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Google",
+   "prevalence": 0.0616
+  },
+  "33across.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "33Across",
+   "prevalence": 0.0686
+  },
+  "360yield.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Improve Digital",
+   "prevalence": 0.0467
+  },
+  "3lift.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "TripleLift",
+   "prevalence": 0.0752
+  },
+  "4dex.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Adagio",
+   "prevalence": 0.0152
+  },
+  "a-mo.net": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Monet Engine",
+   "prevalence": 0.0474
+  },
+  "a-mx.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Monet Engine",
+   "prevalence": 0.0266
+  },
+  "abtasty.com": {
+   "categories": [
+    "Analytics",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "AB Tasty",
+   "prevalence": 0.00342
+  },
+  "acuityplatform.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "AcuityAds",
+   "prevalence": 0.00769
+  },
+  "ad-delivery.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "easyAd Deutschland GmbH",
+   "prevalence": 0.0236
+  },
+  "ad-score.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Adscore",
+   "prevalence": 0.00237
+  },
+  "ad.gt": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Audigent",
+   "prevalence": 0.0235
+  },
+  "adentifi.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "AdTheorent",
+   "prevalence": 0.0242
+  },
+  "adform.net": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Adform",
+   "prevalence": 0.06
+  },
+  "adgrx.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "AdGear",
+   "prevalence": 0.00705
+  },
+  "adition.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Virtual Minds",
+   "prevalence": 0.00618
+  },
+  "aditude.cloud": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "aditude.cloud",
+   "prevalence": 0.00323
+  },
+  "aditude.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "aditude.io",
+   "prevalence": 0.00409
+  },
+  "adkernel.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Adkernel",
+   "prevalence": 0.0348
+  },
+  "adlightning.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Ad Lightning",
+   "prevalence": 0.00427
+  },
+  "admanmedia.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "ADman Media",
+   "prevalence": 0.0453
+  },
+  "admaster.cc": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "admaster.cc",
+   "prevalence": 0.00509
+  },
+  "admixer.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Admixer",
+   "prevalence": 0.00112
+  },
+  "adnami.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Adnami",
+   "prevalence": 0.00252
+  },
+  "adnxs.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Microsoft",
+   "prevalence": 0.146
+  },
+  "adobedc.net": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Adobe",
+   "prevalence": 0.00696
+  },
+  "adobedtm.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Tag Manager",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Adobe",
+   "prevalence": 0.0259
+  },
+  "adotmob.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "A.Mob",
+   "prevalence": 0.00427
+  },
+  "adroll.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "AdRoll",
+   "prevalence": 0.0168
+  },
+  "ads-twitter.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Twitter",
+   "prevalence": 0.023
+  },
+  "adsafeprotected.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Integral Ad Science",
+   "prevalence": 0.017
+  },
+  "adsrvr.org": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "The Trade Desk",
+   "prevalence": 0.145
+  },
+  "adtelligent.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Adtelligent",
+   "prevalence": 0.0057
+  },
+  "adthrive.com": {
+   "categories": [
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "AdThrive",
+   "prevalence": 0.0233
+  },
+  "adtrafficquality.google": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Google",
+   "prevalence": 0.136
+  },
+  "advolve.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "advolve.io",
+   "prevalence": 0.0101
+  },
+  "affirm.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Affirm",
+   "prevalence": 0.00414
+  },
+  "agkn.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "TransUnion",
+   "prevalence": 0.0347
+  },
+  "akstat.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Akamai",
+   "prevalence": 0.01
+  },
+  "alicdn.com": {
+   "categories": [
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Alibaba",
+   "prevalence": 0.000712
+  },
+  "alocdn.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "TowerData",
+   "prevalence": 0.00638
+  },
+  "amazon-adsystem.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Amazon.com",
+   "prevalence": 0.107
+  },
+  "amazon.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Analytics",
+    "Embedded Content",
+    "Online Payment",
+    "SSO",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Amazon.com",
+   "prevalence": 0.000877
+  },
+  "amplitude.com": {
+   "categories": [
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Amplitude",
+   "prevalence": 0.00909
+  },
+  "ampproject.org": {
+   "categories": [
+    "Advertising",
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Google",
+   "prevalence": 0.00347
+  },
+  "amspbs.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "amspbs.com",
+   "prevalence": 0.00266
+  },
+  "amxrtb.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Monet Engine",
+   "prevalence": 0.0193
+  },
+  "aniview.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "ANIVIEW",
+   "prevalence": 0.0155
+  },
+  "anonm.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "anonm.io",
+   "prevalence": 0.00357
+  },
+  "anonymised.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "anonymised.io",
+   "prevalence": 0.00414
+  },
+  "anyrtb.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "anyrtb.com",
+   "prevalence": 0.0111
+  },
+  "appboycdn.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Braze",
+   "prevalence": 0.00366
+  },
+  "appier.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Appier",
+   "prevalence": 0.0107
+  },
+  "aswpsdkus.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Urban Airship",
+   "prevalence": 0.000986
+  },
+  "atmtd.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "atmtd.com",
+   "prevalence": 0.00202
+  },
+  "attentivemobile.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Attentive Mobile",
+   "prevalence": 0.00536
+  },
+  "attn.tv": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Attentive Mobile",
+   "prevalence": 0.0102
+  },
+  "audioeye.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "AudioEye",
+   "prevalence": 0.00656
+  },
+  "awswaf.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Amazon.com",
+   "prevalence": 0.00634
+  },
+  "ay.delivery": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Assertive Yield",
+   "prevalence": 0.0236
+  },
+  "ayads.co": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Sublime Skinz Labs",
+   "prevalence": 0.000466
+  },
+  "azure.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Microsoft",
+   "prevalence": 0.00995
+  },
+  "batch.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "IMEDIAPP",
+   "prevalence": 0.000281
+  },
+  "beehiiv.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "beehiiv.com",
+   "prevalence": 0.00138
+  },
+  "betweendigital.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "SSP Network",
+   "prevalence": 0.00642
+  },
+  "bfmio.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Beachfront Media",
+   "prevalence": 0.0094
+  },
+  "bidr.io": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Beeswax",
+   "prevalence": 0.0619
+  },
+  "bids.ws": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "bids.ws",
+   "prevalence": 0.00205
+  },
+  "bidswitch.net": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "IPONWEB",
+   "prevalence": 0.0746
+  },
+  "bidtheatre.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "BidTheatre",
+   "prevalence": 0.00383
+  },
+  "bing.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Embedded Content"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Microsoft",
+   "prevalence": 0.116
+  },
+  "blismedia.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Blis",
+   "prevalence": 0.0532
+  },
+  "blueconic.net": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "BlueConic",
+   "prevalence": 0.00318
+  },
+  "boomtrain.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Zeta Global",
+   "prevalence": 0.00246
+  },
+  "bounceexchange.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Bounce Exchange",
+   "prevalence": 0.00505
+  },
+  "branch.io": {
+   "categories": [
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Branch Metrics",
+   "prevalence": 0.0024
+  },
+  "brandmetrics.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Brandmetrics",
+   "prevalence": 0.00266
+  },
+  "btloader.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Blockthrough",
+   "prevalence": 0.0252
+  },
+  "bttrack.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Embedded Content"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Bidtellect",
+   "prevalence": 0.0107
+  },
+  "btttag.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Blue Triangle",
+   "prevalence": 0.000836
+  },
+  "byspotify.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Spotify",
+   "prevalence": 0.00597
+  },
+  "captcha-delivery.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "DataDome",
+   "prevalence": 0.00485
+  },
+  "casalemedia.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Index Exchange",
+   "prevalence": 0.111
+  },
+  "ccgateway.net": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Clicksco FZ",
+   "prevalence": 0.0258
+  },
+  "cdnwidget.com": {
+   "categories": [
+    "Obscure Ownership",
+    "Unknown High Risk Behavior"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "CDNWIDGET.COM",
+   "prevalence": 0.00285
+  },
+  "chartbeat.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Chartbeat",
+   "prevalence": 0.0119
+  },
+  "chartbeat.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Chartbeat",
+   "prevalence": 0.0116
+  },
+  "chocolateplatform.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Vdopia",
+   "prevalence": 0.015
+  },
+  "ck-ie.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "ck-ie.com",
+   "prevalence": 0.00771
+  },
+  "clarity.ms": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Microsoft",
+   "prevalence": 0.0894
+  },
+  "clickagy.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Clickagy",
+   "prevalence": 0.00451
+  },
+  "cloudflare.com": {
+   "categories": [
+    "Analytics",
+    "Content Delivery",
+    "Embedded Content"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Cloudflare",
+   "prevalence": 0.238
+  },
+  "cloudflareinsights.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Cloudflare",
+   "prevalence": 0.221
+  },
+  "cnn.com": {
+   "categories": [
+    "Embedded Content"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Warner Bros. Discovery",
+   "prevalence": 0.000123
+  },
+  "cognitivlabs.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Cognitiv",
+   "prevalence": 0.0173
+  },
+  "company-target.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Obscure Ownership",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Demandbase",
+   "prevalence": 0.0092
+  },
+  "condenastdigital.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Conde Nast Publications",
+   "prevalence": 0.000226
+  },
+  "confiant-integrations.net": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Confiant",
+   "prevalence": 0.0131
+  },
+  "connatix.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Connatix",
+   "prevalence": 0.0243
+  },
+  "connectad.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "ConnectAd",
+   "prevalence": 0.00941
+  },
+  "contentsquare.net": {
+   "categories": [
+    "Action Pixels",
+    "Analytics",
+    "Audience Measurement",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "ContentSquare",
+   "prevalence": 0.00736
+  },
+  "contextweb.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Pulsepoint",
+   "prevalence": 0.0481
+  },
+  "cootlogix.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Vidazoo",
+   "prevalence": 0.0247
+  },
+  "copper6.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "copper6.com",
+   "prevalence": 0.0113
+  },
+  "crazyegg.com": {
+   "categories": [
+    "Analytics",
+    "Audience Measurement",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Crazy Egg",
+   "prevalence": 0.0112
+  },
+  "crcldu.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "crcldu.com",
+   "prevalence": 0.00353
+  },
+  "creative-serving.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Platform161",
+   "prevalence": 0.00696
+  },
+  "creativecdn.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "RTB House",
+   "prevalence": 0.0724
+  },
+  "criteo.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Criteo",
+   "prevalence": 0.108
+  },
+  "criteo.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Criteo",
+   "prevalence": 0.0438
+  },
+  "crwdcntrl.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Lotame Solutions",
+   "prevalence": 0.0972
+  },
+  "ctnsnet.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Crimtan Holdings",
+   "prevalence": 0.0121
+  },
+  "cxense.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Piano Software",
+   "prevalence": 0.00399
+  },
+  "dailymotion.com": {
+   "categories": [
+    "Content Delivery",
+    "Embedded Content"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Dailymotion",
+   "prevalence": 0.000705
+  },
+  "datadoghq-browser-agent.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Datadog",
+   "prevalence": 0.00923
+  },
+  "datagrail.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "datagrail.io",
+   "prevalence": 0.00105
+  },
+  "deepintent.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "DeepIntent",
+   "prevalence": 0.0397
+  },
+  "demdex.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Adobe",
+   "prevalence": 0.088
+  },
+  "dianomi.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Dianomi",
+   "prevalence": 0.000349
+  },
+  "digitalaudience.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Social Audience",
+   "prevalence": 0.0152
+  },
+  "disqus.com": {
+   "categories": [
+    "Embedded Content",
+    "Federated Login",
+    "Social - Comment"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Disqus",
+   "prevalence": 0.0296
+  },
+  "dotmetrics.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Dotmetrics",
+   "prevalence": 0.00239
+  },
+  "dotomi.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Conversant",
+   "prevalence": 0.0583
+  },
+  "doubleclick.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Google Ads (Google)",
+   "prevalence": 0.446
+  },
+  "doubleverify.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "DoubleVerify",
+   "prevalence": 0.0161
+  },
+  "dv.tech": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "dv.tech",
+   "prevalence": 0.00746
+  },
+  "dwin1.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Awin",
+   "prevalence": 0.00618
+  },
+  "dxtech.ai": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "dxtech.ai",
+   "prevalence": 0.00607
+  },
+  "dynatrace.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Dynatrace",
+   "prevalence": 0.00401
+  },
+  "e-planning.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Teroa",
+   "prevalence": 0.00174
+  },
+  "ebaystatic.com": {
+   "categories": [
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "eBay",
+   "prevalence": 0.00013
+  },
+  "ebxcdn.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "ebxcdn.com",
+   "prevalence": 0.00423
+  },
+  "ensighten.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Ensighten",
+   "prevalence": 0.00234
+  },
+  "eskimi.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "eskimi.com",
+   "prevalence": 0.0195
+  },
+  "everesttech.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Adobe",
+   "prevalence": 0.0612
+  },
+  "exelator.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "The Nielsen Company",
+   "prevalence": 0.0174
+  },
+  "exponea.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Bloomreach",
+   "prevalence": 0.000836
+  },
+  "eyeota.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "eyeota",
+   "prevalence": 0.0305
+  },
+  "facebook.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Badge",
+    "Embedded Content",
+    "Federated Login",
+    "Social - Comment",
+    "Social - Share",
+    "Social Network"
+   ],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Facebook",
+   "prevalence": 0.209
+  },
+  "facebook.net": {
+   "categories": [
+    "Action Pixels",
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Badge",
+    "Embedded Content",
+    "Federated Login",
+    "Social - Comment",
+    "Social - Share",
+    "Social Network"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Facebook",
+   "prevalence": 0.183
+  },
+  "fastclick.net": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Conversant",
+   "prevalence": 0.0312
+  },
+  "flashtalking.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Embedded Content",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Mediaocean",
+   "prevalence": 0.0102
+  },
+  "fontawesome.com": {
+   "categories": [
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Fonticons",
+   "prevalence": 0.0392
+  },
+  "fout.jp": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "FreakOut Holdings",
+   "prevalence": 0.00121
+  },
+  "ftstatic.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Mediaocean",
+   "prevalence": 0.00261
+  },
+  "fullstory.com": {
+   "categories": [
+    "Analytics",
+    "Session Replay"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "FullStory",
+   "prevalence": 0.00469
+  },
+  "fuseplatform.net": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "fuseplatform.net",
+   "prevalence": 0.0025
+  },
+  "fwmrm.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "FreeWheel",
+   "prevalence": 0.0439
+  },
+  "gammaplatform.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "gammaplatform.com",
+   "prevalence": 0.0113
+  },
+  "geoedge.be": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Five Media",
+   "prevalence": 0.00263
+  },
+  "go-mpulse.net": {
+   "categories": [
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Akamai",
+   "prevalence": 0.0191
+  },
+  "google-analytics.com": {
+   "categories": [
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Google Analytics (Google)",
+   "prevalence": 0.349
+  },
+  "google.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Content Delivery",
+    "Online Payment"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Google",
+   "prevalence": 0.453
+  },
+  "googleadservices.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Google Ads (Google)",
+   "prevalence": 0.051
+  },
+  "googlesyndication.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Google Ads (Google)",
+   "prevalence": 0.212
+  },
+  "googletagmanager.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Tag Manager",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Google Ads (Google)",
+   "prevalence": 0.575
+  },
+  "googletagservices.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Google Ads (Google)",
+   "prevalence": 0.0297
+  },
+  "greylabeldelivery.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "greylabeldelivery.com",
+   "prevalence": 0.00121
+  },
+  "gstatic.com": {
+   "categories": [
+    "Content Delivery",
+    "Embedded Content"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Google",
+   "prevalence": 0.401
+  },
+  "gumgum.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "GumGum",
+   "prevalence": 0.0522
+  },
+  "hadronid.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "hadronid.net",
+   "prevalence": 0.0209
+  },
+  "hotjar.com": {
+   "categories": [
+    "Analytics",
+    "Audience Measurement",
+    "Session Replay"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Hotjar",
+   "prevalence": 0.0308
+  },
+  "hotjar.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Hotjar",
+   "prevalence": 0.0108
+  },
+  "hs-analytics.net": {
+   "categories": [
+    "Action Pixels",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "HubSpot",
+   "prevalence": 0.0176
+  },
+  "hs-banner.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "HubSpot",
+   "prevalence": 0.0176
+  },
+  "hs-scripts.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Content Delivery",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "HubSpot",
+   "prevalence": 0.0173
+  },
+  "htlbid.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "htlbid.com",
+   "prevalence": 0.00381
+  },
+  "html-load.cc": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "html-load.cc",
+   "prevalence": 0.00216
+  },
+  "html-load.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "html-load.com",
+   "prevalence": 0.00318
+  },
+  "hubspot.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Embedded Content",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "HubSpot",
+   "prevalence": 0.0172
+  },
+  "id5-sync.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "ID5",
+   "prevalence": 0.0979
+  },
+  "igodigital.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Salesforce.com",
+   "prevalence": 0.00307
+  },
+  "im-apps.net": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Intimate Merger",
+   "prevalence": 0.00981
+  },
+  "impactcdn.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Impact",
+   "prevalence": 0.00677
+  },
+  "impactradius-event.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Impact",
+   "prevalence": 0.00285
+  },
+  "imrworldwide.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "The Nielsen Company",
+   "prevalence": 0.025
+  },
+  "indexww.com": {
+   "categories": [
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Index Exchange",
+   "prevalence": 0.0246
+  },
+  "infolinks.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Infolink Media",
+   "prevalence": 0.00598
+  },
+  "ingage.tech": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Insticator",
+   "prevalence": 0.029
+  },
+  "inmobi-choice.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "inmobi-choice.io",
+   "prevalence": 0.00624
+  },
+  "inmobi.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "InMobi",
+   "prevalence": 0.0417
+  },
+  "instagram.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Embedded Content",
+    "Social - Share",
+    "Social Network"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Instagram (Facebook)",
+   "prevalence": 0.00516
+  },
+  "intentiq.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Almondnet Group",
+   "prevalence": 0.0337
+  },
+  "ipredictive.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Adelphic",
+   "prevalence": 0.0506
+  },
+  "iqm.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "iqm.com",
+   "prevalence": 0.00899
+  },
+  "ispot.tv": {
+   "categories": [
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "iSpot.tv",
+   "prevalence": 0.00266
+  },
+  "iteratehq.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Iterate",
+   "prevalence": 0.000178
+  },
+  "jsdelivr.net": {
+   "categories": [
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Prospect One",
+   "prevalence": 0.124
+  },
+  "k5a.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Kilkaya",
+   "prevalence": 0.000733
+  },
+  "kargo.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Kargo",
+   "prevalence": 0.038
+  },
+  "ketchcdn.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Ketch",
+   "prevalence": 0.00457
+  },
+  "kueezrtb.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "kueezrtb.com",
+   "prevalence": 0.00894
+  },
+  "liadm.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "LiveIntent",
+   "prevalence": 0.0755
+  },
+  "licdn.com": {
+   "categories": [
+    "Analytics",
+    "Audience Measurement",
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Microsoft",
+   "prevalence": 0.0373
+  },
+  "liftdsp.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "liftdsp.com",
+   "prevalence": 0.00531
+  },
+  "lightboxcdn.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Content Delivery",
+    "Embedded Content",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Digioh",
+   "prevalence": 0.00483
+  },
+  "lijit.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Sovrn Holdings",
+   "prevalence": 0.0656
+  },
+  "linkedin.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Embedded Content",
+    "Social - Share",
+    "Social Network"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Microsoft",
+   "prevalence": 0.105
+  },
+  "linksynergy.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Rakuten",
+   "prevalence": 0.000822
+  },
+  "litix.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Mux",
+   "prevalence": 0.000308
+  },
+  "lngtd.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Longitude Ads",
+   "prevalence": 0.000541
+  },
+  "loopme.me": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Brightcom",
+   "prevalence": 0.0423
+  },
+  "mantis-intelligence.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "mantis-intelligence.com",
+   "prevalence": 0.00428
+  },
+  "marketo.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Embedded Content",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Adobe",
+   "prevalence": 0.00536
+  },
+  "marphezis.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Brightcom",
+   "prevalence": 0.00708
+  },
+  "mathtag.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "MediaMath",
+   "prevalence": 0.019
+  },
+  "mczbf.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Conversant",
+   "prevalence": 0.00357
+  },
+  "medallia.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Medallia",
+   "prevalence": 0.00333
+  },
+  "media.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Media.net Advertising",
+   "prevalence": 0.0614
+  },
+  "media6degrees.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Dstillery",
+   "prevalence": 0.0148
+  },
+  "mediago.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Baidu",
+   "prevalence": 0.0069
+  },
+  "mediarithmics.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Embedded Content",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "mediarithmics",
+   "prevalence": 0.00222
+  },
+  "mediavine.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Mediavine",
+   "prevalence": 0.0228
+  },
+  "mfadsrvr.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "IPONWEB",
+   "prevalence": 0.0372
+  },
+  "mgaru.dev": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "mgaru.dev",
+   "prevalence": 0.00578
+  },
+  "mgid.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "MGID",
+   "prevalence": 0.0122
+  },
+  "micpn.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Movable Ink",
+   "prevalence": 0.00142
+  },
+  "minutemedia-prebid.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "minutemedia-prebid.com",
+   "prevalence": 0.0171
+  },
+  "missena.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "missena.io",
+   "prevalence": 0.00171
+  },
+  "ml314.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Session Replay"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Bombora",
+   "prevalence": 0.0184
+  },
+  "moloco.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Moloco",
+   "prevalence": 0.00644
+  },
+  "mookie1.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "WPP",
+   "prevalence": 0.00411
+  },
+  "mrf.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Marfeel",
+   "prevalence": 0.00749
+  },
+  "mxpnl.com": {
+   "categories": [
+    "Action Pixels",
+    "Analytics",
+    "Audience Measurement",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Mixpanel",
+   "prevalence": 0.00328
+  },
+  "mygaru.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "mygaru.com",
+   "prevalence": 0.0059
+  },
+  "naver.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Naver",
+   "prevalence": 0.000473
+  },
+  "nc0.co": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Ensighten",
+   "prevalence": 0.00112
+  },
+  "newrelic.com": {
+   "categories": [
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "New Relic",
+   "prevalence": 0.0227
+  },
+  "newscgp.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Nationwide News",
+   "prevalence": 0.000103
+  },
+  "newsroom.bi": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "newsroom.bi",
+   "prevalence": 0.0069
+  },
+  "nextdoor.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Nextdoor",
+   "prevalence": 0.00345
+  },
+  "nextmillmedia.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Next Millennium",
+   "prevalence": 0.00308
+  },
+  "nexx360.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "nexx360.io",
+   "prevalence": 0.00323
+  },
+  "npttech.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Embedded Content",
+    "SSO",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Piano Software",
+   "prevalence": 0.0021
+  },
+  "nr-data.net": {
+   "categories": [
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "New Relic",
+   "prevalence": 0.0228
+  },
+  "nrich.ai": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "N.Rich",
+   "prevalence": 0.00342
+  },
+  "ntv.io": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Nativo",
+   "prevalence": 0.00265
+  },
+  "nytrng.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Voltn",
+   "prevalence": 0.00342
+  },
+  "ocmthood.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "ocmthood.com",
+   "prevalence": 0.00221
+  },
+  "ojrq.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Impact",
+   "prevalence": 0.00602
+  },
+  "omnitagjs.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Adyoulike",
+   "prevalence": 0.0315
+  },
+  "omtrdc.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Adobe",
+   "prevalence": 0.0176
+  },
+  "onaudience.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "OnAudience",
+   "prevalence": 0.0325
+  },
+  "onesignal.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Analytics",
+    "Embedded Content",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "OneSignal",
+   "prevalence": 0.0083
+  },
+  "onetag-sys.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "OneTag",
+   "prevalence": 0.0503
+  },
+  "opecloud.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "TripleLift",
+   "prevalence": 0.00623
+  },
+  "openwebmp.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "openwebmp.com",
+   "prevalence": 0.013
+  },
+  "openx.net": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "OpenX",
+   "prevalence": 0.0968
+  },
+  "openxcdn.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "OpenX",
+   "prevalence": 0.0323
+  },
+  "opera.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Opera Software",
+   "prevalence": 0.0482
+  },
+  "optable.co": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "optable.co",
+   "prevalence": 0.0374
+  },
+  "opti-digital.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Opti Digital",
+   "prevalence": 0.00202
+  },
+  "optidigital.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Opti Digital",
+   "prevalence": 0.00364
+  },
+  "optimizely.com": {
+   "categories": [
+    "Action Pixels",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Optimizely",
+   "prevalence": 0.00905
+  },
+  "ortb.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "ortb.net",
+   "prevalence": 0.00722
+  },
+  "osano.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Osano",
+   "prevalence": 0.00967
+  },
+  "outbrain.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Outbrain",
+   "prevalence": 0.055
+  },
+  "outbrainimg.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Outbrain",
+   "prevalence": 0.00286
+  },
+  "p-n.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Pushly",
+   "prevalence": 0.00386
+  },
+  "p7cloud.net": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "p7cloud.net",
+   "prevalence": 0.00485
+  },
+  "parsely.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Parsely",
+   "prevalence": 0.0108
+  },
+  "pbstck.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Pubstack",
+   "prevalence": 0.0044
+  },
+  "pdst.fm": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Podsights",
+   "prevalence": 0.00223
+  },
+  "permutive.app": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Permutive",
+   "prevalence": 0.0059
+  },
+  "permutive.com": {
+   "categories": [
+    "Analytics",
+    "Audience Measurement",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Permutive",
+   "prevalence": 0.00457
+  },
+  "piano.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Piano Software",
+   "prevalence": 0.00477
+  },
+  "pinklion.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "pinklion.io",
+   "prevalence": 0.00745
+  },
+  "pinterest.com": {
+   "categories": [
+    "Content Delivery",
+    "Embedded Content",
+    "Social - Share"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Pinterest",
+   "prevalence": 0.0444
+  },
+  "playdigo.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "playdigo.com",
+   "prevalence": 0.00731
+  },
+  "pmbmonetize.live": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "pmbmonetize.live",
+   "prevalence": 0.00853
+  },
+  "postrelease.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Nativo",
+   "prevalence": 0.0513
+  },
+  "presage.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Ogury",
+   "prevalence": 0.0359
+  },
+  "primis.tech": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "McCann",
+   "prevalence": 0.0174
+  },
+  "privacy-center.org": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Didomi",
+   "prevalence": 0.00631
+  },
+  "prmutv.co": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Permutive",
+   "prevalence": 0.00266
+  },
+  "programmaticx.ai": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "programmaticx.ai",
+   "prevalence": 0.00619
+  },
+  "pub.network": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Freestar",
+   "prevalence": 0.00548
+  },
+  "pubmatic.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "PubMatic",
+   "prevalence": 0.106
+  },
+  "pxf.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Impact",
+   "prevalence": 0.00338
+  },
+  "qualtrics.com": {
+   "categories": [
+    "Analytics",
+    "Audience Measurement",
+    "Embedded Content",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Silver Lake",
+   "prevalence": 0.0101
+  },
+  "quantcount.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Quantcast",
+   "prevalence": 0.0157
+  },
+  "quantserve.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Quantcast",
+   "prevalence": 0.0432
+  },
+  "quantummetric.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Quantum Metric",
+   "prevalence": 0.00413
+  },
+  "rakuten.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Rakuten",
+   "prevalence": 0.00442
+  },
+  "rapidedge.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "rapidedge.io",
+   "prevalence": 0.0247
+  },
+  "raptivecdn.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "raptivecdn.com",
+   "prevalence": 0.0231
+  },
+  "reddit.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Badge",
+    "Embedded Content",
+    "Social - Comment",
+    "Social - Share",
+    "Social Network",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Reddit",
+   "prevalence": 0.03
+  },
+  "redditstatic.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Reddit",
+   "prevalence": 0.0297
+  },
+  "reson8.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Resonate Networks",
+   "prevalence": 0.00251
+  },
+  "rezync.com": {
+   "categories": [
+    "Ad Motivated Tracking"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Zeta Global",
+   "prevalence": 0.0245
+  },
+  "rfihub.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Zeta Global",
+   "prevalence": 0.0429
+  },
+  "richaudience.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Rich Audience",
+   "prevalence": 0.0333
+  },
+  "rkdms.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Merkle",
+   "prevalence": 0.026
+  },
+  "rlcdn.com": {
+   "categories": [
+    "Ad Fraud",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "LiveRamp",
+   "prevalence": 0.11
+  },
+  "rmtag.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Rakuten",
+   "prevalence": 0.000623
+  },
+  "roeye.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "roeye.com",
+   "prevalence": 0.005
+  },
+  "roeyecdn.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "roeyecdn.com",
+   "prevalence": 0.00531
+  },
+  "rokt.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Rokt",
+   "prevalence": 0.00131
+  },
+  "rqtrk.eu": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Roq.ad",
+   "prevalence": 0.0139
+  },
+  "rtb.mx": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "rtb.mx",
+   "prevalence": 0.00592
+  },
+  "rtbwise.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "rtbwise.com",
+   "prevalence": 0.0193
+  },
+  "rubiconproject.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Magnite",
+   "prevalence": 0.122
+  },
+  "sail-horizon.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Embedded Content",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "CM Group",
+   "prevalence": 0.00384
+  },
+  "samplicio.us": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Lucid Holdings",
+   "prevalence": 0.00336
+  },
+  "sascdn.com": {
+   "categories": [
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Smartadserver",
+   "prevalence": 0.00629
+  },
+  "sc-static.net": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Embedded Content"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Snap",
+   "prevalence": 0.0157
+  },
+  "scene7.com": {
+   "categories": [
+    "Advertising",
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Adobe",
+   "prevalence": 0.00373
+  },
+  "scorecardresearch.com": {
+   "categories": [
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "comScore",
+   "prevalence": 0.0584
+  },
+  "script.ac": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Human Security",
+   "prevalence": 0.00533
+  },
+  "securedvisit.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "4Cite Marketing",
+   "prevalence": 0.00539
+  },
+  "seedtag.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "SEEDTAG ADVERTISING",
+   "prevalence": 0.0407
+  },
+  "segment.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Segment.io",
+   "prevalence": 0.00816
+  },
+  "segment.io": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Segment.io",
+   "prevalence": 0.00614
+  },
+  "semasio.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Semasio",
+   "prevalence": 0.00953
+  },
+  "sentry.io": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Functional Software",
+   "prevalence": 0.0176
+  },
+  "servenobid.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Prebid.org",
+   "prevalence": 0.012
+  },
+  "sharethis.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Embedded Content",
+    "Social - Share",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "ShareThis",
+   "prevalence": 0.0137
+  },
+  "sharethrough.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Sharethrough",
+   "prevalence": 0.0659
+  },
+  "shop.pe": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Add Shoppers",
+   "prevalence": 0.00331
+  },
+  "signifyd.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Signifyd",
+   "prevalence": 0.0023
+  },
+  "simpli.fi": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Simplifi Holdings",
+   "prevalence": 0.0519
+  },
+  "site.com": {
+   "categories": [
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Salesforce.com",
+   "prevalence": 0.00471
+  },
+  "sitescout.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Centro",
+   "prevalence": 0.054
+  },
+  "sjv.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Impact",
+   "prevalence": 0.00275
+  },
+  "skimresources.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Skimbit",
+   "prevalence": 0.00414
+  },
+  "smaato.net": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Smaato",
+   "prevalence": 0.0372
+  },
+  "smartadserver.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Smartadserver",
+   "prevalence": 0.0752
+  },
+  "smilewanted.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "smilewanted.com",
+   "prevalence": 0.0194
+  },
+  "snapchat.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Social Network"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Snap",
+   "prevalence": 0.0153
+  },
+  "sonobi.com": {
+   "categories": [
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Sonobi",
+   "prevalence": 0.0435
+  },
+  "sparteo.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "sparteo.com",
+   "prevalence": 0.0108
+  },
+  "springserve.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "SpringServe",
+   "prevalence": 0.0133
+  },
+  "stackadapt.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Collective Roll",
+   "prevalence": 0.0781
+  },
+  "stay22.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "stay22.com",
+   "prevalence": 0.00502
+  },
+  "stripe.com": {
+   "categories": [
+    "Content Delivery",
+    "Embedded Content",
+    "Online Payment"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Stripe",
+   "prevalence": 0.0103
+  },
+  "syncingbridge.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "syncingbridge.com",
+   "prevalence": 0.0268
+  },
+  "t.co": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Badge",
+    "Embedded Content",
+    "Federated Login",
+    "Social - Share",
+    "Social Network"
+   ],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Twitter",
+   "prevalence": 0.0226
+  },
+  "t13.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Freestar",
+   "prevalence": 0.00507
+  },
+  "taboola.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Taboola",
+   "prevalence": 0.0328
+  },
+  "tapad.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Tapad",
+   "prevalence": 0.0973
+  },
+  "tappx.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Tappx",
+   "prevalence": 0.00321
+  },
+  "teads-xo.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "teads-xo.com",
+   "prevalence": 0.00146
+  },
+  "teads.tv": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Teads",
+   "prevalence": 0.0486
+  },
+  "tealiumiq.com": {
+   "categories": [
+    "Action Pixels",
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Tealium",
+   "prevalence": 0.00377
+  },
+  "temu.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Pinduoduo",
+   "prevalence": 0.0555
+  },
+  "the-ozone-project.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "The Ozone Project",
+   "prevalence": 0.00561
+  },
+  "thrtle.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "Throtle",
+   "prevalence": 0.0232
+  },
+  "tiktok.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "ByteDance",
+   "prevalence": 0.0466
+  },
+  "tiktokw.us": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "ByteDance",
+   "prevalence": 0.0406
+  },
+  "tinypass.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Embedded Content",
+    "SSO",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Piano Software",
+   "prevalence": 0.00302
+  },
+  "tiqcdn.com": {
+   "categories": [
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Tag Manager",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Tealium",
+   "prevalence": 0.00933
+  },
+  "travelaudience.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "travelaudience.com",
+   "prevalence": 0.00533
+  },
+  "treasuredata.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Treasure Data",
+   "prevalence": 0.00231
+  },
+  "tremorhub.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Telaria",
+   "prevalence": 0.0105
+  },
+  "tribalfusion.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 3,
+   "owner": "Exponential Interactive",
+   "prevalence": 0.016
+  },
+  "tru.am": {
+   "categories": [
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "trueAnthem",
+   "prevalence": 0.00182
+  },
+  "trustedstack.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "trustedstack.com",
+   "prevalence": 0.029
+  },
+  "turn.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Amobee",
+   "prevalence": 0.0661
+  },
+  "tvpixel.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Data Plus Math",
+   "prevalence": 0.00114
+  },
+  "tvsquared.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "TVSquared",
+   "prevalence": 0.00621
+  },
+  "twitch.tv": {
+   "categories": [
+    "Content Delivery",
+    "Embedded Content"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Amazon.com",
+   "prevalence": 0.000288
+  },
+  "twitchcdn.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Amazon.com",
+   "prevalence": 0.00013
+  },
+  "twitter.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Embedded Content",
+    "Federated Login",
+    "Social - Comment",
+    "Social - Share",
+    "Social Network"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Twitter",
+   "prevalence": 0.0371
+  },
+  "uidapi.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "The Trade Desk",
+   "prevalence": 0.0344
+  },
+  "undertone.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Undertone Networks",
+   "prevalence": 0.0233
+  },
+  "unpkg.com": {
+   "categories": [
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "unpkg",
+   "prevalence": 0.0385
+  },
+  "unrulymedia.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Audience Measurement",
+    "Embedded Content",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Unruly Group",
+   "prevalence": 0.00817
+  },
+  "usbrowserspeed.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "usbrowserspeed.com",
+   "prevalence": 0.00838
+  },
+  "verint-cdn.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Verint Systems",
+   "prevalence": 0.000781
+  },
+  "viafoura.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "Viafoura",
+   "prevalence": 0.00162
+  },
+  "vistarsagency.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "vistarsagency.com",
+   "prevalence": 0.01
+  },
+  "visualwebsiteoptimizer.com": {
+   "categories": [
+    "Analytics",
+    "Session Replay",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "Wingify",
+   "prevalence": 0.0113
+  },
+  "vrtcal.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "VRTCAL Markets",
+   "prevalence": 0.000589
+  },
+  "webcontentassessor.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 2,
+   "owner": "The Media Trust",
+   "prevalence": 0.00806
+  },
+  "wknd.ai": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "wknd.ai",
+   "prevalence": 0.00433
+  },
+  "wp.com": {
+   "categories": [
+    "Analytics",
+    "Content Delivery",
+    "Embedded Content"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Automattic",
+   "prevalence": 0.0276
+  },
+  "wp.pl": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Wirtualna Polska",
+   "prevalence": 0.00407
+  },
+  "x.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Twitter",
+   "prevalence": 0.00155
+  },
+  "yahoo.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Federated Login"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Verizon Media",
+   "prevalence": 0.0984
+  },
+  "yellowblue.io": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 0,
+   "owner": "Unity (ironSource)",
+   "prevalence": 0.0347
+  },
+  "yieldmo.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "YieldMo",
+   "prevalence": 0.0485
+  },
+  "yimg.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Content Delivery"
+   ],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Verizon Media",
+   "prevalence": 0.00914
+  },
+  "yimg.jp": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "default": "ignore",
+   "fingerprinting": 2,
+   "owner": "LY-Corporation",
+   "prevalence": 0.00442
+  },
+  "ymmobi.com": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 0,
+   "owner": "ymmobi.com",
+   "prevalence": 0.0192
+  },
+  "youtube.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Content Delivery",
+    "Embedded Content"
+   ],
+   "default": "ignore",
+   "fingerprinting": 3,
+   "owner": "Youtube (Google)",
+   "prevalence": 0.0485
+  },
+  "zemanta.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing"
+   ],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Outbrain",
+   "prevalence": 0.0171
+  },
+  "zeotap.com": {
+   "categories": [],
+   "default": "block",
+   "fingerprinting": 1,
+   "owner": "Zeotap",
+   "prevalence": 0.00255
+  },
+  "zetaglobal.net": {
+   "categories": [],
+   "default": "ignore",
+   "fingerprinting": 1,
+   "owner": "Zeta Global",
+   "prevalence": 0.00234
+  }
+ },
+ "owners": {
+  "1rx.io": "RhythmOne",
+  "2mdn.net": "Google LLC",
+  "33across.com": "33Across, Inc.",
+  "360yield.com": "Improve Digital BV",
+  "3lift.com": "TripleLift",
+  "4dex.io": "Adagio",
+  "a-mo.net": "Monet Engine Inc.",
+  "a-mx.com": "Monet Engine Inc.",
+  "a2z.com": "Amazon Technologies, Inc.",
+  "abtasty.com": "AB Tasty",
+  "acuityplatform.com": "AcuityAds",
+  "ad-delivery.net": "easyAd Deutschland GmbH",
+  "ad-score.com": "Adscore Technologies DMCC",
+  "ad.gt": "Audigent",
+  "addthis.com": "Oracle Corporation",
+  "adentifi.com": "AdTheorent Inc",
+  "adform.net": "Adform A/S",
+  "adgrx.com": "AdGear Technologies Inc.",
+  "adition.com": "Virtual Minds AG",
+  "aditude.cloud": "aditude.cloud",
+  "aditude.io": "aditude.io",
+  "adjust.com": "AppLovin Corporation",
+  "adkernel.com": "Adkernel, LLC",
+  "adlightning.com": "Ad Lightning, Inc.",
+  "admanmedia.com": "ADman Media",
+  "admantx.com": "SSL Corporation",
+  "admaster.cc": "admaster.cc",
+  "admixer.net": "Admixer Technologies",
+  "adnami.io": "Adnami ApS",
+  "adnxs-simple.com": "Microsoft Corporation",
+  "adnxs.com": "Microsoft Corporation",
+  "adnxs.net": "Microsoft Corporation",
+  "adobe.com": "Adobe Inc.",
+  "adobedc.net": "Adobe Inc.",
+  "adobedtm.com": "Adobe Inc.",
+  "adotmob.com": "A.Mob SAS",
+  "adroll.com": "AdRoll, Inc.",
+  "ads-twitter.com": "Twitter, Inc.",
+  "adsafeprotected.com": "Integral Ad Science, Inc.",
+  "adsrvr.org": "The Trade Desk Inc",
+  "adtelligent.com": "Adtelligent Inc.",
+  "adthrive.com": "AdThrive, LLC",
+  "adtrafficquality.google": "Google LLC",
+  "advertising.com": "Yahoo Inc.",
+  "advolve.io": "advolve.io",
+  "affirm.com": "Affirm Holdings, Inc.",
+  "agkn.com": "TransUnion LLC",
+  "akamai.com": "Akamai Technologies",
+  "akamaihd.net": "Akamai Technologies",
+  "akamaized.net": "Akamai Technologies",
+  "akstat.io": "Akamai Technologies",
+  "aliapp.org": "Alibaba Group",
+  "alibaba-inc.com": "Alibaba Group",
+  "alibaba.com": "Alibaba Group",
+  "alicdn.com": "Alibaba Group",
+  "aliexpress-media.com": "Alibaba Group",
+  "aliexpress.com": "Alibaba Group",
+  "aliyun.com": "Alibaba Group",
+  "alocdn.com": "TowerData, Inc.",
+  "amazon-adsystem.com": "Amazon Technologies, Inc.",
+  "amazon.co.uk": "Amazon Technologies, Inc.",
+  "amazon.com": "Amazon Technologies, Inc.",
+  "amazon.de": "Amazon Technologies, Inc.",
+  "amazon.dev": "Amazon Technologies, Inc.",
+  "amazon.fr": "Amazon Technologies, Inc.",
+  "amazonaws.com": "Amazon Technologies, Inc.",
+  "amplitude.com": "Amplitude",
+  "ampproject.org": "Google LLC",
+  "amspbs.com": "amspbs.com",
+  "amxrtb.com": "Monet Engine Inc.",
+  "aniview.com": "ANIVIEW LTD",
+  "anonm.io": "anonm.io",
+  "anonymised.io": "anonymised.io",
+  "anyrtb.com": "anyrtb.com",
+  "app.link": "Branch Metrics, Inc.",
+  "appboycdn.com": "Braze, Inc.",
+  "appier.net": "Appier Group, Inc.",
+  "aswpsdkus.com": "Urban Airship, Inc.",
+  "atmtd.com": "atmtd.com",
+  "attentivemobile.com": "Attentive Mobile",
+  "attn.tv": "Attentive Mobile",
+  "audioeye.com": "AudioEye, Inc.",
+  "awin1.com": "Awin AG",
+  "awswaf.com": "Amazon Technologies, Inc.",
+  "ay.delivery": "Assertive Yield B.V.",
+  "ayads.co": "Sublime Skinz Labs",
+  "azure.com": "Microsoft Corporation",
+  "azureedge.net": "Microsoft Corporation",
+  "batch.com": "IMEDIAPP SA",
+  "beehiiv.com": "beehiiv.com",
+  "betweendigital.com": "SSP Network Ltd",
+  "bfmio.com": "Beachfront Media LLC",
+  "bidr.io": "Beeswax",
+  "bids.ws": "bids.ws",
+  "bidswitch.net": "IPONWEB GmbH",
+  "bidtheatre.com": "BidTheatre AB",
+  "bing.com": "Microsoft Corporation",
+  "bing.net": "Microsoft Corporation",
+  "blismedia.com": "Blis Global Ltd",
+  "blueconic.net": "BlueConic, Inc.",
+  "boltdns.net": "Brightcove, Inc.",
+  "booking.com": "Booking Holdings Inc.",
+  "boomtrain.com": "Zeta Global",
+  "bounceexchange.com": "Bounce Exchange",
+  "bouncex.net": "Bounce Exchange",
+  "branch.io": "Branch Metrics, Inc.",
+  "brandmetrics.com": "Brandmetrics",
+  "braze.com": "Braze, Inc.",
+  "braze.eu": "Braze, Inc.",
+  "brightcove.com": "Brightcove, Inc.",
+  "brightcove.net": "Brightcove, Inc.",
+  "brightcovecdn.com": "Brightcove, Inc.",
+  "browser-intake-datadoghq.com": "Datadog, Inc.",
+  "bstatic.com": "Booking Holdings Inc.",
+  "btloader.com": "Blockthrough Inc.",
+  "bttrack.com": "Bidtellect, Inc",
+  "btttag.com": "Blue Triangle Technologies",
+  "byspotify.com": "Spotify AB",
+  "captcha-delivery.com": "DataDome",
+  "casalemedia.com": "Index Exchange, Inc.",
+  "ccgateway.net": "Clicksco FZ",
+  "cdn-apple.com": "Apple Inc.",
+  "cdnbasket.net": "Bounce Exchange",
+  "cdninstagram.com": "Facebook, Inc.",
+  "cdnwidget.com": "CDNWIDGET.COM",
+  "chartbeat.com": "Chartbeat",
+  "chartbeat.net": "Chartbeat",
+  "chocolateplatform.com": "Vdopia Inc.",
+  "ck-ie.com": "ck-ie.com",
+  "clarity.ms": "Microsoft Corporation",
+  "clean.gg": "Human Security, Inc.",
+  "clickagy.com": "Clickagy",
+  "cloudflare-dns.com": "Cloudflare, Inc.",
+  "cloudflare.com": "Cloudflare, Inc.",
+  "cloudflareinsights.com": "Cloudflare, Inc.",
+  "cloudflarestream.com": "Cloudflare, Inc.",
+  "cloudfront.net": "Amazon Technologies, Inc.",
+  "cnn.com": "Warner Bros. Discovery, Inc.",
+  "cnn.io": "Warner Bros. Discovery, Inc.",
+  "cognitivlabs.com": "Cognitiv Corp.",
+  "company-target.com": "Demandbase, Inc.",
+  "condenastdigital.com": "Conde Nast Publications Inc.",
+  "confiant-integrations.net": "Confiant, Inc.",
+  "connatix.com": "Connatix",
+  "connectad.io": "ConnectAd",
+  "contentsquare.net": "ContentSquare",
+  "contextweb.com": "Pulsepoint, Inc.",
+  "cootlogix.com": "Vidazoo Ltd",
+  "copper6.com": "copper6.com",
+  "crazyegg.com": "Crazy Egg, Inc.",
+  "crcldu.com": "crcldu.com",
+  "creative-serving.com": "Platform161",
+  "creativecdn.com": "RTB House S.A.",
+  "criteo.com": "Criteo SA",
+  "criteo.net": "Criteo SA",
+  "crwdcntrl.net": "Lotame Solutions, Inc.",
+  "ctnsnet.com": "Crimtan Holdings Ltd",
+  "cxense.com": "Piano Software",
+  "dailymotion.com": "Dailymotion SA",
+  "datadoghq-browser-agent.com": "Datadog, Inc.",
+  "datadoghq.com": "Datadog, Inc.",
+  "datadome.co": "DataDome",
+  "datagrail.io": "datagrail.io",
+  "deepintent.com": "DeepIntent Inc",
+  "demdex.net": "Adobe Inc.",
+  "dianomi.com": "Dianomi Ltd",
+  "digitalaudience.io": "Social Audience B.V.",
+  "disqus.com": "Disqus, Inc.",
+  "dm-event.net": "Dailymotion SA",
+  "dmcdn.net": "Dailymotion SA",
+  "dmxleo.com": "Dailymotion SA",
+  "dotmetrics.net": "Dotmetrics",
+  "dotomi.com": "Conversant LLC",
+  "doubleclick.net": "Google Ads",
+  "doubleverify.com": "DoubleVerify",
+  "dstillery.com": "Dstillery Inc.",
+  "dv.tech": "dv.tech",
+  "dwin1.com": "Awin AG",
+  "dwin2.com": "Awin AG",
+  "dxtech.ai": "dxtech.ai",
+  "dynatrace.com": "Dynatrace LLC",
+  "e-planning.net": "Teroa S.A.",
+  "ebaystatic.com": "eBay, Inc.",
+  "ebxcdn.com": "ebxcdn.com",
+  "ensighten.com": "Ensighten, Inc",
+  "eskimi.com": "eskimi.com",
+  "everesttech.net": "Adobe Inc.",
+  "exelator.com": "The Nielsen Company",
+  "exponea.com": "Bloomreach, Inc.",
+  "eyeota.net": "eyeota Limited",
+  "facebook.com": "Facebook, Inc.",
+  "facebook.net": "Facebook, Inc.",
+  "fastclick.net": "Conversant LLC",
+  "fastly-insights.com": "Fastly, Inc.",
+  "fastly.net": "Fastly, Inc.",
+  "fbcdn.net": "Facebook, Inc.",
+  "fbsbx.com": "Facebook, Inc.",
+  "fbthirdpartypixel.com": "Facebook, Inc.",
+  "flashtalking.com": "Mediaocean LLC",
+  "fontawesome.com": "Fonticons Inc",
+  "fout.jp": "FreakOut Holdings, inc.",
+  "ftstatic.com": "Mediaocean LLC",
+  "fullstory.com": "FullStory",
+  "fuseplatform.net": "fuseplatform.net",
+  "fwmrm.net": "FreeWheel",
+  "gammaplatform.com": "gammaplatform.com",
+  "geoedge.be": "Five Media Marketing Limited",
+  "gfx.ms": "Microsoft Corporation",
+  "ggpht.com": "Google LLC",
+  "go-mpulse.net": "Akamai Technologies",
+  "goal.com": "Perform Media Services Ltd",
+  "google-analytics.com": "Google Analytics",
+  "google.com": "Google LLC",
+  "google.de": "Google LLC",
+  "googleadservices.com": "Google Ads",
+  "googleapis.com": "Google Ads",
+  "googlesyndication.com": "Google Ads",
+  "googletagmanager.com": "Google Ads",
+  "googletagservices.com": "Google Ads",
+  "googleusercontent.com": "Google LLC",
+  "googlevideo.com": "Youtube",
+  "gravatar.com": "Automattic, Inc.",
+  "greylabeldelivery.com": "greylabeldelivery.com",
+  "gstatic.com": "Google LLC",
+  "gumgum.com": "GumGum",
+  "gvt1.com": "Google LLC",
+  "hadronid.net": "hadronid.net",
+  "hotjar.com": "Hotjar Ltd",
+  "hotjar.io": "Hotjar Ltd",
+  "hs-analytics.net": "HubSpot, Inc.",
+  "hs-banner.com": "HubSpot, Inc.",
+  "hs-scripts.com": "HubSpot, Inc.",
+  "hscollectedforms.net": "HubSpot, Inc.",
+  "hsforms.com": "HubSpot, Inc.",
+  "htlbid.com": "htlbid.com",
+  "html-load.cc": "html-load.cc",
+  "html-load.com": "html-load.com",
+  "hubspot.com": "HubSpot, Inc.",
+  "id5-sync.com": "ID5 Technology Ltd",
+  "igodigital.com": "Salesforce.com, Inc.",
+  "im-apps.net": "Intimate Merger, Inc.",
+  "imdb.com": "Amazon Technologies, Inc.",
+  "impactcdn.com": "Impact",
+  "impactradius-event.com": "Impact",
+  "imrworldwide.com": "The Nielsen Company",
+  "indexww.com": "Index Exchange, Inc.",
+  "infolinks.com": "Infolink Media LLC",
+  "ingage.tech": "Insticator",
+  "inmobi-choice.io": "inmobi-choice.io",
+  "inmobi.com": "InMobi Pte Ltd",
+  "instagram.com": "Instagram",
+  "intentiq.com": "Almondnet Group",
+  "ipredictive.com": "Adelphic, Inc.",
+  "iqm.com": "iqm.com",
+  "ispot.tv": "iSpot.tv",
+  "iteratehq.com": "Pickaxe LLC",
+  "jrs5.com": "Rakuten, Inc.",
+  "jsdelivr.net": "Prospect One",
+  "jtvnw.net": "Amazon Technologies, Inc.",
+  "k5a.io": "Kilkaya AS",
+  "kargo.com": "Kargo Global, Inc.",
+  "ketchcdn.com": "Ketch Kloud, Inc.",
+  "ketchjs.com": "Ketch Kloud, Inc.",
+  "kueezrtb.com": "kueezrtb.com",
+  "kwcdn.com": "Pinduoduo Inc.",
+  "liadm.com": "LiveIntent Inc.",
+  "licdn.com": "Microsoft Corporation",
+  "liftdsp.com": "liftdsp.com",
+  "lightboxcdn.com": "Digioh, LLC",
+  "lijit.com": "Sovrn Holdings",
+  "linkedin.com": "Microsoft Corporation",
+  "linksynergy.com": "Rakuten, Inc.",
+  "litix.io": "Mux, Inc.",
+  "live.com": "Microsoft Corporation",
+  "lngtd.com": "Longitude Ads, LLC",
+  "loopme.me": "Online Media Solutions Ltd. dba Brightcom",
+  "mantis-intelligence.com": "mantis-intelligence.com",
+  "marketo.net": "Adobe Inc.",
+  "marphezis.com": "Online Media Solutions Ltd. dba Brightcom",
+  "mathtag.com": "MediaMath, Inc.",
+  "max.com": "Warner Bros. Discovery, Inc.",
+  "mczbf.com": "Conversant LLC",
+  "medallia.com": "Medallia Inc.",
+  "media-amazon.com": "Amazon Technologies, Inc.",
+  "media-imdb.com": "Amazon Technologies, Inc.",
+  "media.net": "Media.net Advertising FZ-LLC",
+  "media6degrees.com": "Dstillery Inc.",
+  "mediaforge.com": "Rakuten, Inc.",
+  "mediago.io": "Baidu, Inc.",
+  "mediarithmics.com": "mediarithmics SAS",
+  "mediavine.com": "Mediavine, Inc.",
+  "megaphone.fm": "Spotify AB",
+  "meta.com": "Facebook, Inc.",
+  "mfadsrvr.com": "IPONWEB GmbH",
+  "mgaru.dev": "mgaru.dev",
+  "mgid.com": "MGID Inc",
+  "micpn.com": "Movable Ink",
+  "microsoft.com": "Microsoft Corporation",
+  "microsoftonline.com": "Microsoft Corporation",
+  "minutemedia-prebid.com": "minutemedia-prebid.com",
+  "missena.io": "missena.io",
+  "mixpanel.com": "Mixpanel, Inc.",
+  "ml314.com": "Bombora Inc.",
+  "mmstat.com": "Alibaba Group",
+  "moatads.com": "Oracle Corporation",
+  "moloco.com": "Moloco Inc.",
+  "mookie1.com": "WPP plc",
+  "mrf.io": "Marfeel Solutions, S.L.",
+  "msauth.net": "Microsoft Corporation",
+  "msftauth.net": "Microsoft Corporation",
+  "msn.com": "Microsoft Corporation",
+  "mxpnl.com": "Mixpanel, Inc.",
+  "mygaru.com": "mygaru.com",
+  "naver.com": "Naver Corporation",
+  "naver.net": "Naver Corporation",
+  "nc0.co": "Ensighten, Inc",
+  "newrelic.com": "New Relic",
+  "newscgp.com": "Nationwide News Pty Ltd",
+  "newsroom.bi": "newsroom.bi",
+  "nextdoor.com": "Nextdoor, Inc.",
+  "nextmillmedia.com": "Next Millennium Media, Inc.",
+  "nexx360.io": "nexx360.io",
+  "ngtv.io": "Warner Bros. Discovery, Inc.",
+  "nmrodam.com": "The Nielsen Company",
+  "npttech.com": "Piano Software",
+  "nr-data.net": "New Relic",
+  "nrich.ai": "N.Rich Technologies",
+  "ntv.io": "Nativo, Inc",
+  "nxtck.com": "Rakuten, Inc.",
+  "nytrng.com": "Voltn LLC",
+  "oath.com": "Yahoo Inc.",
+  "ocmthood.com": "ocmthood.com",
+  "ojrq.net": "Impact",
+  "omnitagjs.com": "Adyoulike",
+  "omtrdc.net": "Adobe Inc.",
+  "onaudience.com": "OnAudience Ltd.",
+  "onesignal.com": "OneSignal",
+  "onetag-sys.com": "OneTag Limited",
+  "online-metrix.net": "RELX Group",
+  "opecloud.com": "TripleLift",
+  "openwebmp.com": "openwebmp.com",
+  "openx.net": "OpenX Technologies Inc",
+  "openxcdn.net": "OpenX Technologies Inc",
+  "opera.com": "Opera Software AS",
+  "optable.co": "optable.co",
+  "opti-digital.com": "Opti Digital",
+  "optidigital.com": "Opti Digital",
+  "optimizely.com": "Optimizely, Inc.",
+  "ortb.net": "ortb.net",
+  "osano.com": "Osano, Inc.",
+  "outbrain.com": "Outbrain",
+  "outbrainimg.com": "Outbrain",
+  "p-n.io": "Pushly",
+  "p7cloud.net": "p7cloud.net",
+  "pangle-ads.com": "ByteDance Ltd.",
+  "parsely.com": "Parsely, Inc.",
+  "pbstck.com": "Pubstack",
+  "pdst.fm": "Podsights",
+  "permutive.app": "Permutive, Inc.",
+  "permutive.com": "Permutive, Inc.",
+  "piano.io": "Piano Software",
+  "pinimg.com": "Pinterest, Inc.",
+  "pinklion.io": "pinklion.io",
+  "pinterest.com": "Pinterest, Inc.",
+  "playdigo.com": "playdigo.com",
+  "pmbmonetize.live": "pmbmonetize.live",
+  "polyfill-fastly.io": "Fastly, Inc.",
+  "postrelease.com": "Nativo, Inc",
+  "presage.io": "Ogury Limited",
+  "primis.tech": "McCann Disciplines Ltd.",
+  "privacy-center.org": "Didomi",
+  "privacymanager.io": "LiveRamp Holdings, Inc.",
+  "prmutv.co": "Permutive, Inc.",
+  "programmaticx.ai": "programmaticx.ai",
+  "pstatic.net": "Naver Corporation",
+  "pub.network": "Publisher First, Inc. dba Freestar",
+  "pubmatic.com": "PubMatic, Inc.",
+  "px-cdn.net": "Human Security, Inc.",
+  "px-client.net": "Human Security, Inc.",
+  "px-cloud.net": "Human Security, Inc.",
+  "pxf.io": "Impact",
+  "qualtrics.com": "Silver Lake Technology Management, L.L.C.",
+  "quantcount.com": "Quantcast Corporation",
+  "quantserve.com": "Quantcast Corporation",
+  "quantummetric.com": "Quantum Metric Inc.",
+  "rakuten-static.com": "Rakuten, Inc.",
+  "rakuten.co.jp": "Rakuten, Inc.",
+  "rakuten.com": "Rakuten, Inc.",
+  "rapidedge.io": "rapidedge.io",
+  "raptivecdn.com": "raptivecdn.com",
+  "recaptcha.net": "Google LLC",
+  "redd.it": "Reddit Inc.",
+  "reddit.com": "Reddit Inc.",
+  "redditmedia.com": "Reddit Inc.",
+  "redditstatic.com": "Reddit Inc.",
+  "reson8.com": "Resonate Networks",
+  "rezync.com": "Zeta Global",
+  "rfihub.com": "Zeta Global",
+  "richaudience.com": "Rich Audience Technologies",
+  "rkdms.com": "Merkle Inc",
+  "rlcdn.com": "LiveRamp Holdings, Inc.",
+  "rmtag.com": "Rakuten, Inc.",
+  "roeye.com": "roeye.com",
+  "roeyecdn.com": "roeyecdn.com",
+  "rokt.com": "Rokt Entities",
+  "rqtrk.eu": "Roq.ad",
+  "rtb.mx": "rtb.mx",
+  "rtbwise.com": "rtbwise.com",
+  "rubiconproject.com": "Magnite, Inc.",
+  "run.app": "Google LLC",
+  "s-onetag.com": "Sovrn Holdings",
+  "sail-horizon.com": "CM Group",
+  "sail-personalize.com": "CM Group",
+  "sail-track.com": "CM Group",
+  "samplicio.us": "Lucid Holdings, LLC",
+  "sascdn.com": "Smartadserver S.A.S",
+  "sc-static.net": "Snap Inc.",
+  "scene7.com": "Adobe Inc.",
+  "scorecardresearch.com": "comScore, Inc",
+  "script.ac": "Human Security, Inc.",
+  "securedvisit.com": "4Cite Marketing",
+  "seedtag.com": "SEEDTAG ADVERTISING S.L.",
+  "segment.com": "Segment.io, Inc.",
+  "segment.io": "Segment.io, Inc.",
+  "semasio.net": "Semasio GmbH",
+  "sentry-cdn.com": "Functional Software, Inc.",
+  "sentry.io": "Functional Software, Inc.",
+  "servenobid.com": "Prebid.org",
+  "sharethis.com": "ShareThis, Inc",
+  "sharethrough.com": "Sharethrough, Inc.",
+  "shop.pe": "Add Shoppers",
+  "signifyd.com": "Signifyd Inc.",
+  "simpli.fi": "Simplifi Holdings Inc.",
+  "site.com": "Salesforce.com, Inc.",
+  "sitescout.com": "Centro, Inc.",
+  "sjv.io": "Impact",
+  "skimresources.com": "Skimbit LTD",
+  "smaato.net": "Smaato Inc.",
+  "smartadserver.com": "Smartadserver S.A.S",
+  "smilewanted.com": "smilewanted.com",
+  "snapchat.com": "Snap Inc.",
+  "sonobi.com": "Sonobi, Inc",
+  "sparteo.com": "sparteo.com",
+  "spotify.com": "Spotify AB",
+  "spotifycdn.com": "Spotify AB",
+  "springserve.com": "SpringServe, LLC",
+  "ssl-images-amazon.com": "Amazon Technologies, Inc.",
+  "stackadapt.com": "Collective Roll",
+  "stay22.com": "stay22.com",
+  "stickyadstv.com": "FreeWheel",
+  "stripe.com": "Stripe, Inc",
+  "stripe.network": "Stripe, Inc",
+  "syncingbridge.com": "syncingbridge.com",
+  "t.co": "Twitter, Inc.",
+  "t13.io": "Publisher First, Inc. dba Freestar",
+  "taboola.com": "Taboola, Inc.",
+  "tapad.com": "Tapad, Inc.",
+  "tappx.com": "Tappcelator Media S.L.",
+  "teads-xo.com": "teads-xo.com",
+  "teads.tv": "Teads ( Luxenbourg ) SA",
+  "tealiumiq.com": "Tealium Inc.",
+  "techcrunch.com": "Yahoo Inc.",
+  "temu.com": "Pinduoduo Inc.",
+  "the-ozone-project.com": "The Ozone Project",
+  "thrtle.com": "Throtle",
+  "tiktok.com": "ByteDance Ltd.",
+  "tiktokcdn.com": "ByteDance Ltd.",
+  "tiktokv.com": "ByteDance Ltd.",
+  "tiktokw.us": "ByteDance Ltd.",
+  "tinypass.com": "Piano Software",
+  "tiqcdn.com": "Tealium Inc.",
+  "travelaudience.com": "travelaudience.com",
+  "treasuredata.com": "Treasure Data, Inc",
+  "tremorhub.com": "Telaria",
+  "tribalfusion.com": "Exponential Interactive Inc.",
+  "tru.am": "trueAnthem Corp",
+  "trustedstack.com": "trustedstack.com",
+  "tsdtocl.com": "Taboola, Inc.",
+  "ttvnw.net": "Amazon Technologies, Inc.",
+  "tumblr.com": "Automattic, Inc.",
+  "turn.com": "Amobee, Inc",
+  "turner.com": "Warner Bros. Discovery, Inc.",
+  "tvpixel.com": "Data Plus Math",
+  "tvsquared.com": "TVSquared",
+  "twimg.com": "Twitter, Inc.",
+  "twitch.tv": "Amazon Technologies, Inc.",
+  "twitchcdn.net": "Amazon Technologies, Inc.",
+  "twitter.com": "Twitter, Inc.",
+  "typekit.net": "Adobe Inc.",
+  "udmserve.net": "Underdog Media LLC",
+  "ugdturner.com": "Warner Bros. Discovery, Inc.",
+  "uidapi.com": "The Trade Desk Inc",
+  "undertone.com": "Undertone Networks",
+  "unpkg.com": "unpkg",
+  "unrulymedia.com": "Unruly Group Limited",
+  "usbrowserspeed.com": "usbrowserspeed.com",
+  "verint-cdn.com": "Verint Systems",
+  "viafoura.co": "Viafoura Inc.",
+  "viafoura.net": "Viafoura Inc.",
+  "videoplayerhub.com": "Blockthrough Inc.",
+  "virtualearth.net": "Microsoft Corporation",
+  "vistarsagency.com": "vistarsagency.com",
+  "visualwebsiteoptimizer.com": "Wingify",
+  "vrtcal.com": "VRTCAL Markets, Inc.",
+  "w-x.co": "International Business Machines Corporation",
+  "warnermediacdn.com": "Warner Bros. Discovery, Inc.",
+  "weather.com": "International Business Machines Corporation",
+  "webcontentassessor.com": "TMT Digital Inc.",
+  "wired.com": "Conde Nast Publications Inc.",
+  "withgoogle.com": "Google LLC",
+  "wknd.ai": "wknd.ai",
+  "wmcdp.io": "Warner Bros. Discovery, Inc.",
+  "wp.com": "Automattic, Inc.",
+  "wp.pl": "Wirtualna Polska",
+  "x.com": "Twitter, Inc.",
+  "yahoo.com": "Yahoo Inc.",
+  "yahoo.net": "Yahoo Inc.",
+  "yellowblue.io": "Unity Software Inc.",
+  "yieldlab.net": "Virtual Minds AG",
+  "yieldmo.com": "YieldMo, Inc.",
+  "yimg.com": "Yahoo Inc.",
+  "yimg.jp": "LY-Corporation",
+  "ymmobi.com": "ymmobi.com",
+  "youtube.com": "Youtube",
+  "ytimg.com": "Youtube",
+  "zemanta.com": "Outbrain",
+  "zeotap.com": "Zeotap GmbH",
+  "zetaglobal.net": "Zeta Global",
+  "zqtk.net": "comScore, Inc"
+ },
+ "tracker_radar": {
+  "accuweather.com": {
+   "categories": [],
+   "cookies": 2.74e-05,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 1,
+   "owner": "Accuweather",
+   "prevalence": 5.49e-05,
+   "region": "US",
+   "sites": 8
+  },
+  "ad-score.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Adscore",
+   "prevalence": 0.000402,
+   "region": "DE",
+   "sites": 4
+  },
+  "adobedtm.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing",
+    "Tag Manager"
+   ],
+   "cookies": 0.0153,
+   "fingerprinting": 2,
+   "max_resource_fingerprinting": 2,
+   "owner": "Adobe",
+   "prevalence": 0.019,
+   "region": "DE",
+   "sites": 189
+  },
+  "ads-twitter.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Third-Party Analytics Marketing",
+    "Action Pixels"
+   ],
+   "cookies": 0.00463,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Twitter",
+   "prevalence": 0.00503,
+   "region": "DE",
+   "sites": 50
+  },
+  "adsafeprotected.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Ad Fraud"
+   ],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Integral Ad Science",
+   "prevalence": 0.00302,
+   "region": "DE",
+   "sites": 30
+  },
+  "airbnb.com": null,
+  "alicdn.com": {
+   "categories": [
+    "CDN"
+   ],
+   "cookies": 0.000201,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Alibaba",
+   "prevalence": 0.000703,
+   "region": "GB",
+   "sites": 7
+  },
+  "aliexpress-media.com": {
+   "categories": [],
+   "cookies": 0.0001,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 2,
+   "owner": "Alibaba",
+   "prevalence": 0.0001,
+   "region": "GB",
+   "sites": 1
+  },
+  "amazon.co.uk": null,
+  "amazon.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Analytics",
+    "SSO",
+    "Third-Party Analytics Marketing",
+    "Online Payment",
+    "Embedded Content"
+   ],
+   "cookies": 0.000603,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Amazon.com",
+   "prevalence": 0.000704,
+   "region": "DE",
+   "sites": 7
+  },
+  "amazon.de": {
+   "categories": [],
+   "cookies": 0.000101,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Amazon.com",
+   "prevalence": 0.000101,
+   "region": "DE",
+   "sites": 1
+  },
+  "amazon.fr": null,
+  "anyclip.com": {
+   "categories": [],
+   "cookies": 0.000101,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": "AnyClip",
+   "prevalence": 0.000101,
+   "region": "DE",
+   "sites": 1
+  },
+  "apnews.com": {
+   "categories": [],
+   "cookies": 2.74e-05,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "The Associated Press",
+   "prevalence": 2.74e-05,
+   "region": "US",
+   "sites": 4
+  },
+  "appsflyer.com": {
+   "categories": [],
+   "cookies": 0.000101,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "AppsFlyer",
+   "prevalence": 0.000704,
+   "region": "DE",
+   "sites": 7
+  },
+  "appsflyersdk.com": {
+   "categories": [],
+   "cookies": 0.000301,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "AppsFlyer",
+   "prevalence": 0.000502,
+   "region": "NL",
+   "sites": 5
+  },
+  "artisticcoast.info": null,
+  "artisticcoast.pro": null,
+  "asos.com": {
+   "categories": [],
+   "cookies": 1.37e-05,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "ASOS.com",
+   "prevalence": 1.37e-05,
+   "region": "US",
+   "sites": 2
+  },
+  "awswaf.com": {
+   "categories": [],
+   "cookies": 0.00855,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Amazon.com",
+   "prevalence": 0.00875,
+   "region": "DE",
+   "sites": 87
+  },
+  "ay.delivery": {
+   "categories": [],
+   "cookies": 0.000503,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 2,
+   "owner": "Assertive Yield",
+   "prevalence": 0.00332,
+   "region": "DE",
+   "sites": 33
+  },
+  "bestbuy.com": null,
+  "bild.de": null,
+  "bloomberg.com": null,
+  "bounceexchange.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "Analytics",
+    "Audience Measurement",
+    "Action Pixels"
+   ],
+   "cookies": 0.000804,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Bounce Exchange",
+   "prevalence": 0.000804,
+   "region": "DE",
+   "sites": 8
+  },
+  "cdiscount.com": null,
+  "cdninstagram.com": {
+   "categories": [
+    "CDN"
+   ],
+   "cookies": 0,
+   "fingerprinting": 2,
+   "max_resource_fingerprinting": 0,
+   "owner": "Facebook",
+   "prevalence": 0.00101,
+   "region": "DE",
+   "sites": 10
+  },
+  "chewy.com": null,
+  "clarity.ms": {
+   "categories": [],
+   "cookies": 0.00332,
+   "fingerprinting": 2,
+   "max_resource_fingerprinting": 2,
+   "owner": "Microsoft",
+   "prevalence": 0.0252,
+   "region": "DE",
+   "sites": 251
+  },
+  "cloudflare.com": {
+   "categories": [
+    "Analytics",
+    "CDN",
+    "Embedded Content"
+   ],
+   "cookies": 0.00111,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 2,
+   "owner": "Cloudflare",
+   "prevalence": 0.132,
+   "region": "DE",
+   "sites": 1312
+  },
+  "cloudfront.net": null,
+  "corriereobjects.it": {
+   "categories": [],
+   "cookies": 1.37e-05,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 2,
+   "owner": "RCS Mediagroup",
+   "prevalence": 1.37e-05,
+   "region": "US",
+   "sites": 2
+  },
+  "costco.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Costco Wholesale",
+   "prevalence": 2.74e-05,
+   "region": "US",
+   "sites": 4
+  },
+  "crcldu.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": null,
+   "prevalence": 0.00151,
+   "region": "DE",
+   "sites": 15
+  },
+  "dailymail.com": {
+   "categories": [],
+   "cookies": 0.000502,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": null,
+   "prevalence": 0.000502,
+   "region": "GB",
+   "sites": 5
+  },
+  "datadome.co": {
+   "categories": [
+    "Fraud Prevention"
+   ],
+   "cookies": 0.00101,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "DataDome",
+   "prevalence": 0.00141,
+   "region": "DE",
+   "sites": 14
+  },
+  "dictionary.com": null,
+  "elcorteingles.es": {
+   "categories": [],
+   "cookies": 1.37e-05,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "El Corte Ingles",
+   "prevalence": 2.06e-05,
+   "region": "US",
+   "sites": 3
+  },
+  "elpais.com": null,
+  "excellentwave.me": null,
+  "fandom.com": {
+   "categories": [],
+   "cookies": 4.12e-05,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Fandom",
+   "prevalence": 4.12e-05,
+   "region": "US",
+   "sites": 6
+  },
+  "fbcdn.net": {
+   "categories": [
+    "Social - Share",
+    "Action Pixels",
+    "CDN",
+    "Embedded Content",
+    "Social Network"
+   ],
+   "cookies": 0,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 0,
+   "owner": "Facebook",
+   "prevalence": 0.000603,
+   "region": "NL",
+   "sites": 6
+  },
+  "forter.com": {
+   "categories": [
+    "Fraud Prevention"
+   ],
+   "cookies": 0.00231,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Forter",
+   "prevalence": 0.00251,
+   "region": "DE",
+   "sites": 25
+  },
+  "frugalfiestas.com": {
+   "categories": [],
+   "cookies": 0.0001,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": null,
+   "prevalence": 0.0001,
+   "region": "NL",
+   "sites": 1
+  },
+  "fuseplatform.net": {
+   "categories": [],
+   "cookies": 0.00211,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 1,
+   "owner": null,
+   "prevalence": 0.00211,
+   "region": "DE",
+   "sites": 21
+  },
+  "gamespot.com": null,
+  "groupon.com": {
+   "categories": [],
+   "cookies": 0.0001,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Groupon",
+   "prevalence": 0.0001,
+   "region": "GB",
+   "sites": 1
+  },
+  "gstatic.com": {
+   "categories": [
+    "CDN",
+    "Embedded Content"
+   ],
+   "cookies": 0.00161,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Google",
+   "prevalence": 0.159,
+   "region": "DE",
+   "sites": 1580
+  },
+  "gumgum.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "cookies": 0.000804,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": "GumGum",
+   "prevalence": 0.00141,
+   "region": "DE",
+   "sites": 14
+  },
+  "hs-analytics.net": {
+   "categories": [
+    "Analytics",
+    "Audience Measurement",
+    "Third-Party Analytics Marketing",
+    "Action Pixels"
+   ],
+   "cookies": 0.016,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "HubSpot",
+   "prevalence": 0.0161,
+   "region": "US",
+   "sites": 2344
+  },
+  "html-load.cc": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": null,
+   "prevalence": 0.00392,
+   "region": "DE",
+   "sites": 39
+  },
+  "html-load.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": null,
+   "prevalence": 0.00302,
+   "region": "DE",
+   "sites": 30
+  },
+  "imdb.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Amazon.com",
+   "prevalence": 0.000789,
+   "region": "US",
+   "sites": 115
+  },
+  "insurads.com": {
+   "categories": [],
+   "cookies": 0.0001,
+   "fingerprinting": 2,
+   "max_resource_fingerprinting": 2,
+   "owner": "InsurAds",
+   "prevalence": 0.000502,
+   "region": "NO",
+   "sites": 5
+  },
+  "kwcdn.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Pinduoduo",
+   "prevalence": 0.00022,
+   "region": "US",
+   "sites": 32
+  },
+  "lemonde.fr": null,
+  "licdn.com": {
+   "categories": [
+    "Analytics",
+    "Audience Measurement",
+    "CDN"
+   ],
+   "cookies": 0,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 1,
+   "owner": "Microsoft",
+   "prevalence": 0.00583,
+   "region": "DE",
+   "sites": 58
+  },
+  "lowes.com": {
+   "categories": [],
+   "cookies": 2.74e-05,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 1,
+   "owner": "Lowe's",
+   "prevalence": 3.43e-05,
+   "region": "US",
+   "sites": 5
+  },
+  "ltwebstatic.com": {
+   "categories": [],
+   "cookies": 0.000201,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "ZOETOP",
+   "prevalence": 0.000201,
+   "region": "GB",
+   "sites": 2
+  },
+  "lyfnh.io": {
+   "categories": [],
+   "cookies": 0.000202,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": null,
+   "prevalence": 0.000202,
+   "region": "FR",
+   "sites": 2
+  },
+  "mantis-intelligence.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": null,
+   "prevalence": 0.000201,
+   "region": "NL",
+   "sites": 2
+  },
+  "media-amazon.com": {
+   "categories": [
+    "CDN"
+   ],
+   "cookies": 0,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 0,
+   "owner": "Amazon.com",
+   "prevalence": 0.00161,
+   "region": "DE",
+   "sites": 16
+  },
+  "medium.com": {
+   "categories": [],
+   "cookies": 4.8e-05,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": "Medium",
+   "prevalence": 4.8e-05,
+   "region": "US",
+   "sites": 7
+  },
+  "mirror.co.uk": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Reach plc",
+   "prevalence": 2.06e-05,
+   "region": "US",
+   "sites": 3
+  },
+  "nbcnews.com": null,
+  "newegg.com": null,
+  "newsweek.com": null,
+  "nike.com": null,
+  "nordstrom.com": null,
+  "npr.org": {
+   "categories": [
+    "Non-Tracking"
+   ],
+   "cookies": 0,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 0,
+   "owner": "National Public Radio",
+   "prevalence": 3.43e-05,
+   "region": "US",
+   "sites": 5
+  },
+  "otto.de": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Otto (GmbH & Co KG)",
+   "prevalence": 0.000101,
+   "region": "DE",
+   "sites": 1
+  },
+  "overstock.com": null,
+  "pinimg.com": {
+   "categories": [
+    "Social - Share",
+    "CDN",
+    "Embedded Content"
+   ],
+   "cookies": 0.00191,
+   "fingerprinting": 2,
+   "max_resource_fingerprinting": 2,
+   "owner": "Pinterest",
+   "prevalence": 0.00241,
+   "region": "DE",
+   "sites": 24
+  },
+  "politico.com": null,
+  "px-cloud.net": {
+   "categories": [
+    "Fraud Prevention"
+   ],
+   "cookies": 0.00261,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Human Security",
+   "prevalence": 0.00402,
+   "region": "DE",
+   "sites": 40
+  },
+  "quantummetric.com": {
+   "categories": [],
+   "cookies": 0.000302,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": "Quantum Metric",
+   "prevalence": 0.000704,
+   "region": "DE",
+   "sites": 7
+  },
+  "riskified.com": {
+   "categories": [],
+   "cookies": 0.000905,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Riskified",
+   "prevalence": 0.00121,
+   "region": "DE",
+   "sites": 12
+  },
+  "rottentomatoes.com": null,
+  "script.ac": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Human Security",
+   "prevalence": 0.00181,
+   "region": "DE",
+   "sites": 18
+  },
+  "sift.com": {
+   "categories": [
+    "Fraud Prevention"
+   ],
+   "cookies": 0.000202,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Sift Science",
+   "prevalence": 0.000202,
+   "region": "FR",
+   "sites": 2
+  },
+  "signifyd.com": {
+   "categories": [],
+   "cookies": 0.000402,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Signifyd",
+   "prevalence": 0.000402,
+   "region": "DE",
+   "sites": 4
+  },
+  "skullmagnets.com": {
+   "categories": [],
+   "cookies": 0.0001,
+   "fingerprinting": 2,
+   "max_resource_fingerprinting": 0,
+   "owner": null,
+   "prevalence": 0.0001,
+   "region": "NL",
+   "sites": 1
+  },
+  "soundcloud.com": {
+   "categories": [
+    "CDN",
+    "Embedded Content"
+   ],
+   "cookies": 0,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 0,
+   "owner": "SoundCloud",
+   "prevalence": 0.000301,
+   "region": "NL",
+   "sites": 3
+  },
+  "spiegel.de": null,
+  "spur.us": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": null,
+   "prevalence": 0.000302,
+   "region": "DE",
+   "sites": 3
+  },
+  "starsbuildingweb.com": {
+   "categories": [],
+   "cookies": 0.000101,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": null,
+   "prevalence": 0.000101,
+   "region": "DE",
+   "sites": 1
+  },
+  "stay22.com": {
+   "categories": [],
+   "cookies": 0.00101,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 1,
+   "owner": null,
+   "prevalence": 0.00101,
+   "region": "DE",
+   "sites": 10
+  },
+  "stripe.network": {
+   "categories": [
+    "Online Payment",
+    "CDN",
+    "Embedded Content"
+   ],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Stripe",
+   "prevalence": 0.000151,
+   "region": "US",
+   "sites": 22
+  },
+  "targetimg1.com": null,
+  "telegraph.co.uk": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 1,
+   "owner": null,
+   "prevalence": 0.000201,
+   "region": "GB",
+   "sites": 2
+  },
+  "tiktokcdn-eu.com": {
+   "categories": [],
+   "cookies": 0.000502,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": null,
+   "prevalence": 0.000603,
+   "region": "NL",
+   "sites": 6
+  },
+  "toadmash.net": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": null,
+   "prevalence": 0.000302,
+   "region": "DE",
+   "sites": 3
+  },
+  "tomsguide.com": null,
+  "ttwstatic.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": null,
+   "prevalence": 0.000302,
+   "region": "DE",
+   "sites": 3
+  },
+  "twimg.com": {
+   "categories": [
+    "Social - Comment",
+    "Social - Share",
+    "CDN",
+    "Embedded Content",
+    "Social Network"
+   ],
+   "cookies": 0,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Twitter",
+   "prevalence": 0.000603,
+   "region": "DE",
+   "sites": 6
+  },
+  "twitch.tv": {
+   "categories": [
+    "CDN",
+    "Embedded Content"
+   ],
+   "cookies": 0.000101,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 0,
+   "owner": "Amazon.com",
+   "prevalence": 0.000101,
+   "region": "DE",
+   "sites": 1
+  },
+  "twitchcdn.net": {
+   "categories": [],
+   "cookies": 0.000202,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Amazon.com",
+   "prevalence": 0.000605,
+   "region": "FR",
+   "sites": 6
+  },
+  "walmart.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising"
+   ],
+   "cookies": 1.37e-05,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Walmart",
+   "prevalence": 1.37e-05,
+   "region": "US",
+   "sites": 2
+  },
+  "washingtonpost.com": null,
+  "wayfair.com": null,
+  "weather.com": {
+   "categories": [],
+   "cookies": 0.000261,
+   "fingerprinting": 2,
+   "max_resource_fingerprinting": 2,
+   "owner": "International Business Machines",
+   "prevalence": 0.000762,
+   "region": "US",
+   "sites": 111
+  },
+  "welt.de": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 1,
+   "owner": null,
+   "prevalence": 1.37e-05,
+   "region": "US",
+   "sites": 2
+  },
+  "wikihow.com": {
+   "categories": [],
+   "cookies": 0,
+   "fingerprinting": 0,
+   "max_resource_fingerprinting": 0,
+   "owner": "Wikihow",
+   "prevalence": 8.23e-05,
+   "region": "US",
+   "sites": 12
+  },
+  "wired.com": null,
+  "yimg.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "Advertising",
+    "CDN"
+   ],
+   "cookies": 0,
+   "fingerprinting": 1,
+   "max_resource_fingerprinting": 1,
+   "owner": "Verizon Media",
+   "prevalence": 0.00131,
+   "region": "DE",
+   "sites": 13
+  },
+  "youtube.com": {
+   "categories": [
+    "Ad Motivated Tracking",
+    "CDN",
+    "Embedded Content"
+   ],
+   "cookies": 0.0118,
+   "fingerprinting": 3,
+   "max_resource_fingerprinting": 3,
+   "owner": "Google",
+   "prevalence": 0.0143,
+   "region": "DE",
+   "sites": 142
+  },
+  "zalando.de": null,
+  "zara.com": null
+ }
+}
