@@ -125,6 +125,69 @@ PAGE_TYPES = [
 ]
 
 
+# --- Harm: purpose x tracking capability -------------------------------------
+# Harmful fingerprinting = fingerprinting whose purpose is to recognise the user
+# for someone other than the service the user asked for (advertising, analytics,
+# profiling). Useful fingerprinting serves the requested service itself
+# (bot/fraud defence, functionality), the "strictly necessary" case of ePrivacy
+# Art. 5(3). Purpose decides the class; capability ranks how much tracking a
+# script can actually do and decides only scripts whose purpose is unknown.
+TRACKING_PURPOSES = {ADS, ANALYTICS}
+SERVICE_PURPOSES = {SECURITY, FUNCTIONAL}
+TRACKING, DUAL_USE, SERVICE = "Tracking", "Dual-use", "Service"
+UNDETERMINED_HIGH, UNDETERMINED_LOW = "Undetermined (high capability)", "Undetermined (low capability)"
+HARM_CLASSES = (TRACKING, DUAL_USE, SERVICE, UNDETERMINED_HIGH, UNDETERMINED_LOW)
+# Browser values the crawler controls and that only fingerprinting-style reads
+# expose: the configured time zone and the Linux platform in the user agent.
+KNOWN_VALUES = ("Europe/Amsterdam", "X11; Linux x86_64", "Linux x86_64")
+
+
+def value_patterns(values=KNOWN_VALUES):
+    """Raw, URL-encoded (once and twice), '+'-encoded and base64 forms of each value."""
+    import base64
+    from urllib.parse import quote
+    pats = set()
+    for v in values:
+        for enc in (v, quote(v, safe=""), quote(quote(v, safe=""), safe=""), v.replace(" ", "+"),
+                    quote(v, safe="").replace("%20", "+")):
+            pats.add(enc)
+        for pad in range(3):    # base64 of the value at each byte alignment, unstable edges dropped
+            b = base64.b64encode(b"\0" * pad + v.encode()).decode().rstrip("=")
+            # Leading chars that mix in preceding bytes, and the last two, which may
+            # mix in following bytes, are not determined by the value alone.
+            core = b[0 if pad == 0 else pad + 1: -2]
+            if len(core) >= 8:
+                pats.add(core)
+    return sorted(pats, key=len, reverse=True)
+
+
+def identifying_power(techniques):
+    """High: a strong technique or >= 3 techniques combined; Medium: two weak ones."""
+    techs = set(techniques or ())
+    if techs & STRONG or len(techs) >= 3:
+        return "High"
+    return "Medium" if len(techs) == 2 else "Low"
+
+
+def capability(power, cross_site, sends_attributes, writes_storage):
+    """Tracking capability from identifying power, cross-site reach, observed
+    attribute transmission and storage writes (the ingredients of an identifier)."""
+    score = {"High": 2, "Medium": 1, "Low": 0}[power] + bool(cross_site) + bool(sends_attributes) \
+        + bool(writes_storage)
+    return "High" if score >= 3 else "Medium" if score == 2 else "Low"
+
+
+def harm_class(primary, secondary, cap):
+    if (primary in TRACKING_PURPOSES and secondary == SECURITY) or \
+            (primary == SECURITY and secondary in TRACKING_PURPOSES):
+        return DUAL_USE
+    if primary in TRACKING_PURPOSES:
+        return TRACKING
+    if primary in SERVICE_PURPOSES:
+        return SERVICE
+    return UNDETERMINED_HIGH if cap == "High" else UNDETERMINED_LOW
+
+
 def page_type(url):
     path = urlsplit(url or "").path.lower()
     if path in ("", "/"):
@@ -140,10 +203,13 @@ def path_template(url):
     path = urlsplit(url or "").path
     out = []
     for seg in path.split("/")[1:]:
-        if re.fullmatch(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", seg, re.I):
-            out.append("{uuid}")
-        elif re.fullmatch(r"[0-9a-f]{8,}", seg, re.I):
-            out.append("{hex}")
+        hexfile = re.fullmatch(r"[0-9a-f]{8,}(\.[A-Za-z0-9]{1,5})?", seg, re.I)
+        if re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", seg, re.I):
+            # UUIDs anywhere in the segment, e.g. a per-visit "<uuid>.js" file name.
+            out.append(re.sub(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+                              "{uuid}", seg, flags=re.I))
+        elif hexfile:
+            out.append("{hex}" + (hexfile.group(1) or ""))
         elif re.fullmatch(r"\d+", seg):
             out.append("{n}")
         elif re.fullmatch(r"[A-Za-z0-9_-]{6,}", seg) and re.search(r"\d", seg) and re.search(r"[A-Z]", seg) \

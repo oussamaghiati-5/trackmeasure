@@ -197,6 +197,35 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; display: grid; ga
   </div>
 
   <article class="finding">
+    <div class="finding-head"><span class="tag">Focus</span><h3>Harmful or useful: the study now centres on harmful fingerprinting</h3></div>
+    <p class="prose">Fingerprinting is <strong>harmful</strong> when its purpose is to recognise the user for someone other than the service they asked for: advertising, analytics, profiling. It is <strong>useful</strong> when it serves the service itself: bot and fraud defence, or functionality. That is the ePrivacy “strictly necessary” case. Purpose decides the class. A second axis, <strong>tracking capability</strong>, ranks scripts and settles the ones whose purpose is unknown. It counts four things: identifying power (a strong technique or ≥3 combined), presence on ≥2 sites, the browser’s own time zone or platform string seen in requests to the vendor, and cookie or storage writes.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Harm class (baseline, 93 sites)</th><th class="num">Pairs</th><th class="num">Strong pairs</th><th class="num">Sites</th></tr></thead>
+        <tbody>
+          <tr><td><span class="pill bad">Tracking (harmful)</span></td><td class="num big">26 (11%)</td><td class="num">3</td><td class="num">17</td></tr>
+          <tr><td>Tracking, upper bound <span class="muted small">(+ dual-use, + unknown purpose with high capability)</span></td><td class="num">44 (19%)</td><td class="num">12</td><td class="num">23</td></tr>
+          <tr><td><span class="pill good">Service (useful)</span></td><td class="num big">151 (64%)</td><td class="num">76</td><td class="num">43</td></tr>
+          <tr><td><span class="pill warn">Undetermined</span></td><td class="num">60 (25%)</td><td class="num">11</td><td class="num">29</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Harmful fingerprinting</th><th class="num">Result</th></tr></thead>
+        <tbody>
+          <tr><td>Runs before any consent interaction</td><td class="num">17 of 17 sites</td></tr>
+          <tr><td>Survives a verified “reject” (vs repeat baseline)</td><td class="num">15 of 16 pairs, −6.3 pp [−23.1, 0]</td></tr>
+          <tr><td>Sites still running it after a verified “reject”</td><td class="num">8 of 36 (10 upper bound)</td></tr>
+          <tr><td>uBlock Origin Lite / Privacy Badger vs repeat baseline</td><td class="num">−88.0 pp / −40.0 pp</td></tr>
+          <tr><td>Seen sending the browser’s time zone and platform to the vendor</td><td class="num">X Ads pixel on 9 sites, GumGum, AnyClip</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose small muted">Harmful fingerprinting is mostly attribute collection by ad-tech: ad-recovery networks, the X Ads pixel, AppsFlyer, Prebid, Clarity and HubSpot. The high-capability unknowns are first-party platform bundles (Amazon, LinkedIn, Pinterest, Temu, X) and two unattributed third parties, so they set the upper bound, not the main estimate.</p>
+  </article>
+
+  <article class="finding">
     <div class="finding-head"><span class="tag">Result 1</span><h3>Most fingerprinting, and nearly all strong fingerprinting, is security</h3></div>
     <div class="tbl-wrap">
       <table>
@@ -285,6 +314,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; display: grid; ga
         <tr><td>Re-assess stored consent and decode consent cookies</td><td><span class="pill good">✓ Done</span></td><td><code>consent.reassess</code>, <code>decode_tcf</code>, <code>cookie_verdict</code>; used by <code>analyze.py</code></td></tr>
         <tr><td>Consent comparisons with the bootstrap</td><td><span class="pill good">✓ Done</span></td><td><code>paired_uncertainty.json</code>, <code>purpose_survival.csv</code></td></tr>
         <tr><td>Purpose labels, hidden vendors, results by purpose</td><td><span class="pill good">✓ Done</span></td><td><code>purpose.py</code>, <code>make purpose</code>, 14 new tests</td></tr>
+        <tr><td>Harmful vs useful classification, results focused on harmful</td><td><span class="pill good">✓ Done</span></td><td><code>purpose.harm_class</code>, <code>harm_survival.csv</code>, 5 new tests</td></tr>
         <tr><td>Paper reframed, README and reports updated</td><td><span class="pill good">✓ Done</span></td><td><code>PAPER_DRAFT.md</code>, public bundle refreshed</td></tr>
         <tr><td>80-script manual validation (κ, precision per technique and purpose)</td><td><span class="pill warn">! Sheet ready</span></td><td>Two teammates fill it (<code>docs/annotation_guide.md</code>), then <code>make agreement</code></td></tr>
         <tr><td>Check the TCF decoder against IAB's library</td><td><span class="pill warn">! To run</span></td><td><code>scripts/check_tcf_official.mjs</code>. It already matches the live API on 20/20 visits</td></tr>

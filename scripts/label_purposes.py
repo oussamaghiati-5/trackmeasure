@@ -21,6 +21,7 @@ Labels come from purpose.label(). Outputs (private; they contain script URLs):
 """
 import argparse
 import json
+import re
 import sqlite3
 import sys
 from collections import defaultdict
@@ -44,11 +45,18 @@ def load(db):
     visits = pd.read_sql("SELECT id AS visit_id, run, site, phase, url FROM visits", con)
     present = pd.read_sql("SELECT DISTINCT visit_id, script_url, script_domain FROM api_calls", con)
     probes = pd.read_sql("SELECT DISTINCT visit_id, script_url, api FROM api_calls "
-                         "WHERE api IN ('Navigator.webdriver', 'Permissions.query')", con)
+                         "WHERE api IN ('Navigator.webdriver', 'Permissions.query', "
+                         "'Document.cookie.set', 'Storage.setItem')", con)
     posts = pd.read_sql("SELECT DISTINCT visit_id, domain FROM requests WHERE method='POST'", con)
     cookies = pd.read_sql("SELECT DISTINCT run, site, name FROM cookies", con)
+    # Requests whose URL carries a browser value the crawler controls (time zone,
+    # Linux platform string): evidence that fingerprint attributes left the browser.
+    rx = re.compile("|".join(re.escape(p) for p in purpose.value_patterns()))
+    sent = {(site, dom) for site, dom, url in con.execute(
+        "SELECT v.site, r.domain, r.url FROM requests r JOIN visits v ON v.id = r.visit_id")
+        if url and dom and rx.search(url)}
     con.close()
-    return visits, present, probes, posts, cookies
+    return visits, present, probes, posts, cookies, sent
 
 
 def owner_of(domain, owners):
@@ -60,6 +68,19 @@ def owner_of(domain, owners):
     return None
 
 
+def same_brand(site, domain):
+    """Brand-named CDNs without owner data: tiktokcdn-eu.com on tiktok.com,
+    targetimg1.com on target.com. The site's name must have >= 4 characters."""
+    s, d = (site or "").split(".")[0], (domain or "").split(".")[0]
+    return len(s) >= 4 and s != d and s in d
+
+
+def owner_key(owner):
+    """Compare owners across sources: 'ByteDance Ltd.' and 'ByteDance' -> 'bytedance'."""
+    words = re.sub(r"[^a-z0-9 ]", " ", (owner or "").lower()).split()
+    return words[0] if words else None
+
+
 def build(db, results, radar_path):
     fp = pd.read_csv(Path(results) / "fp_scripts.csv")
     fp["script_url"] = fp["script_url"].fillna("")
@@ -68,7 +89,7 @@ def build(db, results, radar_path):
     radar = json.loads(Path(radar_path).read_text(encoding="utf-8")) if radar_path else {}
     tr, owners = radar.get("tracker_radar", {}), radar.get("owners", {})
 
-    visits, present, probes, posts, cookies = load(db)
+    visits, present, probes, posts, cookies, sent = load(db)
     vinfo = visits.set_index("visit_id")
     present = present.join(vinfo[["run", "site", "phase", "url"]], on="visit_id")
     present["base"] = present.script_url.map(strip)
@@ -92,8 +113,11 @@ def build(db, results, radar_path):
     for r in probes.itertuples():
         probe_set[(r.site, r.template)].add(r.api)
     post_set = set(zip(posts.site, posts.domain))
+    sent_owner = {(site, owner_key(owner_of(d, owners))) for site, d in sent if owner_of(d, owners)}
     site_cookies = cookies.groupby("site").name.apply(set).to_dict()
     domain_sites = fp[fp.script_domain != "(inline/unknown)"].groupby("script_domain").site.nunique()
+    # Reach: on how many crawled sites did any script from this domain run at all?
+    domain_reach = present[present.script_domain != "(inline/unknown)"].groupby("script_domain").site.nunique()
 
     rows = []
     for (site, dom, tpl), g in fp.groupby(key):
@@ -111,25 +135,33 @@ def build(db, results, radar_path):
         techs = set(g.technique)
         api = probe_set.get((site, tpl), set())
         entry = tr.get(dom)
-        site_owner, dom_owner = owner_of(site, owners), owner_of(dom, owners)
+        site_owner = owner_key(owner_of(site, owners))
+        dom_owner_name = owner_of(dom, owners) or (entry or {}).get("owner")
+        dom_owner = owner_key(dom_owner_name)
         rows.append(dict(
             site=site, script_domain=dom, template=tpl, example_url=g.base.iloc[0], n_urls=g.base.nunique(),
             third_party=int(g.third_party.max()),
-            same_owner=int(bool(site_owner and dom_owner and site_owner == dom_owner)),
+            same_owner=int(bool(site_owner and dom_owner and site_owner == dom_owner) or same_brand(site, dom)),
             techniques=",".join(t for t in STRENGTH if t in techs),
             strongest=next(t for t in STRENGTH if t in techs),
             runs=",".join(sorted(set(g.run))),
             pre_consent=int((g.phase_group == "pre").any()),
             page_context=ctx, subpage_types=",".join(sorted(sub_types.get(k, set()))),
             reads_webdriver=int("Navigator.webdriver" in api), reads_permissions=int("Permissions.query" in api),
+            writes_storage=int(bool(api & {"Document.cookie.set", "Storage.setItem"})),
             posts_to_domain=int((site, dom) in post_set),
+            # Values sent to the script's domain or to another domain of the same owner
+            # (e.g. a script from tiktokcdn-eu.com reporting to tiktok.com).
+            sends_attributes=int((site, dom) in sent or bool(dom_owner and (site, dom_owner) in sent_owner)),
             domain_sites_in_crawl=int(domain_sites.get(dom, 0)),
+            domain_reach_in_crawl=int(domain_reach.get(dom, 0)),
+            tr_sites=(entry or {}).get("sites"),
             site_cookie_vendors=",".join(sorted(purpose.cookie_vendors(site_cookies.get(site, ())))),
             tr_found=int(entry is not None),
             tr_categories="|".join((entry or {}).get("categories") or []),
             tr_fingerprinting=(entry or {}).get("fingerprinting"),
             tr_prevalence=(entry or {}).get("prevalence"),
-            tr_owner=(entry or {}).get("owner") or dom_owner or "",
+            tr_owner=dom_owner_name or "",
         ))
     inv = pd.DataFrame(rows)
 
@@ -174,6 +206,18 @@ def build(db, results, radar_path):
         "independent" if any(s in e for s in ("signature", "Tracker Radar", "cookie", "co-occurrence"))
         else "behaviour/context only")
 
+    # Harm = purpose x capability (purpose.harm_class). A script can link a user
+    # across sites when the same third party (not the site's owner) is embedded on
+    # >= 2 sites: in this crawl, or in Tracker Radar's regional crawl.
+    lab["cross_site"] = ((lab.third_party == 1) & (lab.same_owner == 0) & (
+        (lab.domain_reach_in_crawl >= 2) | (pd.to_numeric(lab.tr_sites, errors="coerce").fillna(0) >= 2))
+    ).astype(int)
+    lab["identifying_power"] = lab.techniques.map(lambda t: purpose.identifying_power(t.split(",")))
+    lab["capability"] = [purpose.capability(p, c, s, w) for p, c, s, w in zip(
+        lab.identifying_power, lab.cross_site, lab.sends_attributes, lab.writes_storage)]
+    lab["harm_class"] = [purpose.harm_class(p, s, c) for p, s, c in zip(
+        lab.purpose_primary, lab.purpose_secondary.fillna(""), lab.capability)]
+
     # Name each cluster's vendor by majority label of its members.
     if len(clusters):
         clusters["vendor"] = [
@@ -193,7 +237,8 @@ def main():
     lab, clusters = build(a.db, a.results, a.radar)
     out = Path(a.results)
     inv_cols = [c for c in lab.columns if c not in ("purpose_primary", "purpose_secondary", "party",
-                                                    "confidence", "evidence", "vendor", "label_source")]
+                                                    "confidence", "evidence", "vendor", "label_source",
+                                                    "harm_class")]
     lab[inv_cols].to_csv(out / "script_inventory.csv", index=False)
     lab.to_csv(out / "script_purposes.csv", index=False)
     clusters.to_csv(out / "hidden_vendor_clusters.csv", index=False)
@@ -201,6 +246,7 @@ def main():
     print(f"{len(lab)} scripts ({len(base)} in baseline runs) on {lab.site.nunique()} sites")
     print(pd.crosstab(lab.purpose_primary, lab.confidence, margins=True).to_string())
     print(pd.crosstab(lab.purpose_primary, lab.party).to_string())
+    print(pd.crosstab(lab.harm_class, lab.capability, margins=True).to_string())
     print(clusters.to_string(index=False))
 
 

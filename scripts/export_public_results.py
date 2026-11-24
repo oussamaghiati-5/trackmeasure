@@ -26,7 +26,7 @@ URL_PATTERN = re.compile(r"https?://[^\s,;]+", re.IGNORECASE)
 # Optional: copied when present. Script URLs and per-site path templates are dropped
 # from the label table; cluster templates are shared by >= 2 sites and kept.
 PURPOSE_COPY = ("purpose_results.json", "purpose_survival.csv", "purpose_prevalence.csv",
-                "purpose_consent_sites.csv", "hidden_vendor_clusters.csv")
+                "purpose_consent_sites.csv", "hidden_vendor_clusters.csv", "harm_survival.csv")
 PURPOSE_DROP = ("example_url", "template")
 
 
@@ -141,6 +141,7 @@ This directory contains selected aggregate and per-site outputs for the complete
 - `script_purposes.csv`: one row per fingerprinting script (site, script domain, path template) with its purpose label, party (first-party, third-party or hidden first-party vendor), page context, confidence and evidence; script URLs and path templates omitted.
 - `hidden_vendor_clusters.csv`: path templates served by two or more sites, attributed to vendors (e.g. bot managers behind first-party URLs).
 - `purpose_prevalence.csv`, `purpose_survival.csv`, `purpose_consent_sites.csv`, `purpose_results.json`: results split by purpose (security/anti-fraud, ads/analytics, other/unknown), with site-bootstrap intervals for blocker and verified-consent survival.
+- `harm_survival.csv` and the `harm` block of `purpose_results.json`: the same analysis by harm class. Tracking (harmful) means an advertising or analytics purpose; Service means security or functional. Dual-use and Undetermined scripts are split by tracking capability, and an upper bound adds the high-capability ones. `script_purposes.csv` gives each script's `harm_class`, `capability`, `cross_site`, `sends_attributes` and `writes_storage`.
 - `manifest.json`: crawl settings and source hashes; exact VPN exit IP removed.
 - `vpn_provenance.json`: public provider/region and resolver-change summary; credential-bearing profile hashes and exact timestamps omitted.
 

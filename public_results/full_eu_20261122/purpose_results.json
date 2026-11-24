@@ -13,15 +13,14 @@
     "pairs_total": 237,
     "pairs_by_purpose": {
       "Anti-fraud/security": 149,
-      "Unknown": 58,
+      "Unknown": 60,
       "Advertising": 15,
       "Analytics": 11,
-      "Functional": 2,
-      "CDN": 2
+      "Functional": 2
     },
     "pairs_by_party": {
-      "Third-party": 97,
-      "First-party": 77,
+      "First-party": 90,
+      "Third-party": 84,
       "Hidden first-party vendor": 63
     },
     "strong_pairs_by_group": {
@@ -34,12 +33,12 @@
       "Other/unknown": 51,
       "Ads/analytics": 23
     },
-    "labelled_share_of_pairs": 0.7553,
+    "labelled_share_of_pairs": 0.7468,
     "labelled_share_of_strong_pairs": 0.8778,
     "confidence_of_labelled_pairs": {
       "High": 95,
       "Medium": 64,
-      "Low": 20
+      "Low": 18
     },
     "by_category": {
       "affiliate": {
@@ -290,6 +289,354 @@
       }
     }
   },
+  "harm": {
+    "definition": "Tracking = purpose Advertising/Analytics (not dual-use). Upper bound adds Dual-use and Undetermined scripts with High capability.",
+    "pairs_by_class": {
+      "Service": 151,
+      "Undetermined (low capability)": 42,
+      "Tracking": 26,
+      "Undetermined (high capability)": 18
+    },
+    "sites_by_class": {
+      "Tracking": 17,
+      "Dual-use": 0,
+      "Service": 43,
+      "Undetermined (high capability)": 6,
+      "Undetermined (low capability)": 23
+    },
+    "strong_pairs_by_class": {
+      "Service": 76,
+      "Undetermined (high capability)": 9,
+      "Tracking": 3,
+      "Undetermined (low capability)": 2
+    },
+    "Tracking": {
+      "sites": 17,
+      "pairs": 26,
+      "strong_pairs": 3,
+      "sites_before_consent": 17,
+      "sites_before_consent_high_capability": 6,
+      "after_verified_reject": {
+        "sites": 8,
+        "of_verified_reject_sites": 36,
+        "sites_high_capability": 3,
+        "sites_strong_technique": 1,
+        "vendors": [
+          "Ad-recovery network (html-load family)",
+          "Adobe Experience Platform tags",
+          "AnyClip / Prebid",
+          "AppsFlyer",
+          "GumGum",
+          "HubSpot analytics",
+          "Mantis brand safety",
+          "Prebid / header bidding",
+          "X (Twitter) Ads pixel"
+        ]
+      },
+      "dual_verified": {
+        "sites": 30,
+        "pairs_accept": 20,
+        "pairs_reject": 9,
+        "sites_accept": 10,
+        "sites_reject": 5
+      }
+    },
+    "Tracking, upper bound": {
+      "sites": 23,
+      "pairs": 44,
+      "strong_pairs": 12,
+      "sites_before_consent": 21,
+      "sites_before_consent_high_capability": 10,
+      "after_verified_reject": {
+        "sites": 10,
+        "of_verified_reject_sites": 36,
+        "sites_high_capability": 3,
+        "sites_strong_technique": 1,
+        "vendors": [
+          "Ad-recovery network (html-load family)",
+          "Adobe Experience Platform tags",
+          "AnyClip / Prebid",
+          "AppsFlyer",
+          "GumGum",
+          "HubSpot analytics",
+          "Integral Ad Science",
+          "Mantis brand safety",
+          "Prebid / header bidding",
+          "X (Twitter) Ads pixel"
+        ]
+      },
+      "dual_verified": {
+        "sites": 30,
+        "pairs_accept": 23,
+        "pairs_reject": 11,
+        "sites_accept": 11,
+        "sites_reject": 7
+      }
+    },
+    "tracking_scripts": {
+      "scripts": 57,
+      "sites": 32,
+      "capability": {
+        "Medium": 30,
+        "High": 22,
+        "Low": 5
+      },
+      "cross_site": 49,
+      "sends_attributes": 12,
+      "writes_storage": 44,
+      "vendors": {
+        "Ad-recovery network (html-load family)": 18,
+        "X (Twitter) Ads pixel": 9,
+        "AppsFlyer": 6,
+        "Wunderkind (BounceX)": 3,
+        "Ad-recovery network (html-load family) (first-party fallback)": 3,
+        "Prebid / header bidding": 3,
+        "Microsoft Clarity": 3,
+        "Adobe Experience Platform tags": 2,
+        "youtube.com": 2,
+        "Adobe Analytics (site tag manager)": 1,
+        "AnyClip / Prebid": 1,
+        "GumGum": 1,
+        "Mantis brand safety": 1,
+        "InsurAds": 1,
+        "HubSpot analytics": 1,
+        "Quantum Metric": 1,
+        "Stay22 affiliate": 1
+      },
+      "attribute_senders": [
+        "Ad-recovery network (html-load family) (first-party fallback) (bild.de)",
+        "AnyClip / Prebid (dictionary.com)",
+        "GumGum (dictionary.com)",
+        "X (Twitter) Ads pixel (forbes.com)",
+        "X (Twitter) Ads pixel (goal.com)",
+        "X (Twitter) Ads pixel (honey.com)",
+        "X (Twitter) Ads pixel (mirror.co.uk)",
+        "X (Twitter) Ads pixel (nypost.com)",
+        "X (Twitter) Ads pixel (politico.com)",
+        "X (Twitter) Ads pixel (telegraph.co.uk)",
+        "X (Twitter) Ads pixel (theverge.com)",
+        "X (Twitter) Ads pixel (vice.com)"
+      ]
+    },
+    "survival": {
+      "ubol": {
+        "Tracking": {
+          "sites_with_pairs": 16,
+          "pairs_baseline": 25,
+          "pairs_surviving": 3,
+          "survival": 0.12,
+          "repeat_survival": 1.0,
+          "difference_pp": -88.0,
+          "ci95_pp": [
+            -100.0,
+            -72.72727272727273
+          ],
+          "pairs_new": 3
+        },
+        "Tracking, upper bound": {
+          "sites_with_pairs": 22,
+          "pairs_baseline": 44,
+          "pairs_surviving": 22,
+          "survival": 0.5,
+          "repeat_survival": 1.0,
+          "difference_pp": -50.0,
+          "ci95_pp": [
+            -74.4186046511628,
+            -27.6595744680851
+          ],
+          "pairs_new": 6
+        },
+        "Service": {
+          "sites_with_pairs": 32,
+          "pairs_baseline": 117,
+          "pairs_surviving": 90,
+          "survival": 0.7692307692307693,
+          "repeat_survival": 0.9658119658119658,
+          "difference_pp": -19.658119658119656,
+          "ci95_pp": [
+            -32.67326732673267,
+            -7.017543859649122
+          ],
+          "pairs_new": 9
+        },
+        "Undetermined": {
+          "sites_with_pairs": 26,
+          "pairs_baseline": 58,
+          "pairs_surviving": 42,
+          "survival": 0.7241379310344828,
+          "repeat_survival": 0.896551724137931,
+          "difference_pp": -17.24137931034483,
+          "ci95_pp": [
+            -33.333333333333336,
+            -3.8461538461538436
+          ],
+          "pairs_new": 8
+        }
+      },
+      "pbadger": {
+        "Tracking": {
+          "sites_with_pairs": 16,
+          "pairs_baseline": 25,
+          "pairs_surviving": 15,
+          "survival": 0.6,
+          "repeat_survival": 1.0,
+          "difference_pp": -40.0,
+          "ci95_pp": [
+            -64.51612903225806,
+            -13.043478260869568
+          ],
+          "pairs_new": 10
+        },
+        "Tracking, upper bound": {
+          "sites_with_pairs": 22,
+          "pairs_baseline": 44,
+          "pairs_surviving": 29,
+          "survival": 0.6590909090909091,
+          "repeat_survival": 1.0,
+          "difference_pp": -34.09090909090909,
+          "ci95_pp": [
+            -56.52173913043479,
+            -14.28571428571429
+          ],
+          "pairs_new": 10
+        },
+        "Service": {
+          "sites_with_pairs": 33,
+          "pairs_baseline": 118,
+          "pairs_surviving": 98,
+          "survival": 0.8305084745762712,
+          "repeat_survival": 0.9661016949152542,
+          "difference_pp": -13.559322033898303,
+          "ci95_pp": [
+            -25.0,
+            -2.608695652173909
+          ],
+          "pairs_new": 17
+        },
+        "Undetermined": {
+          "sites_with_pairs": 26,
+          "pairs_baseline": 58,
+          "pairs_surviving": 38,
+          "survival": 0.6551724137931034,
+          "repeat_survival": 0.896551724137931,
+          "difference_pp": -24.13793103448276,
+          "ci95_pp": [
+            -42.10526315789473,
+            -7.142857142857151
+          ],
+          "pairs_new": 8
+        }
+      },
+      "optout": {
+        "Tracking": {
+          "sites_with_pairs": 9,
+          "pairs_baseline": 16,
+          "pairs_surviving": 15,
+          "survival": 0.9375,
+          "repeat_survival": 1.0,
+          "difference_pp": -6.25,
+          "ci95_pp": [
+            -23.076923076923073,
+            0.0
+          ],
+          "pairs_new": 1
+        },
+        "Tracking, upper bound": {
+          "sites_with_pairs": 9,
+          "pairs_baseline": 16,
+          "pairs_surviving": 15,
+          "survival": 0.9375,
+          "repeat_survival": 1.0,
+          "difference_pp": -6.25,
+          "ci95_pp": [
+            -23.076923076923073,
+            0.0
+          ],
+          "pairs_new": 3
+        },
+        "Service": {
+          "sites_with_pairs": 12,
+          "pairs_baseline": 37,
+          "pairs_surviving": 32,
+          "survival": 0.8648648648648649,
+          "repeat_survival": 0.8918918918918919,
+          "difference_pp": -2.7027027027026973,
+          "ci95_pp": [
+            -10.344827586206895,
+            0.0
+          ],
+          "pairs_new": 6
+        },
+        "Undetermined": {
+          "sites_with_pairs": 5,
+          "pairs_baseline": 6,
+          "pairs_surviving": 6,
+          "survival": 1.0,
+          "repeat_survival": 0.5,
+          "difference_pp": 50.0,
+          "ci95_pp": [
+            0.0,
+            87.5
+          ],
+          "pairs_new": 17
+        }
+      },
+      "accept": {
+        "Tracking": {
+          "sites_with_pairs": 9,
+          "pairs_baseline": 12,
+          "pairs_surviving": 12,
+          "survival": 1.0,
+          "repeat_survival": 1.0,
+          "difference_pp": 0.0,
+          "ci95_pp": [
+            0.0,
+            0.0
+          ],
+          "pairs_new": 18
+        },
+        "Tracking, upper bound": {
+          "sites_with_pairs": 9,
+          "pairs_baseline": 12,
+          "pairs_surviving": 12,
+          "survival": 1.0,
+          "repeat_survival": 1.0,
+          "difference_pp": 0.0,
+          "ci95_pp": [
+            0.0,
+            0.0
+          ],
+          "pairs_new": 23
+        },
+        "Service": {
+          "sites_with_pairs": 15,
+          "pairs_baseline": 44,
+          "pairs_surviving": 40,
+          "survival": 0.9090909090909091,
+          "repeat_survival": 0.9090909090909091,
+          "difference_pp": 0.0,
+          "ci95_pp": [
+            0.0,
+            0.0
+          ],
+          "pairs_new": 7
+        },
+        "Undetermined": {
+          "sites_with_pairs": 6,
+          "pairs_baseline": 8,
+          "pairs_surviving": 7,
+          "survival": 0.875,
+          "repeat_survival": 0.625,
+          "difference_pp": 25.0,
+          "ci95_pp": [
+            0.0,
+            57.14285714285714
+          ],
+          "pairs_new": 17
+        }
+      }
+    }
+  },
   "consent": {
     "verified_reject_sites": 36,
     "verified_accept_sites": 44,
@@ -391,12 +738,12 @@
     },
     "webdriver_probe_by_group": {
       "Security": {
-        "scripts": 142,
+        "scripts": 141,
         "read_navigator_webdriver": 132,
-        "rate": 0.93,
+        "rate": 0.936,
         "ci95": [
-          0.8752,
-          0.9613
+          0.8831,
+          0.9661
         ]
       },
       "Ads/analytics": {
@@ -409,21 +756,21 @@
         ]
       },
       "Other/unknown": {
-        "scripts": 4,
-        "read_navigator_webdriver": 1,
-        "rate": 0.25,
+        "scripts": 0,
+        "read_navigator_webdriver": 0,
+        "rate": null,
         "ci95": [
-          0.0456,
-          0.6994
+          null,
+          null
         ]
       },
-      "fisher_p_security_vs_ads": 9.243464339083723e-06
+      "fisher_p_security_vs_ads": 3.0673711100928688e-06
     },
     "strong_technique_by_group": {
       "Security": {
-        "scripts": 142,
+        "scripts": 141,
         "with_strong_technique": 112,
-        "rate": 0.789
+        "rate": 0.794
       },
       "Ads/analytics": {
         "scripts": 65,
@@ -431,18 +778,17 @@
         "rate": 0.123
       },
       "Other/unknown": {
-        "scripts": 4,
+        "scripts": 0,
         "with_strong_technique": 0,
-        "rate": 0.0
+        "rate": null
       }
     },
     "tracker_radar_fp_score_by_purpose": {
       "Advertising": 2.35,
       "Analytics": 2.71,
       "Anti-fraud/security": 1.76,
-      "CDN": 2.0,
       "Functional": 3.0,
-      "Unknown": 1.56
+      "Unknown": 1.59
     }
   },
   "hidden_first_party_vendors": {
@@ -506,23 +852,22 @@
     ]
   },
   "labels": {
-    "scripts": 348,
+    "scripts": 336,
     "by_purpose": {
-      "Anti-fraud/security": 149,
-      "Unknown": 128,
+      "Anti-fraud/security": 148,
+      "Unknown": 121,
       "Advertising": 51,
       "Analytics": 14,
-      "CDN": 4,
       "Functional": 2
     },
     "by_confidence": {
-      "Low": 144,
+      "Low": 133,
       "High": 114,
-      "Medium": 90
+      "Medium": 89
     },
     "by_party": {
-      "Third-party": 143,
-      "First-party": 109,
+      "Third-party": 123,
+      "First-party": 117,
       "Hidden first-party vendor": 96
     }
   },
@@ -531,25 +876,26 @@
     "strata": {
       "canvas | Hidden first-party vendor": 12,
       "attr_enum | Third-party": 11,
-      "webgl | First-party": 9,
-      "canvas | Third-party": 9,
+      "webgl | First-party": 10,
       "attr_enum | First-party": 8,
       "webgl | Third-party": 8,
+      "canvas | Third-party": 7,
       "canvas | First-party": 6,
       "attr_enum | Hidden first-party vendor": 5,
       "audio | Hidden first-party vendor": 4,
-      "webgl | Hidden first-party vendor": 2,
       "webrtc | Third-party": 2,
+      "webgl | Hidden first-party vendor": 2,
       "audio | Third-party": 1,
+      "audio | First-party": 1,
       "webrtc | Hidden first-party vendor": 1,
-      "canvas_font | Hidden first-party vendor": 1,
-      "webrtc | First-party": 1
+      "webrtc | First-party": 1,
+      "canvas_font | Hidden first-party vendor": 1
     },
     "rule_labels_in_sample": {
-      "Anti-fraud/security": 38,
-      "Unknown": 30,
-      "Advertising": 8,
-      "Analytics": 3,
+      "Anti-fraud/security": 39,
+      "Unknown": 29,
+      "Advertising": 7,
+      "Analytics": 4,
       "Functional": 1
     }
   }

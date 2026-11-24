@@ -1,4 +1,4 @@
-# Who Fingerprints, and Does Saying No Stop It? Purpose-Labelled Fingerprinting Under Verified Consent and Content Blockers
+# Harmful or Useful? Separating Tracking Fingerprinting from Security Fingerprinting Under Verified Consent and Content Blockers
 
 **Course project paper draft, working version (updated 24 November 2026)**
 **Authors:** [add team members]
@@ -6,9 +6,18 @@
 
 ## Abstract
 
-API-pattern detectors can say *that* a script fingerprints the browser, but not *why*. Our professor asked how to tell security fingerprinting from tracking fingerprinting. We crawled 149 popular websites from a German exit with an instrumented Chromium under six conditions: baseline, repeat baseline, uBlock Origin Lite, Privacy Badger, reject plus GPC, and accept. We label each detected fingerprinting script by purpose with an evidence ladder: vendor signatures, DuckDuckGo Tracker Radar categories, page context in the style of FP-Redemption, first-party path clusters that expose hidden vendors, and vendor cookies. We also verify consent state from two independent sources: the live CMP API and the consent cookies stored at the end of the visit.
+API-pattern detectors can say *that* a script fingerprints the browser, but not *why*. Fingerprinting that defends a site against bots and fraud is useful, and in EU law it can be strictly necessary. Fingerprinting that recognises the user for advertising or profiling is harmful, and needs consent. We separate the two and focus the study on the harmful kind.
 
-On 93 usable sites, 64 ran fingerprinting-pattern scripts. 63% of the detected (site, script, technique) pairs were security or anti-fraud and 11% were advertising or analytics, and security vendors produced 84% of the strong-technique pairs. 27% of pairs came from bot managers served through the site's own URLs. After a bug fix, consent verification rose from 3 confirmed choices to 36 verified rejections and 44 verified acceptances. A verified rejection removed third-party contacts (median 22 against 63 after acceptance, on 30 sites) and third-party cookies (1 against 35). It did not reduce fingerprinting: pair survival relative to the repeat baseline changed by +1.7 points (95% CI −6.4 to +11.9). 10 of 36 sites still ran ad-tech or analytics fingerprinting patterns after a verified "no", although almost all of these were weak signals. uBlock Origin Lite removed 88 points of ad/analytics fingerprinting but only 20 points of security fingerprinting. Content blockers and consent therefore act on different fingerprinting populations, and a single "fingerprinting" count hides this.
+We crawled 149 popular websites from a German exit with an instrumented Chromium under six conditions: baseline, repeat baseline, uBlock Origin Lite, Privacy Badger, reject plus GPC, and accept. Each detected script gets a harm class built from two parts:
+
+- **Purpose,** from an evidence ladder: vendor signatures, DuckDuckGo Tracker Radar categories, first-party path clusters that expose hidden vendors, vendor cookies, and page context in the style of FP-Redemption.
+- **Tracking capability:** how identifying the techniques are, cross-site reach, whether the browser's own values appear in requests to that vendor, and storage writes.
+
+We verify consent state from two independent sources: the live CMP API and the consent cookies stored at the end of the visit.
+
+On 93 usable sites, 64 ran fingerprinting-pattern scripts. Most of it is useful, not harmful. 64% of the detected (site, script, technique) pairs serve security or functionality, and these produce 76 of 90 strong-technique pairs. Harmful (tracking) fingerprinting is 11% of pairs on 17 sites, up to 19% on 23 sites when dual-use and high-capability unknown scripts are included. It mostly collects attributes: 3 of its 26 pairs use a strong technique. The X Ads pixel sent the browser's time zone and platform to its own servers on 9 sites.
+
+All 17 harmful-fingerprinting sites run it before any consent interaction. After a bug fix, consent verification rose from 3 confirmed choices to 36 verified rejections and 44 verified acceptances. A verified rejection removed third parties (median 22 against 63 domains after acceptance, on 30 sites) and third-party cookies (1 against 35). It barely reduced harmful fingerprinting: 15 of 16 pairs survived, −6.3 points against the repeat baseline (95% CI −23.1 to 0). 8 of 36 sites kept it after a verified "no". uBlock Origin Lite removed harmful fingerprinting almost entirely (−88 points, CI −100 to −73) but security fingerprinting only partly (−20 points). Counting all fingerprinting together would have hidden all of this.
 
 ## 1. Introduction
 
@@ -18,19 +27,21 @@ The same canvas readback is used by an ad-tech vendor to re-identify a visitor a
 
 We ask:
 
-- **RQ1. Who fingerprints, and why?** Which share of detected fingerprinting is security or anti-fraud, advertising or analytics, or unknown, and how much is served by vendors hidden behind first-party URLs?
-- **RQ2. Does rejecting consent stop it?** With the stored consent state verified, does a rejection change fingerprinting, compared with its effect on cookies and third-party contacts, and for which purposes?
-- **RQ3. What do content blockers stop?** Which fingerprinting survives uBlock Origin Lite and Privacy Badger, by purpose, signal strength and party?
+We ask:
+
+- **RQ1. Can harmful fingerprinting be told apart from useful fingerprinting, and how much of each is there?** Which share of detected fingerprinting serves tracking (advertising, analytics), which serves the site itself (security, functionality), and which cannot be decided? How much is served by vendors hidden behind first-party URLs?
+- **RQ2. Does rejecting consent stop harmful fingerprinting?** With the stored consent state verified, does a rejection remove tracking fingerprinting, compared with its effect on cookies and third-party contacts?
+- **RQ3. Do content blockers stop harmful fingerprinting, and what do they remove besides?** Which tracking and which security fingerprinting survives uBlock Origin Lite and Privacy Badger?
 
 Contributions:
 
-1. **A purpose-labelling method for fingerprinting scripts.** It uses vendor signatures, Tracker Radar, page context, path clusters and vendor cookies, and outputs a primary and secondary purpose, a party, a confidence level and an evidence trail. It is validated by agreement between independent sources and by behavioural checks, and comes with a stratified 80-script manual-validation protocol.
+1. **A harm classification for fingerprinting scripts.** Purpose comes from vendor signatures, Tracker Radar, page context, path clusters and vendor cookies, with a confidence level and an evidence trail. Tracking capability comes from identifying power, cross-site reach, observed transmission of the browser's own values, and storage writes. Each script gets a class: Tracking, Dual-use, Service, or Undetermined. The method is validated by agreement between independent sources and by behavioural checks, and comes with a stratified 80-script manual-validation protocol.
 2. **Two-source consent verification.** It combines the live CMP API with offline decoding of stored IAB TCF, OneTrust and Cookiebot cookies. It fixes two verifier errors that had turned the consent question into a negative result.
 3. **A 2026 EU replication of Papadogiannakis et al. [8] with verified consent state and purpose labels.** We find that consent and blockers act on different fingerprinting populations.
 
 ## 2. Related Work
 
-**Detecting fingerprinting.** Englehardt and Narayanan crawled one million sites and introduced API-pattern rules for canvas, font, WebRTC and audio fingerprinting [1]. Acar et al. measured canvas fingerprinting and respawning [2]. FP-Inspector [3] learns fingerprinting behaviour from static and dynamic features and finds substantially more fingerprinting scripts than hand-written rules. We keep the transparent rules of [1], adapted as in [3], and add manual validation (Section 3.6) rather than a classifier. FP-tracer [11] follows attribute values from source to network sink. FPTrace [12] shows causally that fingerprints are used for ad targeting by changing the fingerprint and watching ad bids. Both answer "is it used for tracking" more directly than we can, and Section 6 explains how our pipeline would extend towards them.
+**Detecting fingerprinting.** Englehardt and Narayanan crawled one million sites and introduced API-pattern rules for canvas, font, WebRTC and audio fingerprinting [1]. Acar et al. measured canvas fingerprinting and respawning [2]. FP-Inspector [3] learns fingerprinting behaviour from static and dynamic features and finds substantially more fingerprinting scripts than hand-written rules. We keep the transparent rules of [1], adapted as in [3], and add manual validation (Section 3.7) rather than a classifier. FP-tracer [11] follows attribute values from source to network sink. FPTrace [12] shows causally that fingerprints are used for ad targeting by changing the fingerprint and watching ad bids. Both answer "is it used for tracking" more directly than we can, and Section 6 explains how our pipeline would extend towards them.
 
 **Why scripts fingerprint.** FP-Redemption [9] infers security use from context: scripts present on every page suggest bot detection, and scripts present only on sign-up or payment pages suggest fraud prevention. Senol et al. [10] study fingerprinting on authentication pages and stress its dual nature. DuckDuckGo Tracker Radar [13] assigns usage categories (Advertising, Analytics, Fraud Prevention, Ad Fraud, CDN and others) and a 0–3 fingerprinting score per domain. The score measures the likelihood of fingerprinting-API use, not intent. We combine these sources and add first-party path clustering and vendor cookies.
 
@@ -78,7 +89,30 @@ Labels follow an evidence ladder (`purpose.py`):
 
 Confidence is High when two independent sources agree, for example a signature plus Tracker Radar or a vendor cookie. It is Medium for a single signature or Tracker Radar category, and Low for context rules, CDN-only categories and Unknown. Ad-verification vendors (IAS, Ad-Score, invalid-traffic detection) are labelled Advertising with Anti-fraud/security as the secondary purpose. This is Senol et al.'s dual use: their fraud checks protect advertisers, inside the ad supply chain.
 
-### 3.4 Consent verification from two sources
+### 3.4 Harmful versus useful fingerprinting
+
+We call fingerprinting **harmful** when its purpose is to recognise the user for someone other than the service the user asked for: advertising, ad measurement, analytics or profiling. Fingerprinting is **useful** when it serves the requested service itself: bot and fraud defence, or functionality. This follows the line drawn by Art. 5(3) of the ePrivacy Directive and the EDPB's guidelines on it [16]. Access to device information needs consent unless it is strictly necessary for the service, and security can be part of that service. It also follows Senol et al.'s dual-use framing [10].
+
+Purpose alone does not say how much harm a script can do, so we also measure its **tracking capability**:
+
+- **Identifying power.** High means a strong technique, or three or more techniques combined, since weak signals become identifying in combination. Medium means two weak techniques, and Low means one.
+- **Cross-site reach.** A third party, not owned by the site's owner, is embedded on at least 2 sites in our crawl or in Tracker Radar's regional crawl, so it can link visits across sites.
+- **Attribute transmission.** A request from the same site to the script's domain, or to another domain of the same owner, carries a browser value that only API reads expose. We use the configured time zone `Europe/Amsterdam` and the `X11; Linux x86_64` platform string, matched raw, URL-encoded once or twice, `+`-encoded, and inside base64 at every byte offset. Request bodies were not captured, so this is a lower bound.
+- **Storage writes.** The script writes cookies or `localStorage`, which can hold an identifier.
+
+Capability is High with three or more of these points (identifying power counts 0–2, each other ingredient 1), Medium with two, and Low otherwise. The harm class (`purpose.harm_class`) follows from purpose and capability:
+
+| Harm class | Rule | Interpretation |
+|---|---|---|
+| **Tracking** (harmful) | primary purpose Advertising or Analytics | the study's focus |
+| **Dual-use** | an advertising purpose with a secondary security purpose (ad verification such as IAS), or the reverse | harmful or useful depending on view |
+| **Service** (useful) | primary purpose Anti-fraud/security or Functional | arguably strictly necessary |
+| **Undetermined, high capability** | purpose Unknown or CDN, capability High | could track; purpose unproven |
+| **Undetermined, low capability** | purpose Unknown or CDN, capability Low or Medium | |
+
+We report every harmful-fingerprinting result twice: for **Tracking** (main estimate), and for an **upper bound** that adds Dual-use and Undetermined scripts with high capability. Purpose decides the class, and capability only ranks scripts within a class and settles scripts of unknown purpose. A security vendor with high capability is still Service. This keeps the classification tied to purpose, which the law uses, rather than to technique, which is the same in both cases.
+
+### 3.5 Consent verification from two sources
 
 The crawler attempts the choice through CMP JavaScript APIs or by clicking banner buttons in seven languages, and stores every frame's CMP state. A click alone never counts. We verify the saved state in two ways.
 
@@ -99,11 +133,11 @@ Our decoder agrees with the live `__tcfapi` purposes and vendor counts on 20 of 
 
 A choice is **verified** when either source matches the request and neither shows the opposite. Conflicts are excluded as unknown.
 
-### 3.5 Comparisons and uncertainty
+### 3.6 Comparisons and uncertainty
 
-We compare each condition with the baseline on sites with usable measurements in the condition, the baseline and the repeat baseline. For the consent conditions, we further require a verified choice. A baseline pair **survives** when it is seen again in the condition's post-consent phases. We report the condition's survival minus the repeat baseline's survival, with 95% percentile intervals from 2,000 site-level bootstrap resamples (`scripts/paired_uncertainty.py`), overall and per purpose group: Security, Ads/analytics, and Other/unknown.
+We compare each condition with the baseline on sites with usable measurements in the condition, the baseline and the repeat baseline. For the consent conditions, we further require a verified choice. A baseline pair **survives** when it is seen again in the condition's post-consent phases. We report the condition's survival minus the repeat baseline's survival, with 95% percentile intervals from 2,000 site-level bootstrap resamples (`scripts/paired_uncertainty.py`). We do this overall, per purpose group (Security, Ads/analytics, Other/unknown) and per harm class (Tracking, the Tracking upper bound, Service, Undetermined).
 
-### 3.6 Validation of the labels
+### 3.7 Validation of the labels
 
 Without ground truth, we use four checks:
 
@@ -118,15 +152,36 @@ Without ground truth, we use four checks:
 
 The baseline was usable on 93 of 149 sites (62%): news 42/50, e-commerce 22/50, social 22/37 and affiliate 7/12. Of the 56 failures, 51 were HTTP 401, 403 or 429 responses. Section 4.2 shows that the sites we reached run bot management heavily. The failures are therefore probably bot blocking, and the excluded sites are probably the ones that fingerprint most.
 
-### 4.2 RQ1: who fingerprints, and why
+### 4.2 RQ1: harmful versus useful fingerprinting
 
-64 of 93 usable sites ran at least one fingerprinting-pattern script in the baseline, with 237 (site, script domain, purpose, technique) pairs. The labels cover 75.5% of pairs and 87.8% of strong-technique pairs. Of the labelled pairs, 95 are High confidence, 64 Medium and 20 Low.
+64 of 93 usable sites ran at least one fingerprinting-pattern script in the baseline, with 237 (site, script domain, purpose, technique) pairs. The purpose labels cover 74.7% of pairs and 87.8% of strong-technique pairs. Of the labelled pairs, 95 are High confidence, 64 Medium and 18 Low.
+
+| Harm class (baseline) | Pairs | Strong-technique pairs | Sites |
+|---|---:|---:|---:|
+| **Tracking** (harmful) | **26 (11%)** | **3** | **17** |
+| Tracking, upper bound (+ dual-use, + undetermined with high capability) | 44 (19%) | 12 | 23 |
+| Service (useful: security, functional) | 151 (64%) | 76 | 43 |
+| Undetermined, high capability | 18 (8%) | 9 | 6 |
+| Undetermined, low capability | 42 (18%) | 2 | 23 |
+
+Most fingerprinting in this sample is useful, not harmful. Harmful fingerprinting is a minority, and it is mostly attribute collection rather than strong fingerprinting:
+
+- **Vendors.** Across all runs, the 57 tracking scripts (on 32 sites) belong to:
+  - ad-recovery networks (`html-load.*` and their first-party fallbacks)
+  - the X Ads pixel
+  - AppsFlyer, Wunderkind, Prebid, Microsoft Clarity, Adobe tags and HubSpot
+  - Quantum Metric, InsurAds, Stay22, GumGum, AnyClip and Mantis
+- **Capability.** 49 of the 57 can link visits across sites, 44 write cookies or storage, and 22 have high capability.
+- **Values sent home.** The X Ads pixel sent the browser's time zone and platform string to X's servers on 9 sites. GumGum and AnyClip did so on dictionary.com, and the ad-recovery fallback on bild.de.
+- **Undetermined, high capability.** These are first-party platform bundles that use strong techniques: Amazon, Best Buy, LinkedIn, Nordstrom, Pinterest, Temu and X. There are also two unattributed third parties, `toadmash.net` on thesun.co.uk and `lyfnh.io` on cdiscount.com. Their purpose cannot be shown from our data. They are the reason for the upper bound.
+
+The purpose breakdown behind these classes:
 
 | Purpose | Pairs | Strong-technique pairs | Sites |
 |---|---:|---:|---:|
 | Anti-fraud/security | 149 (63%) | 76 | 42 |
 | Advertising + analytics | 26 (11%) | 3 | 17 |
-| Unknown, functional, CDN | 62 (26%) | 11 | 28 |
+| Unknown, functional | 62 (26%) | 11 | 28 |
 
 - **Strong techniques mostly mean security.** 76 of the 90 strong-technique pairs (84%) come from security vendors. Ad-tech and analytics scripts use the weak techniques: attribute enumeration (IAS, Prebid, GumGum, the X Ads pixel, AppsFlyer) and the WebGL renderer query.
 - **E-commerce fingerprinting is bot and fraud management.** 21 of 22 usable e-commerce sites fingerprint. 20 of them run security fingerprinting, 10 run nothing else, and only one shows an ad/analytics pattern. On news sites, 12 of 42 run security fingerprinting and 11 run ad/analytics fingerprinting.
@@ -138,9 +193,9 @@ The baseline was usable on 93 of 149 sites (62%): news 42/50, e-commerce 22/50, 
   - Fastly's bot challenge on 4 (lemonde, newsweek, wikihow, bloomberg)
 
   Script-domain attribution counts all of these as first-party, and blockers cannot remove them by domain.
-- **Before consent.** 17 sites ran ad/analytics fingerprinting patterns before any consent interaction, but only 2 with a strong technique: HubSpot on techcrunch.com, and an Adobe tag on corriere.it.
+- **Harmful fingerprinting before consent.** All 17 sites with tracking fingerprinting ran it before any consent interaction, 6 of them with high capability: the X Ads pixel on honey.com, nypost.com and vice.com, HubSpot on techcrunch.com, an Adobe tag on corriere.it, and the ad-recovery network on buzzfeed.com. Only 2 used a strong technique: HubSpot (canvas and audio) and the Adobe tag (audio). Under ePrivacy Art. 5(3), tracking fingerprinting before consent is the clearest potential violation in this data.
 
-### 4.3 RQ2: does rejecting consent stop fingerprinting?
+### 4.3 RQ2: does rejecting consent stop harmful fingerprinting?
 
 Two-source verification raised verified choices from 3 to 80:
 
@@ -156,33 +211,36 @@ On the 30 dual-verified sites, the choice matters a great deal for cookies and t
 
 | Verified reject vs repeat baseline | Sites | Pair survival | Difference (pp) | 95% CI |
 |---|---:|---:|---:|---:|
-| All purposes | 19 | 89.8% | +1.7 | [−6.4, +11.9] |
-| Security | 11 | 86.1% | −2.8 | [−10.7, 0.0] |
-| Ads/analytics | 9 | 93.8% | −6.3 | [−23.1, 0.0] |
+| **Tracking** (harmful) | 9 | 93.8% (15/16) | **−6.3** | [−23.1, 0.0] |
+| Tracking, upper bound | 9 | 93.8% | −6.3 | [−23.1, 0.0] |
+| Service (useful) | 12 | 86.5% | −2.7 | [−10.3, 0.0] |
+| All fingerprinting | 19 | 89.8% | +1.7 | [−6.4, +11.9] |
 
-After a verified rejection, 29 of 36 sites still ran fingerprinting-pattern scripts. On 12 sites these were security scripts. On 10 sites they were ad-tech or analytics scripts:
+**Harmful fingerprinting survives a verified "no".** 15 of 16 tracking pairs present at baseline were still there after rejection. After a verified rejection, 8 of 36 sites ran tracking fingerprinting, and 10 under the upper bound:
 
-- Integral Ad Science (washingtonpost.com, theverge.com)
-- GumGum, AnyClip and Prebid (dictionary.com)
-- the X Ads pixel (vice.com)
-- AppsFlyer (weather.com)
+- the X Ads pixel (vice.com), which also sent the time zone and platform to X
+- GumGum and AnyClip (dictionary.com), which also sent attributes, plus Prebid there
 - HubSpot (techcrunch.com)
+- AppsFlyer (weather.com)
 - Adobe tags (elpais.com)
 - Mantis (mirror.co.uk)
-- an ad-recovery network (huffpost.com, buzzfeed.com, mirror.co.uk)
+- the ad-recovery network (huffpost.com, buzzfeed.com, mirror.co.uk)
+- under the upper bound, Integral Ad Science ad verification (washingtonpost.com, theverge.com)
 
-These ad/analytics cases were almost all weak signals: 16 of 18 pairs are attribute enumeration or the WebGL renderer query. The one strong case is HubSpot analytics (canvas and audio) on techcrunch.com. Of 21 strong-technique pairs after rejection, 19 are security vendors. Accepting added ad/analytics fingerprinting: on the dual-verified sites there were 23 ad/analytics pairs after acceptance against 11 after rejection, on 11 sites against 7.
+Three of these sites had high capability (buzzfeed.com, techcrunch.com, vice.com). Only one used a strong technique: HubSpot, with canvas and audio. The rest is attribute enumeration and the WebGL renderer query. By contrast, 19 of the 21 strong-technique pairs seen after rejection were Service scripts.
 
-We conclude that rejection removes the cookie and third-party layer of tracking but not the fingerprinting layer. Most fingerprinting that survives a "no" is security fingerprinting, which may be exempt as strictly necessary. A minority is ad-tech attribute collection, which is not clearly exempt. Because API reads alone cannot show that a fingerprint left the browser (Section 6), we report these as potential, not demonstrated, consent violations.
+Accepting adds harmful fingerprinting on top. On the dual-verified sites there were 20 tracking pairs on 10 sites after acceptance, against 9 pairs on 5 sites after rejection.
 
-### 4.4 RQ3: what do content blockers stop?
+We conclude that rejection removes the cookie and third-party layer of tracking but leaves the harmful fingerprinting that runs before consent in place. The fingerprinting that survives a "no" is mostly useful security fingerprinting, which may be exempt as strictly necessary. A harmful minority remains on 8 of 36 sites, and it is not exempt. Its attribute transmission is directly observed for the X Ads pixel, GumGum and AnyClip. For the rest we observe API reads only (Section 6), so we report potential, not demonstrated, violations.
 
-| Survival vs repeat baseline (pp, 95% CI) | All | Security | Ads/analytics | Other/unknown |
-|---|---:|---:|---:|---:|
-| uBlock Origin Lite (56 sites) | −27.5 [−40.2, −16.2] | −19.8 [−34.7, −7.2] | **−88.0 [−100, −72.7]** | −16.9 [−32.7, −3.6] |
-| Privacy Badger (57 sites) | −19.9 [−31.5, −9.7] | −13.7 [−25.0, −2.4] | −40.0 [−64.5, −13.0] | −23.7 [−40.6, −7.5] |
+### 4.4 RQ3: do content blockers stop harmful fingerprinting?
 
-uBlock Origin Lite removed 22 of 25 ad/analytics pairs but kept 77% of security pairs, which are 58% of all baseline pairs. The headline "−27.7 points" is therefore an average of two different effects. Blockers do the job of a tracker blocker well against ad-tech, and leave the bulk of strong fingerprinting, which is bot management that is often first-party, in place. Blocking security scripts also has a cost we do not measure: uBlock removed HUMAN, Forter, Riskified, Stripe and DataDome pairs, which protect checkouts.
+| Survival vs repeat baseline (pp, 95% CI) | **Tracking** | Tracking, upper bound | Service | Undetermined | All |
+|---|---:|---:|---:|---:|---:|
+| uBlock Origin Lite (56 sites) | **−88.0 [−100, −72.7]** | −50.0 [−74.4, −27.7] | −19.7 [−32.7, −7.0] | −17.2 [−33.3, −3.8] | −27.5 [−40.2, −16.2] |
+| Privacy Badger (57 sites) | **−40.0 [−64.5, −13.0]** | −34.1 [−56.5, −14.3] | −13.6 [−25.0, −2.6] | −24.1 [−42.1, −7.1] | −19.9 [−31.5, −9.7] |
+
+Yes, for the known trackers. uBlock Origin Lite removed 22 of 25 tracking pairs. Privacy Badger removed 10 of 25, and its learning-based blocking starts from an empty state in each fresh profile. The upper bound is smaller (−50 points), because the high-capability first-party platform bundles are untouched. uBlock also removed 23% of useful security pairs, while keeping 77% of them. Security pairs are 58% of all baseline pairs. The headline "−27.7 points" is therefore an average of two different effects. Blockers do the job of a tracker blocker well against ad-tech, and leave the bulk of strong fingerprinting, which is bot management that is often first-party, in place. Blocking security scripts also has a cost we do not measure: uBlock removed HUMAN, Forter, Riskified, Stripe and DataDome pairs, which protect checkouts.
 
 We also saw circumvention. On nordstrom.com, under both blockers, Forter's script loaded from a CloudFront host, with the same hashed filename as on `forter.com`. On bild.de, mirror.co.uk and tomsguide.com, an ad-recovery network that the baseline served from `html-load.*` reappeared as extension-less UUID paths on the site's own domain, mostly in the Privacy Badger run. That run also produced 10 new ad/analytics pairs.
 
@@ -194,24 +252,31 @@ We also saw circumvention. On nordstrom.com, under both blockers, Forter's scrip
   - Adobe and HubSpot: analytics against advertising
 
   Tracker Radar alone could label only 18 of 59 third-party script domains: 54 were in Tracker Radar, but most had no usage category. Signatures and context are needed.
-- **Behaviour agrees with the labels.** Using only labels that rest on vendor, Tracker Radar or cookie evidence, and not on behaviour, 93% of security scripts read `navigator.webdriver` (132/142, 95% CI 88–96%), against 68% of ad/analytics scripts (44/65, CI 56–78%). Fisher's exact p < 10⁻⁵. 79% of security scripts use a strong technique, against 12% of ad/analytics scripts.
+- **Behaviour agrees with the labels.** Using only labels that rest on vendor, Tracker Radar or cookie evidence, and not on behaviour, 94% of security scripts read `navigator.webdriver` (132/141, 95% CI 88–97%), against 68% of ad/analytics scripts (44/65, CI 56–78%). Fisher's exact p < 10⁻⁵. 79% of security scripts use a strong technique, against 12% of ad/analytics scripts.
 - **Tracker Radar's fingerprinting score is not a purpose signal.** Mean scores are 2.35 for advertising, 2.71 for analytics and 1.76 for security, which confirms that the score measures API use, not intent.
-- **Manual validation is pending.** The 80-script stratified sample is generated. Detector precision per technique and label precision per purpose will be reported from two annotators' independent labels. The rule labels in the sample are 38 security, 30 unknown, 8 advertising, 3 analytics and 1 functional.
+- **Manual validation is pending.** The 80-script stratified sample is generated. Detector precision per technique and label precision per purpose will be reported from two annotators' independent labels. The rule labels in the sample are 39 security, 29 unknown, 7 advertising, 4 analytics and 1 functional.
 
-## 5. Discussion: how to tell security fingerprinting from tracking fingerprinting
+## 5. Discussion: separating harmful from useful fingerprinting
 
-Our answer to the professor's question is that **no single signal separates the two, but a ladder of evidence separates most of it, and the rest should be reported as Unknown.**
+Our answer to the professor's question is that **harm is defined by purpose, and purpose can be established for three quarters of the detections. The rest is bounded, not guessed.**
 
-- **Vendor identity is the strongest signal.** It is recoverable for first-party URLs through path templates and vendor cookies.
+- **Vendor identity is the strongest signal.** It is recoverable even for first-party URLs, through path templates and vendor cookies.
 - **Tracker Radar gives an independent but sparse second opinion.**
-- **Context and behaviour are weak alone** but consistent with the vendor labels. Bot managers run on every page and probe for automation. Ad-tech enumerates attributes.
+- **Context and behaviour are weak alone,** but they agree with the vendor labels. Bot managers run on every page and probe for automation, while ad-tech enumerates attributes and sends them home.
+- **Capability adds what purpose cannot.** It ranks harmful scripts by how much tracking they can do, and it sizes the uncertain remainder into the upper bound.
 
-Purpose labels change the conclusions of a fingerprinting study. Without them we would have reported that rejection "does not stop fingerprinting" and that uBlock "reduces it by 28 points". With them: rejection leaves mostly security fingerprinting plus weak ad-tech attribute collection on a minority of sites, and uBlock removes ad-tech fingerprinting almost completely while leaving bot management.
+Focusing on harmful fingerprinting changes the study's conclusions. Counting all fingerprinting, we would have reported that rejection "does not stop fingerprinting" and that uBlock "reduces it by 28 points". Restricted to harmful fingerprinting:
+
+- Harmful fingerprinting is a minority (11–19% of pairs) and runs before consent on every site that has it.
+- A verified rejection leaves 15 of 16 of its pairs in place.
+- uBlock Origin Lite removes 88% of it, together with a fifth of the useful security fingerprinting.
+
+The useful majority is mostly first-party bot management. Neither consent nor filter lists should be expected to remove it, and removing it would cost security.
 
 ## 6. Limitations and validity
 
-1. **An API read is not proof of tracking.** We do not observe whether values leave the browser or feed an identifier. FP-tracer [11] (taint tracking) and FPTrace [12] (ad-bid changes) close this gap. Capturing request bodies and searching them for the browser's known attribute values is a cheap next step.
-2. **Purpose labels are estimates.** 26% of baseline pairs remain Unknown, mostly inline WebGL checks, platform bundles (YouTube, Meta, X, Temu) and rotating, unattributed domains. Manual validation is pending. The signature list was built by inspecting this batch, so it may fit this batch better than new data.
+1. **An API read is not proof of tracking.** Attribute transmission is observed only in request URLs, because request bodies were not captured. It is a lower bound: 12 of 57 tracking scripts are confirmed to send the browser's values. We do not observe whether the values feed an identifier. FP-tracer [11] (taint tracking) and FPTrace [12] (ad-bid changes) close this gap. Capturing request bodies is a cheap next step.
+2. **Harm classes are estimates.** 25% of baseline pairs have no supported purpose, mostly inline WebGL checks, platform bundles (YouTube, Meta, X, Temu) and rotating, unattributed domains. The upper bound covers the high-capability part. Manual validation is pending. The signature list was built by inspecting this batch, so it may fit this batch better than new data. Security vendors that pool device data across their customers are classed as Service by purpose, even though their capability is high.
 3. **Page context is shallow.** We crawl the home page and one subpage, with no login, cart or checkout pages. FP-Redemption's strongest context signals are therefore only partly available.
 4. **Selection.** 56 of 149 sites were unusable, mostly through bot blocking. The verified-consent sites are mainly large TCF or OneTrust publishers. Reject is combined with GPC.
 5. **One crawl, one exit, one browser profile.** The profile was en-US with an Amsterdam time zone behind a German IP. This inconsistency may itself trigger bot detection.
@@ -232,7 +297,11 @@ The Tracker Radar subset (CC BY-NC-SA 4.0) is pinned to commit `a358dac` and com
 
 ## 8. Conclusion
 
-In a 149-site EU crawl, most fingerprinting, and almost all strong fingerprinting, is bot and fraud management, often served from the site's own URLs. Verified consent rejection removes third parties and cookies but leaves fingerprinting in place: mostly security scripts, plus weak ad-tech attribute collection on 10 of 36 sites. Content blockers remove ad-tech fingerprinting almost completely and leave bot management. Purpose labelling turns "fingerprinting went up or down" into statements that a privacy engineer or a regulator can act on. The next step is to show which fingerprints leave the browser and feed an identifier.
+Harmful and useful fingerprinting can be separated by purpose, with tracking capability as a second axis and an explicit bound for what stays undetermined.
+
+In a 149-site EU crawl, most fingerprinting, and almost all strong fingerprinting, is useful bot and fraud management, often served from the site's own URLs. Harmful (tracking) fingerprinting accounts for 11–19% of detections on 17–23 sites, and it is mostly ad-tech attribute collection. It runs before consent on every site that has it. It survives a verified rejection on 8 of 36 sites (15 of 16 pairs), and some of it sends the browser's attributes to the vendor. uBlock Origin Lite removes it almost entirely.
+
+The next step is to capture request bodies and show which fingerprints feed an identifier.
 
 ## References
 

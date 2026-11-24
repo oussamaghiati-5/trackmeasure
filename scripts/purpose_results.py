@@ -10,6 +10,8 @@ Writes to the results directory:
   purpose_survival.csv          blocker / consent survival by purpose group, with
                                 site-bootstrap intervals against the repeat baseline
   purpose_consent_sites.csv     per-site fingerprinting by purpose after verified choices
+  harm_survival.csv             the same survival analysis by harm class (Tracking = the
+                                study's focus, with an upper bound; see purpose.harm_class)
   validation/annotation_sheet.csv, validation/annotation_key.csv
                                 stratified 80-script manual-validation sample (private)
 
@@ -73,32 +75,34 @@ def load(results):
     lab = pd.read_csv(r / "script_purposes.csv").fillna({"vendor": "", "purpose_secondary": ""})
     fp["script_url"] = fp.script_url.fillna("")
     fp["template"] = fp.script_url.map(lambda u: purpose.path_template(u.split("?")[0].split("#")[0]))
-    det = fp.merge(lab[KEY + ["purpose_primary", "party", "confidence", "vendor"]], on=KEY, how="left")
+    det = fp.merge(lab[KEY + ["purpose_primary", "party", "confidence", "vendor", "harm_class", "capability",
+                              "sends_attributes", "cross_site"]], on=KEY, how="left")
     assert det.purpose_primary.notna().all(), "unlabelled detections: re-run label_purposes.py"
     det["group"] = det.purpose_primary.map(group_of)
     return ps, det, lab
 
 
-def pair_sets(det, run, sites, groups=None):
+def pair_sets(det, run, sites, groups=None, col="group"):
     d = det[(det.run == run) & (det.phase_group == "post") & det.site.isin(sites)]
     if groups:
-        d = d[d.group.isin(groups)]
+        d = d[d[col].isin(groups)]
     out = defaultdict(set)
     for r in d.itertuples():
         out[r.site].add((r.script_domain, r.purpose_primary, r.technique))
     return out
 
 
-def survival_table(ps, det):
+def survival_table(ps, det, views=None, col="group"):
+    views = views or [("All", None)] + [(g, {g}) for g in GROUPS]
     elig = ps[ps.comparison_eligible == 1]
     sites_of = {run: set(elig[elig.run == run].site) for run in elig.run.unique()}
     rows, summary = [], {}
     for run in ("ubol", "pbadger", "optout", "accept"):
         common = sites_of["baseline"] & sites_of.get(run, set()) & sites_of["baseline2"]
-        for gname, groups in [("All", None)] + [(g, {g}) for g in GROUPS]:
-            base = pair_sets(det, "baseline", common, groups)
-            cond = pair_sets(det, run, common, groups)
-            rep = pair_sets(det, "baseline2", common, groups)
+        for gname, groups in views:
+            base = pair_sets(det, "baseline", common, groups, col)
+            cond = pair_sets(det, run, common, groups, col)
+            rep = pair_sets(det, "baseline2", common, groups, col)
             cond_rows = [dict(site=s, fp_pairs_baseline=len(base[s]), fp_pairs_surviving=len(base[s] & cond[s]),
                               tp_domains_run=0) for s in sorted(common)]
             ref = {s: dict(site=s, fp_pairs_baseline=len(base[s]), fp_pairs_surviving=len(base[s] & rep[s]),
@@ -155,6 +159,66 @@ def prevalence(ps, det, sites_csv):
                        "only_security": int(bc.groupby("site").group.agg(lambda g: set(g) == {"Security"}).sum())}
         out["by_category"] = rows
     return table, out
+
+
+# Harm views (purpose.harm_class). "Tracking" is the study's focus; the upper bound
+# adds dual-use scripts and scripts of unknown purpose with high tracking capability.
+HARM_VIEWS = [
+    ("Tracking", {purpose.TRACKING}),
+    ("Tracking, upper bound", {purpose.TRACKING, purpose.DUAL_USE, purpose.UNDETERMINED_HIGH}),
+    ("Service", {purpose.SERVICE}),
+    ("Undetermined", {purpose.UNDETERMINED_HIGH, purpose.UNDETERMINED_LOW}),
+]
+
+
+def harm(ps, det, lab):
+    """Prevalence and verified-consent results for harmful (tracking) fingerprinting."""
+    ok = ps[ps.comparison_eligible == 1]
+    elig = set(ok[ok.run == "baseline"].site)
+    b = det[(det.run == "baseline") & det.site.isin(elig)]
+    pairs = b.drop_duplicates(["site", "script_domain", "purpose_primary", "technique"])
+    out = {"definition": "Tracking = purpose Advertising/Analytics (not dual-use). Upper bound adds "
+                         "Dual-use and Undetermined scripts with High capability.",
+           "pairs_by_class": pairs.harm_class.value_counts().to_dict(),
+           "sites_by_class": {c: int(b[b.harm_class == c].site.nunique()) for c in purpose.HARM_CLASSES},
+           "strong_pairs_by_class": pairs[pairs.technique.isin(purpose.STRONG)].harm_class.value_counts().to_dict()}
+    for name, classes in HARM_VIEWS[:2]:
+        bv = b[b.harm_class.isin(classes)]
+        pre = bv[bv.phase_group == "pre"]
+        out[name] = {
+            "sites": int(bv.site.nunique()),
+            "pairs": int(len(pairs[pairs.harm_class.isin(classes)])),
+            "strong_pairs": int(len(pairs[pairs.harm_class.isin(classes) & pairs.technique.isin(purpose.STRONG)])),
+            "sites_before_consent": int(pre.site.nunique()),
+            "sites_before_consent_high_capability": int(pre[pre.capability == "High"].site.nunique()),
+        }
+    tl = lab[lab.harm_class == purpose.TRACKING]
+    out["tracking_scripts"] = {
+        "scripts": len(tl), "sites": int(tl.site.nunique()),
+        "capability": tl.capability.value_counts().to_dict(),
+        "cross_site": int(tl.cross_site.sum()), "sends_attributes": int(tl.sends_attributes.sum()),
+        "writes_storage": int(tl.writes_storage.sum()),
+        "vendors": tl.vendor.replace("", pd.NA).fillna(tl.script_domain).value_counts().to_dict(),
+        "attribute_senders": sorted({f"{v or d} ({s})" for v, d, s in zip(
+            tl.vendor, tl.script_domain, tl.site) if tl.loc[(tl.vendor == v) & (tl.site == s), "sends_attributes"].any()})}
+    rej = set(ok[(ok.run == "optout") & (ok.consent_outcome == "confirmed")].site)
+    acc = set(ok[(ok.run == "accept") & (ok.consent_outcome == "confirmed")].site)
+    both = rej & acc
+    for name, classes in HARM_VIEWS[:2]:
+        r = det[(det.run == "optout") & (det.phase_group == "post") & det.site.isin(rej) & det.harm_class.isin(classes)]
+        a = det[(det.run == "accept") & (det.phase_group == "post") & det.site.isin(both) & det.harm_class.isin(classes)]
+        rb = r[r.site.isin(both)]
+        key = ["site", "script_domain", "purpose_primary", "technique"]
+        out[name]["after_verified_reject"] = {
+            "sites": int(r.site.nunique()), "of_verified_reject_sites": len(rej),
+            "sites_high_capability": int(r[r.capability == "High"].site.nunique()),
+            "sites_strong_technique": int(r[r.technique.isin(purpose.STRONG)].site.nunique()),
+            "vendors": sorted(set(r.vendor.replace("", pd.NA).fillna(r.script_domain)))}
+        out[name]["dual_verified"] = {"sites": len(both),
+                                      "pairs_accept": int(len(a.drop_duplicates(key))),
+                                      "pairs_reject": int(len(rb.drop_duplicates(key))),
+                                      "sites_accept": int(a.site.nunique()), "sites_reject": int(rb.site.nunique())}
+    return out
 
 
 def consent(ps, det):
@@ -241,7 +305,7 @@ def validity(lab, radar):
     strong = {}
     for g in GROUPS:
         sub = ind[ind.purpose_primary.map(group_of) == g]
-        has = sub.techniques.map(lambda t: bool(set(t.split(",")) & purpose.STRONG))
+        has = sub.techniques.map(lambda t: bool(set(t.split(",")) & purpose.STRONG)).astype(bool)
         strong[g] = {"scripts": len(sub), "with_strong_technique": int(has.sum()),
                      "rate": round(float(has.mean()), 3) if len(sub) else None}
     out["strong_technique_by_group"] = strong
@@ -300,6 +364,9 @@ def main():
 
     table, prev = prevalence(ps, det, a.sites)
     surv, surv_summary = survival_table(ps, det)
+    hsurv, hsurv_summary = survival_table(ps, det, HARM_VIEWS, col="harm_class")
+    harm_res = harm(ps, det, lab)
+    harm_res["survival"] = hsurv_summary
     per, cons = consent(ps, det)
     val = validity(lab, radar)
     sample = annotation_sample(lab, out)
@@ -308,6 +375,7 @@ def main():
     res = {
         "prevalence": prev,
         "survival": surv_summary,
+        "harm": harm_res,
         "consent": cons,
         "validity": val,
         "hidden_first_party_vendors": {
@@ -321,6 +389,7 @@ def main():
     }
     table.to_csv(out / "purpose_prevalence.csv", index=False)
     surv.to_csv(out / "purpose_survival.csv", index=False)
+    hsurv.to_csv(out / "harm_survival.csv", index=False)
     per.to_csv(out / "purpose_consent_sites.csv", index=False)
     (out / "purpose_results.json").write_text(json.dumps(res, indent=2, default=str) + "\n", encoding="utf-8")
     print(json.dumps(res, indent=1, default=str))

@@ -19,6 +19,21 @@ This update follows the review of the EU batch, which found that the detector sa
 - `scripts/purpose_results.py` gives blocker and consent results per purpose with bootstrap intervals, runs validity checks, and writes the 80-script validation sheet. `scripts/purpose_agreement.py` and `docs/annotation_guide.md` cover the two-annotator κ and precision step.
 - The public bundle is refreshed with the purpose tables and without URLs. `PAPER_DRAFT.md` is reframed around the three research questions: who fingerprints and why, does rejecting stop it, and what blockers stop. The README is updated.
 
+**Harmful vs useful fingerprinting (added later on 24 November).** `purpose.harm_class` turns purpose into harm:
+
+- **Tracking (harmful):** advertising or analytics purpose.
+- **Service (useful):** security or functional purpose.
+- **Dual-use:** ad verification and similar.
+- **Undetermined:** split by tracking capability.
+
+Capability counts identifying power (strong or ≥3 combined techniques), cross-site reach, attribute transmission and storage writes. Attribute transmission means the browser's own time zone or platform string seen in request URLs to the vendor, raw, URL-encoded or base64. 5 tests were added. The study now focuses on the harmful class:
+
+- Harmful fingerprinting is 11% of baseline pairs on 17 sites, up to 19% on 23 sites under the upper bound. It is mostly attribute collection: 3 strong pairs.
+- It runs before consent on all 17 sites.
+- 15 of 16 harmful pairs survive a verified rejection (8 of 36 sites).
+- uBlock removes 88 points of it. Privacy Badger removes 40.
+- The X Ads pixel sent the browser's time zone and platform to X on 9 sites.
+
 **Results (EU batch)**
 
 | | Before | After |

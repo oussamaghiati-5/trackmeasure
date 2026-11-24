@@ -103,6 +103,51 @@ class Labels(unittest.TestCase):
                          {"Akamai", "DataDome", "Kasada"})
 
 
+class Harm(unittest.TestCase):
+    def test_per_visit_file_names_collapse(self):
+        self.assertEqual(purpose.path_template(
+            "https://p.toadmash.net/1795359836/761bc1f7-244d-406f-a0af-a23903d30284.js"), "/{hex}/{uuid}.js")
+        self.assertEqual(purpose.path_template("https://f.com/public/de27c0d40747/04bc79fd5f2951beba7a20d2.js"),
+                         "/public/{hex}/{hex}.js")
+
+    def test_known_values_found_raw_encoded_and_in_base64_at_any_offset(self):
+        import base64
+        import re
+        rx = re.compile("|".join(re.escape(p) for p in purpose.value_patterns()))
+        self.assertTrue(rx.search("https://t.co/i?tz=Europe%2FAmsterdam&x=1"))
+        self.assertTrue(rx.search("https://a.com/p?ua=Mozilla%2F5.0%20(X11%3B%20Linux%20x86_64)"))
+        for prefix in ("", "a", "ab", "abc"):
+            blob = base64.b64encode((prefix + '{"tz":"Europe/Amsterdam","w":1}').encode()).decode()
+            self.assertTrue(rx.search("https://a.com/c?d=" + blob), prefix)
+        self.assertFalse(rx.search("https://a.com/c?tz=Europe%2FParis&platform=Win32"))
+
+    def test_identifying_power_and_capability(self):
+        self.assertEqual(purpose.identifying_power(["canvas"]), "High")
+        self.assertEqual(purpose.identifying_power(["attr_enum", "webgl", "audio"]), "High")
+        self.assertEqual(purpose.identifying_power(["attr_enum", "webgl"]), "Medium")
+        self.assertEqual(purpose.identifying_power(["webgl"]), "Low")
+        self.assertEqual(purpose.capability("Low", True, True, True), "High")
+        self.assertEqual(purpose.capability("Medium", True, False, False), "Medium")
+        self.assertEqual(purpose.capability("Low", False, False, True), "Low")
+
+    def test_harm_class_follows_purpose_and_uses_capability_only_for_unknowns(self):
+        self.assertEqual(purpose.harm_class(purpose.ADS, "", "Low"), purpose.TRACKING)
+        self.assertEqual(purpose.harm_class(purpose.ANALYTICS, purpose.ADS, "High"), purpose.TRACKING)
+        self.assertEqual(purpose.harm_class(purpose.ADS, purpose.SECURITY, "Medium"), purpose.DUAL_USE)
+        self.assertEqual(purpose.harm_class(purpose.SECURITY, "", "High"), purpose.SERVICE)
+        self.assertEqual(purpose.harm_class(purpose.FUNCTIONAL, "", "High"), purpose.SERVICE)
+        self.assertEqual(purpose.harm_class(purpose.UNKNOWN, "", "High"), purpose.UNDETERMINED_HIGH)
+        self.assertEqual(purpose.harm_class(purpose.CDN, "", "Medium"), purpose.UNDETERMINED_LOW)
+
+    def test_brand_named_cdn_counts_as_same_owner(self):
+        from label_purposes import owner_key, same_brand
+        self.assertTrue(same_brand("tiktok.com", "tiktokcdn-eu.com"))
+        self.assertTrue(same_brand("target.com", "targetimg1.com"))
+        self.assertFalse(same_brand("x.com", "xandr.com"))
+        self.assertFalse(same_brand("cnn.com", "cnn.com"))
+        self.assertEqual(owner_key("ByteDance Ltd."), owner_key("Bytedance"))
+
+
 class Agreement(unittest.TestCase):
     def test_cohen_kappa(self):
         self.assertEqual(cohen_kappa(list("aabb"), list("aabb"))[0], 1.0)

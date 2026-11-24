@@ -6,9 +6,9 @@ Course research project (web/device tracking, *Defensive: Detection/Transparency
 
 ## Research questions
 
-1. **Who fingerprints, and why?** How common is fingerprinting (canvas, canvas-font, WebRTC, audio, WebGL, attribute enumeration) on ~150 popular news, e-commerce and social/affiliate sites, and which share is security/anti-fraud, advertising/analytics, or unknown, including vendors hidden behind first-party URLs?
-2. **Does saying no stop it?** With the saved consent state verified, does rejecting consent through the site's CMP (plus a Global Privacy Control signal) change fingerprinting, cookies and third-party contacts? Accepting is measured as the upper bound.
-3. **What do blockers stop?** How much of each purpose survives a content blocker (uBlock Origin Lite, Privacy Badger)?
+1. **Harmful or useful?** How common is fingerprinting (canvas, canvas-font, WebRTC, audio, WebGL, attribute enumeration) on ~150 popular news, e-commerce and social/affiliate sites? Which share is harmful (tracking: advertising/analytics), which is useful (security, functionality), and which cannot be decided? How much is served by vendors hidden behind first-party URLs?
+2. **Does saying no stop harmful fingerprinting?** With the saved consent state verified, does rejecting consent through the site's CMP (plus a Global Privacy Control signal) remove tracking fingerprinting, cookies and third-party contacts? Accepting is measured as the upper bound.
+3. **Do blockers stop harmful fingerprinting?** How much tracking and how much security fingerprinting survives a content blocker (uBlock Origin Lite, Privacy Badger)?
 4. Do identifiers respawn after cookies are cleared, including identifiers re-derived purely from the browser fingerprint? (Protocol implemented; not run on the EU batch.)
 
 Related work: Papadogiannakis et al. WWW'21 (tracking despite consent), FPTrace WWW'25 and FP-tracer PoPETs'24 (is fingerprinting used for tracking), FP-Redemption DIMVA'21 and Senol et al. WWW'24 (security fingerprinting), DuckDuckGo Tracker Radar (domain purposes), Englehardt & Narayanan CCS'16 (detection heuristics), FP-Inspector S&P'21, Fouad et al. PoPETs'22 (cookie respawning, including fingerprint-based).
@@ -98,7 +98,18 @@ A detection says *that* a script fingerprints, not *why*. Each script, defined a
 4. **Page context and behaviour (FP-Redemption-style, low confidence).** A script present only on login or checkout pages, or present on every page while probing `navigator.webdriver` with strong techniques, is labelled anti-fraud/anti-bot.
 5. Otherwise the purpose is **Unknown**.
 
-Each label has `purpose_primary`, `purpose_secondary`, `party` (First-party / Third-party / Hidden first-party vendor), `page_context`, `confidence` (High / Medium / Low) and `evidence`. `purpose_results.py` re-runs the blocker and verified-consent comparisons per purpose group with site-bootstrap intervals. It also runs validity checks: agreement between Tracker Radar and the signatures (Cohen's κ), automation-probe rates by purpose, and technique strength by purpose. Finally it writes a stratified 80-script manual-validation sheet. Two annotators fill the sheet ([`docs/annotation_guide.md`](docs/annotation_guide.md)), and `make agreement` reports κ, detector precision per technique and label precision per purpose.
+Each label has `purpose_primary`, `purpose_secondary`, `party` (First-party / Third-party / Hidden first-party vendor), `page_context`, `confidence` (High / Medium / Low) and `evidence`.
+
+**Harmful vs useful (`purpose.harm_class`).** Harmful fingerprinting recognises the user for someone other than the service requested (advertising, analytics); useful fingerprinting serves the service itself (security, functionality, the ePrivacy "strictly necessary" case). Purpose decides the class: **Tracking** (Advertising/Analytics), **Service** (Anti-fraud/security, Functional) or **Dual-use** (ad verification and similar).
+
+Each script also gets a tracking **capability** (High/Medium/Low) from four ingredients:
+
+- identifying power: a strong technique or ≥3 combined techniques;
+- cross-site reach: a third party on ≥2 sites;
+- attribute transmission: the browser's own time zone or platform string seen in request URLs to that vendor, raw, URL-encoded or base64;
+- storage writes.
+
+Capability ranks scripts within a class. It also splits scripts of unknown purpose into **Undetermined (high/low capability)**. Harmful-fingerprinting results are reported for Tracking and for an upper bound that adds Dual-use and high-capability Undetermined scripts (`harm_survival.csv`, the `harm` block of `purpose_results.json`). `purpose_results.py` re-runs the blocker and verified-consent comparisons per purpose group with site-bootstrap intervals. It also runs validity checks: agreement between Tracker Radar and the signatures (Cohen's κ), automation-probe rates by purpose, and technique strength by purpose. Finally it writes a stratified 80-script manual-validation sheet. Two annotators fill the sheet ([`docs/annotation_guide.md`](docs/annotation_guide.md)), and `make agreement` reports κ, detector precision per technique and label precision per purpose.
 
 ```sh
 make tracker-radar STUDY_BATCH=full_eu_20261122   # network, once; output is committed
@@ -227,7 +238,8 @@ The six-condition EU study batch `full_eu_20261122` completed on 2026-11-22. Its
 
 The baseline yielded 93 usable visits out of 149 attempts; 64 sites ran fingerprinting-pattern scripts. Results after the 2026-11-24 update (consent verifier fix and purpose labelling):
 
-- **Who fingerprints:** 63% of the 237 baseline (site, script, technique) pairs are security or anti-fraud and 11% are advertising or analytics. Security vendors produce 84% of strong-technique pairs. 27% of pairs come from bot managers hidden behind first-party URLs (Akamai, Cloudflare, Kasada, DataDome, Fastly).
+- **Harmful vs useful:** 64% of the 237 baseline (site, script, technique) pairs are useful (security or functional). Harmful tracking fingerprinting is 11% of pairs on 17 sites, up to 19% on 23 sites under the upper bound. Harmful fingerprinting is mostly attribute collection: 3 of its 26 pairs use a strong technique, against 76 strong pairs for security. All 17 harmful sites run it before consent. The X Ads pixel sent the browser's time zone and platform to X on 9 sites. 27% of pairs come from bot managers hidden behind first-party URLs (Akamai, Cloudflare, Kasada, DataDome, Fastly).
+- **Harmful fingerprinting under consent and blockers:** after a verified rejection, 15 of 16 harmful pairs survive (−6.3 points vs repeat baseline, CI −23.1 to 0), on 8 of 36 sites. uBlock Origin Lite removes it almost completely (−88 points, CI −100 to −73). Privacy Badger removes −40.
 - **Consent:** 36 verified rejections and 44 verified acceptances (30 sites both ways). On those 30 sites, rejecting cut third-party domains (median 22 against 63) and third-party cookies (1 against 35), but fingerprinting survival did not change: +1.7 points against the repeat baseline, 95% CI −6.4 to +11.9. 10 of 36 sites kept ad/analytics fingerprinting patterns after a verified rejection, almost all of them weak signals.
 - **Blockers:** uBlock Origin Lite reduced ad/analytics fingerprinting by 88 points but security fingerprinting by only 20 (overall −27.5). Privacy Badger: −40 and −14 (overall −19.9).
 

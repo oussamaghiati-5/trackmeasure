@@ -31,6 +31,11 @@ Primary batch: `full_eu_20261122`, with a Germany network exit. The input list h
   - 27% of pairs come from hidden first-party vendors.
   - uBlock: ads/analytics −88 pp, security −19.8 pp.
   - 10 of 36 verified-reject sites keep ad/analytics fingerprinting patterns, almost all weak.
+- Harm classes (`purpose.harm_class`): Tracking (ads/analytics, harmful) / Dual-use / Service (security, functional; useful) / Undetermined (high/low capability). Capability combines identifying power, cross-site reach, attribute transmission seen in URLs, and storage writes.
+  - The study focuses on Tracking: 11% of pairs on 17 sites, upper bound 19% on 23 sites.
+  - All harmful sites run it before consent.
+  - 15 of 16 harmful pairs survive a verified rejection (8 of 36 sites).
+  - uBlock removes 88 points of it.
 - Main defensible claims: consent and blockers act on different fingerprinting populations. Most strong fingerprinting is bot and fraud management. Purpose labels are evidence-based estimates with confidence levels, and the manual two-annotator validation is still pending.
 
 ## Important files

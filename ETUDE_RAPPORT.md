@@ -34,6 +34,23 @@ Les cookies de consentement stockés (TCF, OneTrust, Cookiebot) sont aussi déco
 - **Refus vérifié.** Il supprime les tiers (médiane de 22 domaines contre 63 après acceptation) et les cookies tiers (1 contre 35), mais **pas le fingerprinting** : +1,7 point par rapport à la répétition de référence, IC 95 % [−6,4 ; +11,9]. Après un refus vérifié, 10 sites sur 36 exécutent encore des scripts publicitaires ou analytics à motif de fingerprinting, presque tous à signal faible. Le fingerprinting fort restant après un refus vient à 19 paires sur 21 de fournisseurs de sécurité.
 - **Bloqueurs.** uBlock Origin Lite supprime le fingerprinting publicitaire et analytics (−88 points) mais très peu le fingerprinting de sécurité (−20 points). Le chiffre global de −27,7 points mélangeait ces deux effets.
 
+**Fingerprinting nuisible ou utile.** Le fingerprinting est **nuisible** (pistage) quand sa finalité est de reconnaître l'utilisateur pour un autre que le service demandé : publicité ou analytics. Il est **utile** quand il sert le service lui-même : sécurité, anti-fraude, fonctionnement. C'est le cas « strictement nécessaire » de l'article 5(3) de la directive ePrivacy.
+
+Chaque script reçoit aussi une **capacité de pistage** fondée sur quatre critères :
+
+- pouvoir d'identification (technique forte ou au moins 3 techniques combinées) ;
+- présence sur plusieurs sites ;
+- envoi observé des valeurs du navigateur (fuseau horaire, plateforme) dans les URL des requêtes vers le fournisseur ;
+- écriture de cookies ou de stockage local.
+
+Les scripts sans finalité établie sont classés « indéterminés », à capacité haute ou basse. Résultats centrés sur le fingerprinting nuisible :
+
+- 11 % des paires sur 17 sites, jusqu'à 19 % sur 23 sites en borne haute. Il s'agit surtout de collecte d'attributs, avec 3 paires à technique forte.
+- Il s'exécute avant tout consentement sur les 17 sites.
+- Après un refus vérifié, 15 paires sur 16 survivent (8 sites sur 36).
+- uBlock en supprime 88 points, Privacy Badger 40.
+- Le pixel X Ads envoie le fuseau horaire et la plateforme du navigateur à X sur 9 sites.
+
 **Validité.** Signatures et Tracker Radar concordent sur 8 domaines sur 12 (κ = 0,49). Les scripts de sécurité testent `navigator.webdriver` dans 93 % des cas, contre 68 % pour les scripts publicitaires et analytics (p < 10⁻⁵). Il reste à faire annoter l'échantillon stratifié de 80 scripts par deux personnes (`docs/annotation_guide.md`, puis `make agreement`).
 
 Les sections suivantes décrivent le protocole d'origine. Les chiffres de consentement qu'elles citent (2 refus, 1 acceptation) correspondent à l'ancien vérificateur.
