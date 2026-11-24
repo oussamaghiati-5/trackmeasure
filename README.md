@@ -231,7 +231,7 @@ The baseline yielded 93 usable visits out of 149 attempts; 64 sites ran fingerpr
 - **Consent:** 36 verified rejections and 44 verified acceptances (30 sites both ways). On those 30 sites, rejecting cut third-party domains (median 22 against 63) and third-party cookies (1 against 35), but fingerprinting survival did not change: +1.7 points against the repeat baseline, 95% CI −6.4 to +11.9. 10 of 36 sites kept ad/analytics fingerprinting patterns after a verified rejection, almost all of them weak signals.
 - **Blockers:** uBlock Origin Lite reduced ad/analytics fingerprinting by 88 points but security fingerprinting by only 20 (overall −27.5). Privacy Badger: −40 and −14 (overall −19.9).
 
-See [`PAPER_DRAFT.md`](PAPER_DRAFT.md) for the research-paper draft, [`NASROU_REPORT.md`](NASROU_REPORT.md) for the change log, and [`ETUDE_RAPPORT.md`](ETUDE_RAPPORT.md) for the detailed French report.
+See [`PAPER_DRAFT.md`](PAPER_DRAFT.md) for the research-paper draft, [`NASROU_REPORT.md`](NASROU_REPORT.md) for the change log, and [`ETUDE_RAPPORT.md`](ETUDE_RAPPORT.md) for the detailed French report. [`docs/review.html`](docs/review.html) holds the critique that motivated this rework: the brief scorecard, weaknesses, upgrade plan and related-work map. Its "Update" section shows the final results and the status of each Tier 1 item. Open it in a browser.
 
 To recreate the shareable bundle from the private batch, run:
 

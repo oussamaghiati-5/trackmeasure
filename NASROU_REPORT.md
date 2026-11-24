@@ -2,7 +2,7 @@
 
 ## Update of 24 November 2026: purpose labelling and consent fix
 
-This update follows the review of the EU batch, which found that the detector said *that* scripts fingerprint but not *why*, and that the consent question had been dropped because of verifier bugs. It needs no new crawl. Everything is recomputed from `data/full_eu_20261122/crawl.sqlite`.
+This update follows the review of the EU batch, which found that the detector said *that* scripts fingerprint but not *why*, and that the consent question had been dropped because of verifier bugs. The full review, with the final results and the status of each planned item, is in [`docs/review.html`](docs/review.html). This update implements its Tier 1 plan and needs no new crawl. Everything is recomputed from `data/full_eu_20261122/crawl.sqlite`.
 
 **Changes**
 
