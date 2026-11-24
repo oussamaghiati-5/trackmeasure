@@ -209,7 +209,9 @@ def main():
     ps = per_site(d, det)
     cmp_ = compare(ps, det, a.baseline)
     ps.to_csv(out / "per_site.csv", index=False)
-    det.drop_duplicates().to_csv(out / "fp_scripts.csv", index=False)
+    # Sorted so that re-runs write byte-identical files (set iteration order varies).
+    det.drop_duplicates().sort_values(list(det.columns), na_position="first").to_csv(
+        out / "fp_scripts.csv", index=False)
     cmp_.to_csv(out / "comparison.csv", index=False)
     coverage = ps.groupby(["run", "consent_action", "consent_outcome"], dropna=False).agg(
         site_runs=("site", "size"), usable_navigation=("measurement_ok", "sum"),

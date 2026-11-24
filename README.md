@@ -111,6 +111,14 @@ Each script also gets a tracking **capability** (High/Medium/Low) from four ingr
 
 Capability ranks scripts within a class. It also splits scripts of unknown purpose into **Undetermined (high/low capability)**. Harmful-fingerprinting results are reported for Tracking and for an upper bound that adds Dual-use and high-capability Undetermined scripts (`harm_survival.csv`, the `harm` block of `purpose_results.json`). `purpose_results.py` re-runs the blocker and verified-consent comparisons per purpose group with site-bootstrap intervals. It also runs validity checks: agreement between Tracker Radar and the signatures (Cohen's κ), automation-probe rates by purpose, and technique strength by purpose. Finally it writes a stratified 80-script manual-validation sheet. Two annotators fill the sheet ([`docs/annotation_guide.md`](docs/annotation_guide.md)), and `make agreement` reports κ, detector precision per technique and label precision per purpose.
 
+To re-run the whole offline analysis in one command (about 1–2 minutes, results are byte-identical across runs):
+
+```sh
+python scripts/reproduce_results.py --batch full_eu_20261122 --export
+```
+
+Step by step:
+
 ```sh
 make tracker-radar STUDY_BATCH=full_eu_20261122   # network, once; output is committed
 make purpose STUDY_BATCH=full_eu_20261122         # offline: labels + purpose results + validation sheet

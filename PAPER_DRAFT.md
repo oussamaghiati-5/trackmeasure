@@ -159,10 +159,10 @@ The baseline was usable on 93 of 149 sites (62%): news 42/50, e-commerce 22/50, 
 | Harm class (baseline) | Pairs | Strong-technique pairs | Sites |
 |---|---:|---:|---:|
 | **Tracking** (harmful) | **26 (11%)** | **3** | **17** |
-| Tracking, upper bound (+ dual-use, + undetermined with high capability) | 44 (19%) | 12 | 23 |
+| Tracking, upper bound (+ dual-use, + undetermined with high capability) | 45 (19%) | 12 | 23 |
 | Service (useful: security, functional) | 151 (64%) | 76 | 43 |
-| Undetermined, high capability | 18 (8%) | 9 | 6 |
-| Undetermined, low capability | 42 (18%) | 2 | 23 |
+| Undetermined, high capability | 19 (8%) | 9 | 6 |
+| Undetermined, low capability | 41 (17%) | 2 | 23 |
 
 Most fingerprinting in this sample is useful, not harmful. Harmful fingerprinting is a minority, and it is mostly attribute collection rather than strong fingerprinting:
 

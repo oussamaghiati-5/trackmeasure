@@ -79,6 +79,9 @@ def load(results):
                               "sends_attributes", "cross_site"]], on=KEY, how="left")
     assert det.purpose_primary.notna().all(), "unlabelled detections: re-run label_purposes.py"
     det["group"] = det.purpose_primary.map(group_of)
+    # Deterministic row order: pair-level de-duplication keeps the first row.
+    det = det.sort_values(["run", "site", "phase_group", "script_domain", "technique", "script_url"],
+                          kind="stable").reset_index(drop=True)
     return ps, det, lab
 
 
@@ -171,12 +174,21 @@ HARM_VIEWS = [
 ]
 
 
+HARM_RANK = (purpose.TRACKING, purpose.DUAL_USE, purpose.UNDETERMINED_HIGH, purpose.SERVICE,
+             purpose.UNDETERMINED_LOW)
+
+
 def harm(ps, det, lab):
     """Prevalence and verified-consent results for harmful (tracking) fingerprinting."""
     ok = ps[ps.comparison_eligible == 1]
     elig = set(ok[ok.run == "baseline"].site)
     b = det[(det.run == "baseline") & det.site.isin(elig)]
-    pairs = b.drop_duplicates(["site", "script_domain", "purpose_primary", "technique"])
+    # Two scripts can give the same pair with different capability (an Unknown script
+    # at High and at Low): the pair takes the higher-risk class, so it never depends
+    # on row order and the upper bound stays an upper bound.
+    pairs = (b.assign(_rank=b.harm_class.map({c: i for i, c in enumerate(HARM_RANK)}))
+             .sort_values("_rank", kind="stable")
+             .drop_duplicates(["site", "script_domain", "purpose_primary", "technique"]))
     out = {"definition": "Tracking = purpose Advertising/Analytics (not dual-use). Upper bound adds "
                          "Dual-use and Undetermined scripts with High capability.",
            "pairs_by_class": pairs.harm_class.value_counts().to_dict(),

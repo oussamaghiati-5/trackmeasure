@@ -293,9 +293,9 @@
     "definition": "Tracking = purpose Advertising/Analytics (not dual-use). Upper bound adds Dual-use and Undetermined scripts with High capability.",
     "pairs_by_class": {
       "Service": 151,
-      "Undetermined (low capability)": 42,
+      "Undetermined (low capability)": 41,
       "Tracking": 26,
-      "Undetermined (high capability)": 18
+      "Undetermined (high capability)": 19
     },
     "sites_by_class": {
       "Tracking": 17,
@@ -343,7 +343,7 @@
     },
     "Tracking, upper bound": {
       "sites": 23,
-      "pairs": 44,
+      "pairs": 45,
       "strong_pairs": 12,
       "sites_before_consent": 21,
       "sites_before_consent_high_capability": 10,
