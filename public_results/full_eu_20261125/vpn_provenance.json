@@ -1,0 +1,18 @@
+{
+  "provider": "VPNBook",
+  "server": "de220.vpnbook.com",
+  "protocol": "udp25000",
+  "expected_country": "DE",
+  "incidents": [
+    {
+      "condition": "accept",
+      "description": "The host lost its Wi-Fi uplink during accept; the following campus network blocked OpenVPN, so the tunnel could not reconnect. 25 of 97 accept sites failed (19 with DNS errors at the end of the run) and the runner stopped at the end-of-condition exit check.",
+      "handling": "Resumed with --modes accept on the original network, profile and exit (same DE exit IP; manifest unchanged). The crawler re-measured all 25 failed sites from scratch; 4 needed the network-error retry pass; accept finished 97/97. One of the 25 (linkedin.com, HTTP 404 on a subpage) is a non-network failure that other conditions would not have retried."
+    },
+    {
+      "condition": "pbadger, optout",
+      "description": "The laptop was suspended twice (Modern Standby) despite the runner's keep-awake request, pausing the crawl about 73 and 65 minutes. Other screen-off standby periods did not pause the crawl (no gaps, normal visit durations).",
+      "handling": "The optout pause fell between sites. In pbadger one visit was frozen mid-measurement (foodnetwork.com subpage, 73 min); the analysis reports a sensitivity check without that site."
+    }
+  ]
+}

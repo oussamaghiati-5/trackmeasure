@@ -1,0 +1,98 @@
+{
+  "accept": {
+    "sites": 30,
+    "survival": 0.8172043010752689,
+    "repeat_survival": 0.8817204301075269,
+    "difference_pp": -6.451612903225801,
+    "ci95_pp": [
+      -16.470588235294116,
+      1.2195121951219523
+    ],
+    "tp_domain_sites": 56,
+    "tp_domain_median_delta": 50.5,
+    "tp_domain_ci95": [
+      40.0,
+      61.5
+    ]
+  },
+  "gpc": {
+    "sites": 59,
+    "survival": 0.8783783783783784,
+    "repeat_survival": 0.963963963963964,
+    "difference_pp": -8.558558558558559,
+    "ci95_pp": [
+      -15.503875968992242,
+      -2.2321428571428603
+    ],
+    "tp_domain_sites": 95,
+    "tp_domain_median_delta": 0,
+    "tp_domain_ci95": [
+      0,
+      0
+    ]
+  },
+  "optout": {
+    "sites": 18,
+    "survival": 0.828125,
+    "repeat_survival": 0.953125,
+    "difference_pp": -12.5,
+    "ci95_pp": [
+      -31.034482758620697,
+      2.4691358024691357
+    ],
+    "tp_domain_sites": 34,
+    "tp_domain_median_delta": 2.0,
+    "tp_domain_ci95": [
+      0.0,
+      3.0
+    ]
+  },
+  "pbadger": {
+    "sites": 59,
+    "survival": 0.7385321100917431,
+    "repeat_survival": 0.9311926605504587,
+    "difference_pp": -19.266055045871553,
+    "ci95_pp": [
+      -30.27888446215139,
+      -8.81057268722467
+    ],
+    "tp_domain_sites": 95,
+    "tp_domain_median_delta": 0,
+    "tp_domain_ci95": [
+      -1,
+      0
+    ]
+  },
+  "reject": {
+    "sites": 16,
+    "survival": 0.8823529411764706,
+    "repeat_survival": 0.9215686274509803,
+    "difference_pp": -3.9215686274509776,
+    "ci95_pp": [
+      -18.181818181818176,
+      8.510638297872342
+    ],
+    "tp_domain_sites": 31,
+    "tp_domain_median_delta": 2,
+    "tp_domain_ci95": [
+      0,
+      3
+    ]
+  },
+  "ubol": {
+    "sites": 60,
+    "survival": 0.6812227074235808,
+    "repeat_survival": 0.9344978165938864,
+    "difference_pp": -25.32751091703056,
+    "ci95_pp": [
+      -38.288288288288285,
+      -11.16071428571429
+    ],
+    "tp_domain_sites": 95,
+    "tp_domain_median_delta": -6,
+    "tp_domain_ci95": [
+      -10,
+      -4
+    ]
+  }
+}

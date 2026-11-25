@@ -1,0 +1,50 @@
+{
+  "sites_sha256": "c25daf3095a39e961057c15e7c318d364f22a1322b8a6a29c1f9af0e4665a3fa",
+  "site_count": 149,
+  "settings": [
+    "--workers",
+    "2",
+    "--headful",
+    "--subpages",
+    "1",
+    "--dwell",
+    "5",
+    "--timeout",
+    "45",
+    "--site-timeout",
+    "180",
+    "--consent-wait",
+    "20",
+    "--locale",
+    "en-US",
+    "--seed",
+    "0",
+    "--timezone",
+    "Europe/Berlin"
+  ],
+  "exit": {
+    "country": "DE",
+    "ip": "redacted"
+  },
+  "network": "vpn",
+  "data_volume": true,
+  "source_sha256": {
+    "crawler.py": "ca6a41b2d444401ed15743c7c03ba21922dbeaf0eabcb091efa084bf18b776da",
+    "instrument.js": "10cdde6b8879dc523df162e161b6ded2d38136377acd410a3a2113a11624eb2e",
+    "consent.py": "ffa68d40cd6cf785ef08c62dcdd0e070d0d6d66d8491f636b9c1cf7edeb6a18d",
+    "analyze.py": "69bf2151373038d69c201c77130e968ad98f5868380e50ef12323c237e1e5696",
+    "respawn.py": "932facc4c336fae1e4f0057c59ee67087d617096bc46651fae5e54441af6039e",
+    "common.py": "712c675b0de047a79c84d970a7dd1682f58e653d8f1debc5052a42ee2e3a2573",
+    "navigation.py": "b94e0459f4e22bb035b718386d6ce8d817b392b6f794ae5adfe84369eac4ff83",
+    "extension_state.py": "6ad372656f8b839540058f8ede71020e6d5e258f7754308cf11991f4a9710a4c",
+    "requirements.txt": "690cf85e3c382719e68fc76b47cf2bd2b3fabb8b74bfd0fcb96fba407f603735",
+    "extensions.lock.json": "3ac08ecf792bde5e7b8b1288022b4cc275a6fb63dc108f59fef749c8c35d97d8",
+    "Dockerfile": "ab8cd9be4fabff83d8fc1558ba969bf5c369ad4361521903c814c8b5a5332ad3",
+    "docker-compose.yml": "be4d60a2c84cbade9ecc2006bf2cf1d015b2c21ada7759458b08b2a6dc8c32d6",
+    "docker-compose.vpn.openvpn.yml": "b4f60a91f45db8de7d32a8c5c484955bb095241f1c87a481555610149b9145e3",
+    "docker-compose.volume.yml": "50096bdc3ee86b2d4856c5d88dd3a31d509c5de407ca984a68e14e0567241b92",
+    "scripts/run_study.py": "fe372d3c8c94a93678212f17dd63ff46a25deb29ac8b3b47861ec1168f44e530",
+    "scripts/run_pilot.py": "87c7a33ccabbd928984c40d80083482a18a4bf3175e40dcb96180da175aacdc1"
+  },
+  "started_at": "2026-11-25T09:16:49.205602+00:00"
+}

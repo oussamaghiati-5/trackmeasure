@@ -28,6 +28,7 @@ URL_PATTERN = re.compile(r"https?://[^\s,;]+", re.IGNORECASE)
 PURPOSE_COPY = ("purpose_results.json", "purpose_survival.csv", "purpose_prevalence.csv",
                 "purpose_consent_sites.csv", "hidden_vendor_clusters.csv", "harm_survival.csv")
 PURPOSE_DROP = ("example_url", "template")
+INCIDENT_KEYS = ("condition", "description", "handling")
 
 
 def read_json(path):
@@ -124,13 +125,20 @@ def export(batch, sites, destination, overwrite=False):
             for key in ("before", "after", "reason")
             if key in change
         }
+    # Collection incidents (network loss, host suspension) and how they were handled.
+    incidents = [{key: item[key] for key in INCIDENT_KEYS if key in item}
+                 for item in provenance.get("incidents", ()) if isinstance(item, dict)]
+    if incidents:
+        public_provenance["incidents"] = incidents
     write_json(destination / "vpn_provenance.json", public_provenance)
 
-    readme = """# Public results bundle — full_eu_20261122
+    readme = f"""# Public results bundle — {batch.resolve().name}
 
 This directory contains selected aggregate and per-site outputs for the completed study batch.
 
 ## Files
+
+- `analyze.md` (when present): the written analysis of this batch.
 
 - `per_site.csv`: measurement status and per-site metrics for each condition; URLs in error messages are redacted.
 - `comparison.csv`: site-paired domain–technique pair and third-party-domain comparisons.
@@ -143,7 +151,7 @@ This directory contains selected aggregate and per-site outputs for the complete
 - `purpose_prevalence.csv`, `purpose_survival.csv`, `purpose_consent_sites.csv`, `purpose_results.json`: results split by purpose (security/anti-fraud, ads/analytics, other/unknown), with site-bootstrap intervals for blocker and verified-consent survival.
 - `harm_survival.csv` and the `harm` block of `purpose_results.json`: the same analysis by harm class. Tracking (harmful) means an advertising or analytics purpose; Service means security or functional. Dual-use and Undetermined scripts are split by tracking capability, and an upper bound adds the high-capability ones. `script_purposes.csv` gives each script's `harm_class`, `capability`, `cross_site`, `sends_attributes` and `writes_storage`.
 - `manifest.json`: crawl settings and source hashes; exact VPN exit IP removed.
-- `vpn_provenance.json`: public provider/region and resolver-change summary; credential-bearing profile hashes and exact timestamps omitted.
+- `vpn_provenance.json`: public provider/region, resolver-change and collection-incident summary; credential-bearing profile hashes and exact timestamps omitted.
 
 Raw crawl databases and crawl logs are not included. The database can contain cookie values and the logs may contain request details. Error-message URLs are also redacted. Use the repository scripts and the private local batch to reproduce or inspect raw observations. These results describe the accessible sites and this crawler configuration; heuristic API detections are not ground-truth proof of tracking, and purpose labels are evidence-based estimates (see `confidence` and `evidence`), not vendor-confirmed facts.
 """
@@ -154,11 +162,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("batch", type=Path, help="Completed private batch directory")
     parser.add_argument("--sites", type=Path, required=True, help="Frozen input sites CSV")
-    parser.add_argument("--out", type=Path, default=Path("public_results/full_eu_20261122"),
-                        help="Public bundle directory")
+    parser.add_argument("--out", type=Path, help="Public bundle directory (default: public_results/BATCH)")
     parser.add_argument("--overwrite", action="store_true",
                         help="Refresh files in an existing destination directory")
     args = parser.parse_args()
+    args.out = args.out or Path("public_results") / args.batch.resolve().name
     export(args.batch, args.sites, args.out, overwrite=args.overwrite)
     print(f"Wrote privacy-reduced results bundle to {args.out}")
 

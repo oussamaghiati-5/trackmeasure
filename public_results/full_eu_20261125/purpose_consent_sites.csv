@@ -1,0 +1,91 @@
+run,site,dual_verified,pairs_Security,vendors_Security,pairs_Ads/analytics,vendors_Ads/analytics,pairs_Other/unknown,vendors_Other/unknown
+optout,20minutes.fr,1,0,,0,,0,
+optout,9gag.com,1,0,,0,,0,
+optout,accuweather.com,1,0,,0,,1,(inline/unknown)
+optout,asos.com,1,3,"Akamai Bot Manager (sensor, random path)",0,,0,
+optout,booking.com,1,2,AWS WAF Bot Control,0,,1,(inline/unknown)
+optout,cnet.com,1,0,,0,,1,(inline/unknown)
+optout,consumerreports.org,1,0,,0,,0,
+optout,dailymotion.com,1,0,,0,,0,
+optout,dictionary.com,1,1,Cloudflare Bot Management,3,AnyClip / Prebid;GumGum;Prebid / header bidding,1,(inline/unknown)
+optout,elcorteingles.es,1,4,"Akamai Bot Manager;Akamai Bot Manager (sensor, random path)",0,,0,
+optout,elmundo.es,1,0,,0,,1,unidadeditorial.es
+optout,elpais.com,1,1,DataDome first-party,1,Adobe Experience Platform tags,0,
+optout,foodnetwork.com,1,0,,0,,1,(inline/unknown)
+optout,healthline.com,1,0,,0,,0,
+optout,hespress.com,0,0,,0,,1,(inline/unknown)
+optout,huffpost.com,1,0,,2,Ad-recovery network (html-load family),1,(inline/unknown)
+optout,ign.com,1,0,,0,,1,(inline/unknown)
+optout,lefigaro.fr,1,0,,0,,0,
+optout,mirror.co.uk,1,0,,2,Ad-recovery network (html-load family);Mantis brand safety,1,(inline/unknown)
+optout,msn.com,1,0,,0,,0,
+optout,npr.org,1,6,"Akamai Bot Manager (sensor, random path);Stripe Radar (fraud signals)",0,,1,(inline/unknown)
+optout,otto.de,1,6,Kasada bot defence,0,,0,
+optout,pcmag.com,1,0,,0,,1,(inline/unknown)
+optout,rtings.com,0,0,,1,Prebid / header bidding,0,
+optout,soundcloud.com,1,1,DataDome first-party,0,,0,
+optout,techcrunch.com,1,10,Cloudflare Turnstile/Bot Management;HUMAN (PerimeterX),4,HubSpot analytics,1,(inline/unknown)
+optout,tumblr.com,1,0,,0,,0,
+optout,twitch.tv,0,0,,0,,1,twitch.tv
+optout,vice.com,1,0,,1,X (Twitter) Ads pixel,1,(inline/unknown)
+optout,washingtonpost.com,1,0,,0,,1,(inline/unknown)
+optout,weather.com,1,0,,1,AppsFlyer,0,
+optout,webmd.com,1,0,,0,,0,
+optout,zara.com,1,5,"Akamai Bot Manager (sensor, random path);Riskified",0,,0,
+optout,zdnet.com,1,0,,0,,0,
+accept,20minutes.fr,1,0,,0,,1,(inline/unknown)
+accept,9gag.com,1,0,,2,Ad-recovery network (html-load family),0,
+accept,accuweather.com,1,2,Akamai Bot Manager,0,,1,(inline/unknown)
+accept,asos.com,1,3,"Akamai Bot Manager (sensor, random path)",0,,0,
+accept,bild.de,0,0,,1,Ad-recovery network (html-load family),0,
+accept,bloomberg.com,0,2,HUMAN (PerimeterX) first-party;Stripe Radar (fraud signals),1,AppsFlyer,1,(inline/unknown)
+accept,booking.com,1,2,AWS WAF Bot Control,0,,1,(inline/unknown)
+accept,businessinsider.com,0,0,,0,,0,
+accept,buzzfeed.com,0,0,,2,Ad-recovery network (html-load family),0,
+accept,cnbc.com,0,0,,0,,1,(inline/unknown)
+accept,cnet.com,1,0,,0,,0,
+accept,cnn.com,0,0,,2,Integral Ad Science;Wunderkind (BounceX),0,
+accept,consumerreports.org,1,0,,0,,0,
+accept,corriere.it,0,0,,4,Adobe Analytics (site tag manager);AppsFlyer;InsurAds,4,tncid.app
+accept,dailymail.co.uk,0,4,"Akamai Bot Manager (sensor, random path)",0,,0,
+accept,dailymotion.com,1,0,,0,,0,
+accept,dictionary.com,1,1,Cloudflare Bot Management,4,AnyClip / Prebid;GumGum;Prebid / header bidding;Wunderkind (BounceX),0,
+accept,elcorteingles.es,1,4,"Akamai Bot Manager (sensor, random path)",1,Microsoft Clarity,0,
+accept,elmundo.es,1,0,,0,,1,unidadeditorial.es
+accept,elpais.com,1,1,DataDome first-party,1,Adobe Experience Platform tags,0,
+accept,foodnetwork.com,1,0,,0,,1,(inline/unknown)
+accept,forbes.com,0,2,DataDome;Google reCAPTCHA,1,Integral Ad Science,0,
+accept,goal.com,0,1,HUMAN (PerimeterX),1,X (Twitter) Ads pixel,1,(inline/unknown)
+accept,healthline.com,1,0,,0,,0,
+accept,huffpost.com,1,0,,2,Ad-recovery network (html-load family),1,(inline/unknown)
+accept,ign.com,1,0,,0,,0,
+accept,independent.co.uk,0,0,,0,,0,
+accept,lefigaro.fr,1,0,,0,,0,
+accept,lemonde.fr,0,1,Fastly bot challenge,1,AppsFlyer,0,
+accept,merriam-webster.com,0,0,,0,,0,
+accept,mirror.co.uk,1,0,,5,Ad-recovery network (html-load family);Ad-recovery network (html-load family) (first-party fallback);Mantis brand safety;X (Twitter) Ads pixel,0,
+accept,msn.com,1,0,,0,,1,(inline/unknown)
+accept,nbcnews.com,0,0,,0,,3,(inline/unknown);nbcnews.com
+accept,npr.org,1,5,"Akamai Bot Manager (sensor, random path);Stripe Radar (fraud signals)",0,,1,(inline/unknown)
+accept,nypost.com,0,0,,7,Stay22 affiliate;Wunderkind (BounceX);X (Twitter) Ads pixel;youtube.com,2,(inline/unknown)
+accept,otto.de,1,6,Kasada bot defence,0,,0,
+accept,pcmag.com,1,0,,0,,0,
+accept,rottentomatoes.com,0,4,rottentomatoes.com,1,Adobe Experience Platform tags,1,(inline/unknown)
+accept,soundcloud.com,1,1,DataDome first-party,1,AppsFlyer,1,(inline/unknown)
+accept,spiegel.de,0,0,,0,,0,
+accept,techcrunch.com,1,4,HUMAN (PerimeterX),4,HubSpot analytics,0,
+accept,theguardian.com,0,0,,0,,1,(inline/unknown)
+accept,theverge.com,0,0,,1,X (Twitter) Ads pixel,2,(inline/unknown)
+accept,tomsguide.com,0,0,,1,Ad-recovery network (html-load family),0,
+accept,tumblr.com,1,0,,0,,0,
+accept,usatoday.com,0,0,,1,Integral Ad Science,1,(inline/unknown)
+accept,vice.com,1,0,,1,X (Twitter) Ads pixel,0,
+accept,washingtonpost.com,1,0,,1,Integral Ad Science,1,(inline/unknown)
+accept,weather.com,1,0,,1,AppsFlyer,0,
+accept,webmd.com,1,0,,0,,0,
+accept,welt.de,0,0,,0,,3,tornadorainbow.me;welt.de
+accept,wikihow.com,0,0,,0,,1,(inline/unknown)
+accept,wired.com,0,1,Cloudflare Bot Management,1,X (Twitter) Ads pixel,0,
+accept,yahoo.com,0,0,,1,Prebid / header bidding,1,(inline/unknown)
+accept,zara.com,1,5,"Akamai Bot Manager (sensor, random path);Riskified",0,,0,
+accept,zdnet.com,1,0,,0,,0,

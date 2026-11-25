@@ -253,6 +253,24 @@ On this Windows/Docker setup, the live SQLite database became corrupt on both On
 
 ## Status
 
+**Latest batch: `full_eu_20261125` (eight conditions, 2026-11-25).** The run adds `reject` (reject without GPC) and `gpc` (GPC alone) to the earlier conditions. It uses the fixed consent clicker, POST-body capture and a time zone matched to the VPN exit.
+- Outputs: [`public_results/full_eu_20261125/`](public_results/full_eu_20261125/).
+- Written analysis, in French: [`analyze.md`](public_results/full_eu_20261125/analyze.md).
+
+It reproduces the earlier batch:
+- 66 of 97 accessible sites fingerprint.
+- 62% of pairs are security and 11% advertising or analytics.
+- uBlock Origin Lite removes 86 points of tracking fingerprinting and Privacy Badger 45.
+- 8 of 31–34 sites with a verified rejection still run tracking fingerprinting.
+
+New in this batch:
+- GPC alone has no measurable effect.
+- Rejection with or without GPC gives the same result.
+- Accepting adds a median of 50 third-party domains.
+- Verified acceptances rose from 44 to 56.
+
+The sections below describe the 2026-11-22 batch.
+
 The six-condition EU study batch `full_eu_20261122` completed on 2026-11-22. Its shareable, privacy-reduced outputs are in [`public_results/full_eu_20261122/`](public_results/full_eu_20261122/). The full local batch remains under ignored `results/` and its SQLite database under ignored `data/`; neither should be committed as-is.
 
 The baseline yielded 93 usable visits out of 149 attempts; 64 sites ran fingerprinting-pattern scripts. Results after the 2026-11-24 update (consent verifier fix and purpose labelling):
@@ -269,6 +287,8 @@ To recreate the shareable bundle from the private batch, run:
 ```sh
 python scripts/export_public_results.py results/full_eu_20261122 --sites data/full_eu_20261122/sites.csv --overwrite
 ```
+
+The output goes to `public_results/<batch>` by default. Collection incidents recorded in the private `vpn_provenance.json` (`incidents`: condition, description, handling) are copied to the bundle.
 
 The exporter removes script URLs that may contain session tokens, the exact VPN exit IP, and credential-bearing VPN profile hashes. It omits raw crawl logs and databases.
 

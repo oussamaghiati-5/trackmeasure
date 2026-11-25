@@ -214,19 +214,28 @@ def harm(ps, det, lab):
         "vendors": tl.vendor.replace("", pd.NA).fillna(tl.script_domain).value_counts().to_dict(),
         "attribute_senders": sorted({f"{v or d} ({s})" for v, d, s in zip(
             tl.vendor, tl.script_domain, tl.site) if tl.loc[(tl.vendor == v) & (tl.site == s), "sends_attributes"].any()})}
-    rej = set(ok[(ok.run == "optout") & (ok.consent_outcome == "confirmed")].site)
-    acc = set(ok[(ok.run == "accept") & (ok.consent_outcome == "confirmed")].site)
-    both = rej & acc
-    for name, classes in HARM_VIEWS[:2]:
-        r = det[(det.run == "optout") & (det.phase_group == "post") & det.site.isin(rej) & det.harm_class.isin(classes)]
-        a = det[(det.run == "accept") & (det.phase_group == "post") & det.site.isin(both) & det.harm_class.isin(classes)]
-        rb = r[r.site.isin(both)]
-        key = ["site", "script_domain", "purpose_primary", "technique"]
-        out[name]["after_verified_reject"] = {
-            "sites": int(r.site.nunique()), "of_verified_reject_sites": len(rej),
+    def verified(run):
+        return set(ok[(ok.run == run) & (ok.consent_outcome == "confirmed")].site)
+
+    def after_reject(run, sites, classes):
+        r = det[(det.run == run) & (det.phase_group == "post") & det.site.isin(sites) & det.harm_class.isin(classes)]
+        return r, {
+            "sites": int(r.site.nunique()), "of_verified_reject_sites": len(sites),
             "sites_high_capability": int(r[r.capability == "High"].site.nunique()),
             "sites_strong_technique": int(r[r.technique.isin(purpose.STRONG)].site.nunique()),
             "vendors": sorted(set(r.vendor.replace("", pd.NA).fillna(r.script_domain)))}
+
+    rej, acc = verified("optout"), verified("accept")
+    # The reject condition is a reject without GPC (batches after 2026-11-22).
+    rej_only = verified("reject")
+    both = rej & acc
+    for name, classes in HARM_VIEWS[:2]:
+        r, out[name]["after_verified_reject"] = after_reject("optout", rej, classes)
+        if rej_only:
+            out[name]["after_verified_reject_without_gpc"] = after_reject("reject", rej_only, classes)[1]
+        a = det[(det.run == "accept") & (det.phase_group == "post") & det.site.isin(both) & det.harm_class.isin(classes)]
+        rb = r[r.site.isin(both)]
+        key = ["site", "script_domain", "purpose_primary", "technique"]
         out[name]["dual_verified"] = {"sites": len(both),
                                       "pairs_accept": int(len(a.drop_duplicates(key))),
                                       "pairs_reject": int(len(rb.drop_duplicates(key))),
@@ -277,6 +286,16 @@ def consent(ps, det):
     if both:
         diff = (w["tp_domains"].loc[both, "accept"] - w["tp_domains"].loc[both, "optout"])
         out["dual_tp_domains_accept_gt_reject_sites"] = int((diff > 0).sum())
+    # Reject without GPC (batches after 2026-11-22), to separate the two optout signals.
+    rej_only = set(ok[(ok.run == "reject") & (ok.consent_outcome == "confirmed")].site)
+    if rej_only:
+        d = det[(det.run == "reject") & (det.phase_group == "post") & det.site.isin(rej_only)]
+        out["reject_without_gpc"] = {
+            "verified_sites": len(rej_only), "also_verified_in_optout": len(rej_only & rej),
+            "source": ok[(ok.run == "reject") & (ok.consent_outcome == "confirmed")].consent_reason.value_counts().to_dict(),
+            **{f"after_reject_sites_with_{g}": int(d[d.group == g].site.nunique()) for g in GROUPS},
+            "after_reject_sites_with_any_fp": int(d.site.nunique()),
+            "after_reject_ads_analytics_sites": sorted(d[d.group == "Ads/analytics"].site.unique())}
     return per, out
 
 
