@@ -25,7 +25,7 @@ Chaque label porte une finalité principale et secondaire, une partie (first-par
 - après un refus total, la liste vide des finalités TCF était traitée comme « illisible » ;
 - après une acceptation, le vérificateur exigeait que tous les fournisseurs de la liste mondiale soient acceptés.
 
-Les cookies de consentement stockés (TCF, OneTrust, Cookiebot) sont aussi décodés. Résultat : **36 refus et 44 acceptations vérifiés**, contre 2 et 1 auparavant, dont 30 sites vérifiés dans les deux sens. Le décodeur concorde avec l'API du CMP sur 20 visites sur 20.
+Les cookies de consentement stockés (TCF, OneTrust, Cookiebot) sont aussi décodés. Résultat : **36 refus et 44 acceptations vérifiés**, contre 2 et 1 auparavant, dont 30 sites vérifiés dans les deux sens. Le décodeur concorde avec l'API du CMP sur 20 visites sur 20, et avec la bibliothèque de référence de l'IAB sur les 21 chaînes TCF stockées.
 
 **Résultats principaux**
 

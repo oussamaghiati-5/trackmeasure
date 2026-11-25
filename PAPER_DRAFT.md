@@ -129,7 +129,7 @@ The fixed rule is in `consent.tcf_matches`. A rejection must leave no purpose, v
 - OneTrust `OptanonConsent` groups, counted only when `OptanonAlertBoxClosed` shows a real choice
 - Cookiebot `CookieConsent`
 
-Our decoder agrees with the live `__tcfapi` purposes and vendor counts on 20 of 20 visits where both exist.
+Our decoder agrees with the live `__tcfapi` purposes and vendor counts on 20 of 20 visits where both exist. It also agrees with IAB Tech Lab's reference library (`@iabtechlabtcf/core` 1.5.22) on purposes, special features and vendor-consent counts for all 21 stored TC strings. The crawler stores cookie values cut at 1,000 characters. Six TC strings were cut, each after the vendor-consent field. For those six, the library decoded the core segment field by field up to the cut.
 
 A choice is **verified** when either source matches the request and neither shows the opposite. Conflicts are excluded as unknown.
 
@@ -280,7 +280,7 @@ The useful majority is mostly first-party bot management. Neither consent nor fi
 3. **Page context is shallow.** We crawl the home page and one subpage, with no login, cart or checkout pages. FP-Redemption's strongest context signals are therefore only partly available.
 4. **Selection.** 56 of 149 sites were unusable, mostly through bot blocking. The verified-consent sites are mainly large TCF or OneTrust publishers. Reject is combined with GPC.
 5. **One crawl, one exit, one browser profile.** The profile was en-US with an Amsterdam time zone behind a German IP. This inconsistency may itself trigger bot detection.
-6. **Consent decoding.** We decode TCF purposes, special features and vendor consents, but not legitimate-interest fields. The decoder matches the live API on 20/20 visits, but has not yet been checked against IAB's reference library.
+6. **Consent decoding.** We decode TCF purposes, special features and vendor consents, but not legitimate-interest fields. The decoder matches the live API on 20/20 visits and IAB's reference library on 21/21 stored strings. Six strings were cut at the crawler's 1,000-character cookie limit after the fields we use. A longer TC string, or a OneTrust or Cookiebot cookie over that limit, would not decode; the longest stored `OptanonConsent` is 724 characters.
 7. **Blocker cost is not measured** (breakage, page load, failed checkout) [14].
 
 ## 7. Ethics and reproducibility
@@ -331,5 +331,4 @@ The next step is to capture request bodies and show which fingerprints feed an i
 - Add the authors.
 - Convert the paper to the ACM AsiaCCS template.
 - Run the two-annotator validation (`docs/annotation_guide.md`) and fill in Section 4.5.
-- Optionally run `scripts/check_tcf_official.mjs` to confirm the TCF decoder against IAB's library.
 - Keep the limitations in the submitted version.

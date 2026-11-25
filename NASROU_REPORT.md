@@ -51,10 +51,11 @@ Capability counts identifying power (strong or ≥3 combined techniques), cross-
 - Vendor signatures and Tracker Radar agree on 8 of 12 shared domains (κ = 0.49). The disagreements are secondary purposes.
 - 93% of security scripts probe `navigator.webdriver`, against 68% of ad/analytics scripts (p < 10⁻⁵).
 
+- The TCF decoder agrees with IAB's reference library on all 21 stored TC strings (`scripts/check_tcf_official.mjs`, 25 Nov). It also matches the live API on 20 of 20 visits. Six strings were cut at the crawler's 1,000-character cookie limit, after the fields we decode.
+
 **Still open:**
 
 - Two annotators must fill the 80-script sheet to get κ and precision per technique and per purpose.
-- The TCF decoder should be checked against IAB's library (`scripts/check_tcf_official.mjs`). It already matches the live API on 20 of 20 visits.
 
 Host unit suite: 90 tests pass.
 

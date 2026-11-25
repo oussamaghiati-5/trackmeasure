@@ -317,7 +317,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; display: grid; ga
         <tr><td>Harmful vs useful classification, results focused on harmful</td><td><span class="pill good">✓ Done</span></td><td><code>purpose.harm_class</code>, <code>harm_survival.csv</code>, 5 new tests</td></tr>
         <tr><td>Paper reframed, README and reports updated</td><td><span class="pill good">✓ Done</span></td><td><code>PAPER_DRAFT.md</code>, public bundle refreshed</td></tr>
         <tr><td>80-script manual validation (κ, precision per technique and purpose)</td><td><span class="pill warn">! Sheet ready</span></td><td>Two teammates fill it (<code>docs/annotation_guide.md</code>), then <code>make agreement</code></td></tr>
-        <tr><td>Check the TCF decoder against IAB's library</td><td><span class="pill warn">! To run</span></td><td><code>scripts/check_tcf_official.mjs</code>. It already matches the live API on 20/20 visits</td></tr>
+        <tr><td>Check the TCF decoder against IAB's library</td><td><span class="pill good">✓ Done 25 Nov</span></td><td><code>scripts/check_tcf_official.mjs</code>: agrees on 21/21 stored TC strings (and the live API on 20/20 visits)</td></tr>
       </tbody>
     </table>
   </div>
@@ -503,7 +503,7 @@ else:
   </div>
   <div class="tiers">
     <div class="tier">
-      <div class="tier-head"><h3>Tier 1 · No new crawl</h3><span class="pill good">✓ Done 24 Nov</span><span class="muted small">Except the two-annotator validation and the IAB decoder check. See the update at the top.</span></div>
+      <div class="tier-head"><h3>Tier 1 · No new crawl</h3><span class="pill good">✓ Done 24 Nov</span><span class="muted small">Except the two-annotator validation. See the update at the top.</span></div>
       <ul>
         <li>Fix <code>consent.py:151</code> and <code>:158</code>, add regression tests, and re-assess the stored consent JSON. Turn the scratch script into <code>scripts/offline_consent.py</code> and check its decoding against the official IAB TC-string decoder.</li>
         <li>Recompute consent comparisons on the verified sites with your existing <code>paired_uncertainty.py</code> bootstrap.</li>
