@@ -182,7 +182,10 @@ exit). Baseline subpages that answer with an HTTP error are replaced by up to tw
 spare candidates and listed in the `subpage_skips` table; comparison runs revisit
 the baseline's URLs unchanged. Request bodies of POST/PUT/PATCH requests are kept
 (first 32 KB, full size in `body_size`), request URLs up to 16 KB, and cookie
-values whole.
+values whole. After each condition, sites that failed with a network error (DNS,
+connection, timeout) get one retry pass a minute later; HTTP answers such as 403
+bot blocks are kept as failures. On Windows the runner keeps the computer from
+sleeping while it is alive.
 Outputs are in `data/<batch>/` and `results/<batch>/`. A completed command can
 still contain failed sites; inspect `per_site.csv` and `consent_coverage.csv`
 before reporting any result. `make respawn` selects candidates from that
@@ -240,7 +243,7 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 After a condition finishes, run `python scripts/paired_uncertainty.py results/BATCH/comparison.csv` to write `paired_uncertainty.json`. It compares each condition with the repeat baseline on common sites with detected baseline pairs and gives a 95% site-bootstrap interval for the difference in pair survival. This quantifies variation across measured sites; it does not resolve sampling or fingerprint-heuristic errors.
 
-On this Windows/Docker setup, the live SQLite database became corrupt on both OneDrive and local Windows bind mounts. Use `docker-compose.volume.yml` to keep the live batch database on Docker's Linux filesystem, and export a copy to the workspace only after the crawler exits. Inspect the run's `.log` file while it writes; open the exported SQLite file after completion. `scripts/run_study.py` works with this overlay: it gives each batch its own volume (`trackmeasure_<batch>_data`), reads the database through the container, and exports a copy to `data/<batch>/crawl.sqlite` when the requested conditions finish. `scripts/resume_local_batch.py` was used to finish the 2026-11-22 batch.
+On this Windows/Docker setup, the live SQLite database became corrupt on both OneDrive and local Windows bind mounts. Use `docker-compose.volume.yml` to keep the live batch database on Docker's Linux filesystem, and export a copy to the workspace only after the crawler exits. Inspect the run's `.log` file while it writes; open the exported SQLite file after completion. `scripts/run_study.py` works with this overlay: it gives each batch its own volume (`trackmeasure_<batch>_data`, handed to the container's `pwuser` once), reads the database through the container, and exports a copy to `data/<batch>/crawl.sqlite` when the requested conditions finish. `scripts/resume_local_batch.py` was used to finish the 2026-11-22 batch.
 
 ## Smoke test
 

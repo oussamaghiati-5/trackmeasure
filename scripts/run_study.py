@@ -20,6 +20,7 @@ import json
 import os
 import shutil
 import subprocess
+import time
 
 from run_pilot import MODES, run
 from verify_vpn import ROOT, BASE, VPN, DATA_OVERLAY, VPN_OVERLAY, expected_country, trace
@@ -62,6 +63,15 @@ src.close()
 '''
 
 
+NETWORK_ERRORS = ("net::ERR_", "Timeout", "TimeoutError")
+RETRY_PAUSE = 60        # seconds, so a short VPN DNS outage can end before the retry
+
+
+def network_failures(rows):
+    """Sites whose failure was the network, not the site's answer (sites_done rows)."""
+    return [site for site, error in rows or [] if error and any(k in error for k in NETWORK_ERRORS)]
+
+
 def exit_timezone(country):
     try:
         return TIMEZONES[country.upper()]
@@ -79,6 +89,14 @@ def query(batch, sql):
     out = container_python(QUERY, f"data/{batch}/crawl.sqlite", sql, capture=True).stdout
     line = next(line for line in out.splitlines() if line.startswith(MARKER))
     return json.loads(line[len(MARKER):])
+
+
+def prepare_volume(batch):
+    """A new Docker volume is root-owned (755); hand it to the crawler's pwuser once.
+    Only CHOWN is added, for this one-off command, on top of the dropped capabilities."""
+    subprocess.run(OFFLINE + ["run", "--rm", "--no-deps", "-T", "--user", "root", "--cap-add", "CHOWN",
+                              "--entrypoint", "chown", "crawler", "pwuser:pwuser", f"data/{batch}"],
+                   cwd=ROOT, check=True)
 
 
 def export(batch):
@@ -103,6 +121,11 @@ def main():
         ap.error("--batch must contain only letters, digits, hyphens or underscores")
     # docker-compose.volume.yml names the batch's volume after this variable.
     os.environ["STUDY_BATCH"] = args.batch
+    if os.name == "nt":
+        # Keep Windows from sleeping while the runner is alive (ES_CONTINUOUS |
+        # ES_SYSTEM_REQUIRED); the request ends with this process.
+        import ctypes
+        ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
     source = (ROOT / args.sites).resolve()
     if not source.is_file():
         ap.error(f"site list not found: {source}")
@@ -116,6 +139,8 @@ def main():
     for path in (data, results, inputs):
         path.mkdir(parents=True, exist_ok=True)
     subprocess.run(["docker", "compose", "build", "crawler"], cwd=ROOT, check=True)
+    if DATA_OVERLAY:
+        prepare_volume(args.batch)
     network = VPN if args.network == "vpn" else BASE
     if args.network == "vpn":
         subprocess.run(VPN + ["up", "-d", "--wait", "--wait-timeout", "120", "gluetun"],
@@ -161,15 +186,31 @@ def main():
                     writer.writeheader()
                     writer.writerows(selected)
             input_path = f"results/{args.batch}/inputs/successful_sites.csv"
-        command = network + ["run", "--rm", "-T", "crawler", "xvfb-run", "-a", "python", "-u",
-                             "crawler.py", "--sites", input_path,
-                             "--out", f"data/{args.batch}/crawl.sqlite", "--run", mode,
-                             "--consent-artifacts", f"results/{args.batch}/consent", *settings, *MODES[mode]]
-        if mode != "baseline":
-            command += ["--reuse-urls-from", f"data/{args.batch}/crawl.sqlite:baseline"]
-        run(command, results / f"{mode}.log")
-        if trace(network) != exit_info:
-            raise RuntimeError("Network exit changed during run; do not compare this batch")
+        def crawl(site_list):
+            command = network + ["run", "--rm", "-T", "crawler", "xvfb-run", "-a", "python", "-u",
+                                 "crawler.py", "--sites", site_list,
+                                 "--out", f"data/{args.batch}/crawl.sqlite", "--run", mode,
+                                 "--consent-artifacts", f"results/{args.batch}/consent", *settings, *MODES[mode]]
+            if mode != "baseline":
+                command += ["--reuse-urls-from", f"data/{args.batch}/crawl.sqlite:baseline"]
+            run(command, results / f"{mode}.log")
+            if trace(network) != exit_info:
+                raise RuntimeError("Network exit changed during run; do not compare this batch")
+
+        crawl(input_path)
+        # One retry pass for network failures (VPN DNS timeouts, dropped connections).
+        # HTTP answers such as 403 bot blocks are measurements and are not retried.
+        failures = query(args.batch, f"SELECT site, error FROM sites_done WHERE run='{mode}' AND ok=0")
+        retry = network_failures(failures)
+        if retry:
+            print(f"{mode}: retrying {len(retry)} sites after network errors: {', '.join(retry)}", flush=True)
+            retry_path = inputs / f"retry_{mode}.csv"
+            with retry_path.open("w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=["domain", "category"], extrasaction="ignore")
+                writer.writeheader()
+                writer.writerows(row for row in sites if row["domain"] in set(retry))
+            time.sleep(RETRY_PAUSE)
+            crawl(f"results/{args.batch}/inputs/{retry_path.name}")
         (ok, failed), = query(args.batch, "SELECT COALESCE(SUM(ok),0), COALESCE(SUM(1-ok),0) "
                                           f"FROM sites_done WHERE run='{mode}'")
         print(f"{mode}: {ok} completed, {failed} failed; inspect {results / (mode + '.log')}", flush=True)

@@ -143,6 +143,17 @@ class Harm(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             run_study.exit_timezone("US")
 
+    def test_only_network_failures_are_retried(self):
+        import run_study
+        rows = [["temu.com", "NavigationError: landing https://temu.com/: Page.goto: net::ERR_NAME_NOT_RESOLVED at x"],
+                ["a.com", "NavigationError: landing https://a.com/: Page.goto: Timeout 45000ms exceeded."],
+                ["b.com", "TimeoutError: "],
+                ["c.com", "NavigationError: landing https://c.com/: HTTP 403"],
+                ["d.com", "NavigationError: subpage https://d.com/x: HTTP 429"],
+                ["e.com", None]]
+        self.assertEqual(run_study.network_failures(rows), ["temu.com", "a.com", "b.com"])
+        self.assertEqual(run_study.network_failures(None), [])
+
     def test_identifying_power_and_capability(self):
         self.assertEqual(purpose.identifying_power(["canvas"]), "High")
         self.assertEqual(purpose.identifying_power(["attr_enum", "webgl", "audio"]), "High")
