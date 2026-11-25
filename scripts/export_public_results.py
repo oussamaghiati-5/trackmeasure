@@ -28,6 +28,8 @@ URL_PATTERN = re.compile(r"https?://[^\s,;]+", re.IGNORECASE)
 PURPOSE_COPY = ("purpose_results.json", "purpose_survival.csv", "purpose_prevalence.csv",
                 "purpose_consent_sites.csv", "hidden_vendor_clusters.csv", "harm_survival.csv")
 PURPOSE_DROP = ("example_url", "template")
+# Identifier sharing (scripts/id_sharing.py): cookie names and domains only, no values or URLs.
+EVIDENCE_COPY = ("id_sharing.json", "id_sharing.csv")
 INCIDENT_KEYS = ("condition", "description", "handling")
 
 
@@ -99,7 +101,7 @@ def export(batch, sites, destination, overwrite=False):
     (destination / "sites.csv").write_bytes(sites.read_bytes())
     sanitize_per_site(batch / "per_site.csv", destination / "per_site.csv")
     sanitize_fingerprint_scripts(batch / "fp_scripts.csv", destination / "fp_scripts.csv")
-    purpose_files = [name for name in PURPOSE_COPY if (batch / name).is_file()]
+    purpose_files = [name for name in PURPOSE_COPY + EVIDENCE_COPY if (batch / name).is_file()]
     for name in purpose_files:
         (destination / name).write_bytes((batch / name).read_bytes())
     if (batch / "script_purposes.csv").is_file():
@@ -150,6 +152,10 @@ This directory contains selected aggregate and per-site outputs for the complete
 - `hidden_vendor_clusters.csv`: path templates served by two or more sites, attributed to vendors (e.g. bot managers behind first-party URLs).
 - `purpose_prevalence.csv`, `purpose_survival.csv`, `purpose_consent_sites.csv`, `purpose_results.json`: results split by purpose (security/anti-fraud, ads/analytics, other/unknown), with site-bootstrap intervals for blocker and verified-consent survival.
 - `harm_survival.csv` and the `harm` block of `purpose_results.json`: the same analysis by harm class. Tracking (harmful) means an advertising or analytics purpose; Service means security or functional. Dual-use and Undetermined scripts are split by tracking capability, and an upper bound adds the high-capability ones. `script_purposes.csv` gives each script's `harm_class`, `capability`, `cross_site`, `sends_attributes` and `writes_storage`.
+- `id_sharing.csv` and `id_sharing.json`: identifier-like cookie values found in requests to another party, such as an analytics client ID sent to its vendor or a cookie synced between ad companies.
+  - A value counts as an identifier only if it occurs in one browser profile (one run and site).
+  - `receiver_known_tracker` marks receivers on DuckDuckGo's tracker list.
+  - The files contain cookie names and domains, never cookie values or URLs.
 - `manifest.json`: crawl settings and source hashes; exact VPN exit IP removed.
 - `vpn_provenance.json`: public provider/region, resolver-change and collection-incident summary; credential-bearing profile hashes and exact timestamps omitted.
 

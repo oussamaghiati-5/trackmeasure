@@ -2,7 +2,7 @@
 
 Collecte du 25 novembre 2026, de 09:16 à 16:44 UTC. Elle porte sur 149 sites, en 8 conditions, avec une sortie VPN en Allemagne. Ce document résume les résultats et les compare au batch du 22 novembre (`public_results/full_eu_20261122`). Il signale aussi ce qu'il ne faut pas en conclure.
 
-Tous les chiffres viennent des fichiers de ce dossier : surtout `purpose_results.json`, `paired_uncertainty.json` et `consent_coverage.csv`. On peut les régénérer avec `python scripts/reproduce_results.py --batch full_eu_20261125 --export` à partir de la base privée (section 9).
+Tous les chiffres viennent des fichiers de ce dossier : surtout `purpose_results.json`, `paired_uncertainty.json` et `consent_coverage.csv`. On peut les régénérer avec `python scripts/reproduce_results.py --batch full_eu_20261125 --export` à partir de la base privée (section 10).
 
 ## Résumé
 
@@ -20,6 +20,7 @@ Tous les chiffres viennent des fichiers de ce dossier : surtout `purpose_results
    - Privacy Badger en retire 45 % (−45 pts, IC95 [−68 ; −19]).
    - Les deux retirent aussi une partie des scripts de sécurité : −16 et −13 pts, surtout HUMAN/PerimeterX.
 6. **Les résultats reproduisent ceux du 22 novembre** : même prévalence, même effet des bloqueurs, même survie au refus. Le correctif du clic de consentement fait passer les acceptations vérifiées de 44 à 56.
+7. **Les identifiants partent aussi après un refus.** Sur 21 des 31 sites où le refus est vérifié, un identifiant de cookie (Google Analytics, Facebook, Parse.ly, Adobe, LiveIntent…) part encore vers un traqueur connu, et 6 de ces sites font du cookie syncing. Sur les mêmes sites, il y en avait 19 sans aucun choix : le refus ne réduit rien. Après acceptation, le nombre de sites concernés double (28 → 54 sur 56), et le médian de destinataires passe à 16, contre 2 après refus. Ce résultat se reproduit sur le batch du 22/11. Il établit l'envoi effectif d'un identifiant, pas seulement l'appel d'une API (section 6).
 
 ## 1. Ce qui a été mesuré
 
@@ -167,7 +168,7 @@ Principaux vendeurs : réseau d'ad-recovery de la famille html-load, pixel X (Tw
 - **Bloqueurs.** Seuls les bloqueurs réduisent nettement le tracking, et uBlock bien plus que Privacy Badger. Les deux retirent aussi des scripts de sécurité, surtout HUMAN/PerimeterX sur 3 sites, puis Akamai, Forter et Riskified : c'est un dommage collatéral sur la détection de fraude.
 - **Pertes « Service » sous `gpc`, `optout`, `reject` et `accept`.** Elles viennent de 1 à 3 sites chacune, avec des anti-bots qui ne se déclenchent pas à chaque visite (Kasada, Akamai, Stripe Radar, PerimeterX). Ce n'est pas un effet du signal.
   - Les dénominateurs sont petits (30 à 54 paires sous consentement), d'où les IC larges.
-  - Ces conditions ont tourné 3 à 7 h après la baseline (section 8).
+  - Ces conditions ont tourné 3 à 7 h après la baseline (section 9).
 - **GPC.** L'écart « toutes paires » de −8,6 pts est significatif, mais il vient des pertes de scripts de sécurité, pas du tracking : 26 paires de tracking sur 29 survivent, avec un IC qui contient 0.
 
 ## 5. Consentement
@@ -217,7 +218,52 @@ Les 8 autres (dailymail.co.uk, newsweek.com, telegraph.co.uk, theverge.com, webm
 
 Sur les 3 vrais murs, le refus est impossible sans payer. Ils sont donc en « échoué » (action non terminée) et n'entrent pas dans les comparaisons de refus.
 
-## 6. Validité des étiquettes de finalité
+## 6. Partage d'identifiants : le suivi quitte le navigateur
+
+Le fingerprinting mesuré plus haut est un comportement de script : un appel d'API. Cette section cherche une preuve plus directe : **un identifiant propre au navigateur, envoyé à une autre entreprise** (script `scripts/id_sharing.py`, adapté de `exfil.py` sur `main`).
+
+**Ce qui compte comme identifiant.** Une valeur de cookie compte si elle remplit toutes ces conditions :
+- au moins 10 caractères, dont un chiffre ;
+- ce n'est ni un horodatage ni un cookie de consentement ;
+- **elle n'apparaît que dans un seul profil**. Chaque visite part d'un navigateur neuf : une valeur qui se répète entre sites ou conditions est une constante, pas un identifiant.
+
+On cherche cette valeur, brute ou décodée, dans l'URL ou le corps des requêtes non bloquées vers un autre domaine. Les domaines d'une même entreprise sont exclus (propriétaires Tracker Radar).
+
+**Le chiffre principal** compte les envois vers un **traqueur connu** (liste DuckDuckGo). Le compte « tout tiers » est une borne haute, car il contient aussi de la sécurité (PerimeterX, Riskified), du fonctionnel (LaunchDarkly) et des domaines d'une même entreprise non reconnus (Inditex/Zara, BuzzFeed/HuffPost, VK/mail.ru).
+
+**Sites qui envoient un identifiant à un traqueur connu après l'étape de consentement**, mêmes sites dans les trois colonnes :
+
+| Condition | Sites comparés | Baseline | Répétition | Condition |
+|---|---|---|---|---|
+| ubol | 95 | 49 | 49 | **17** |
+| pbadger | 95 | 49 | 49 | **21** |
+| gpc | 95 | 49 | 48 | 46 |
+| optout (refus + GPC, vérifié) | 34 | 19 | 18 | 22 |
+| reject (refus seul, vérifié) | 31 | 19 | 19 | 21 |
+| accept (vérifié) | 56 | 28 | 28 | **54** |
+
+**Lecture :**
+- **Refus et GPC.** Le refus vérifié, avec ou sans GPC, ne réduit pas l'envoi d'identifiants : 21 sites sur 31 envoient encore un identifiant à un traqueur connu, dont 6 en cookie syncing (un cookie tiers transmis à un autre tiers). GPC seul non plus.
+- **Destinataires après refus vérifié :** googlesyndication.com (10 sites), google.com (7), parsely.com (5), google-analytics.com, rubiconproject.com, scorecardresearch.com (3 chacun), puis Facebook, Adobe (demdex, adobedc), Index Exchange (casalemedia), Piano, LiveIntent (liadm), Criteo, The Trade Desk (adsrvr)…
+- **Acceptation.** Elle double le nombre de sites concernés. Sur les 31 sites vérifiés dans les deux sens, le médian de destinataires par site est de 16 après acceptation contre 2 après refus. Le cookie syncing touche 47 des 56 sites acceptés.
+- **Bloqueurs.** Ce sont les seuls qui réduisent nettement l'envoi : uBlock de 49 à 17 sites, Privacy Badger de 49 à 21.
+- **Cookies les plus partagés en baseline :** `g_state` (Google One Tap), `_parsely_visitor`, `__tbc`/`_pcid`/`cX_*` (Piano/Cxense), `_fbp` (Facebook), `__eoi` (Google Ads), `_ga` (Google Analytics), `_twpid` (X).
+- **Combinaison de techniques.** Sur 3 sites en baseline, et 7 après acceptation, le domaine qui exécute un fingerprinting de tracking reçoit aussi un identifiant (AppsFlyer, AnyClip, html-load, GumGum, InsurAds).
+
+**Réplication** (batch du 22/11, URL seules car les corps POST n'étaient pas capturés) :
+- refus + GPC : 17 → 18 sites ;
+- acceptation : 18 → 41 ;
+- uBlock : 41 → 9 ;
+- Privacy Badger : 41 → 18.
+
+C'est le même profil de résultats.
+
+**Limites.**
+- C'est une borne basse : les en-têtes `Cookie` et `Referer`, les identifiants hachés et les corps tronqués ne sont pas examinés.
+- Le sens de l'échange n'est pas établi : le destinataire peut être celui qui a émis la valeur.
+- Une partie de ces envois peut relever d'une exemption ou d'un intérêt légitime : nous mesurons, nous ne qualifions pas juridiquement.
+
+## 7. Validité des étiquettes de finalité
 
 - **Lecture de `navigator.webdriver`** (sonde de détection de robot) :
   - scripts de sécurité : 139/144 = 96,5 % (IC95 [92,1 ; 98,5]) ;
@@ -233,7 +279,7 @@ Ces deux tests indirects confirment que les deux groupes se comportent différem
 
 La validation manuelle à deux annotateurs n'est **pas encore faite**. La feuille d'annotation de 80 scripts est générée dans `results/full_eu_20261125/validation/` (privé). Elle est à remplir avant de publier un κ inter-annotateurs.
 
-## 7. Comparaison avec le batch du 22 novembre
+## 8. Comparaison avec le batch du 22 novembre
 
 | Mesure | 22/11 | 25/11 |
 |---|---|---|
@@ -252,6 +298,8 @@ La validation manuelle à deux annotateurs n'est **pas encore faite**. La feuill
 | uBlock, service | −19,7 pts | −16,2 pts |
 | Tiers en plus après acceptation (médiane) | +56 | +50,5 |
 | Scripts de tracking envoyant des attributs | 12 / 57 | 37 / 58 |
+| Sites envoyant un identifiant à un traqueur connu : baseline → refus vérifié (mêmes sites) | 17 → 18 (35 sites) | 19 → 22 (34 sites) |
+| Idem : baseline → acceptation vérifiée | 18 → 41 (43 sites) | 28 → 54 (56 sites) |
 
 **Ce qui se reproduit :** la prévalence, la domination de la sécurité, l'effet des bloqueurs, la survie du tracking au refus et l'explosion des tiers après acceptation.
 
@@ -259,7 +307,7 @@ La validation manuelle à deux annotateurs n'est **pas encore faite**. La feuill
 - **Acceptations vérifiées en hausse.** C'est le clic par texte visible.
 - **Scripts qui envoient des attributs : ×3.** Les corps POST sont maintenant capturés, et le fuseau cherché est celui du navigateur (Europe/Berlin). Ce n'est pas un changement des sites. C'est aussi pourquoi la borne haute du tracking monte : plus de scripts « inconnus » passent en capacité haute.
 
-## 8. Limites
+## 9. Limites
 
 - **Conditions séquentielles.** Les conditions ont tourné l'une après l'autre sur 7 h. Le plancher de bruit (`baseline2`) est mesuré 23 min après la baseline, alors que `gpc` et `accept` tournent 6 à 7 h après. La dérive temporelle (rotation des scripts, réputation de l'IP) n'est donc pas couverte par le plancher. Les pertes de scripts de sécurité sous `gpc` (−9 pts) en donnent un ordre de grandeur. Un ordre aléatoire des conditions par site, ou une `baseline3` en fin de collecte, mesurerait cette dérive.
 - **Petits dénominateurs sous consentement.** Il n'y a que 13 à 23 paires de tracking sur 8 à 14 sites, d'où des IC larges.
@@ -268,7 +316,7 @@ La validation manuelle à deux annotateurs n'est **pas encore faite**. La feuill
 - **Consentement.** 42 % des acceptations et environ 65 % des refus restent « échoué » ou « inconnu ». La cause : bannière non trouvée ou non cliquée, mur payant, ou CMP sans lecteur d'état (par exemple Reddit, Temu, YouTube). Les comparaisons de consentement portent donc sur un sous-ensemble de sites, et le détecteur de murs payants a des faux positifs (section 5).
 - **Machine hôte.** Il y a eu deux suspensions et une coupure réseau (section 2). Elles sont sans effet mesuré sur les résultats, mais il faudra empêcher la veille sur secteur et éviter le Wi-Fi campus, qui bloque OpenVPN, pour la prochaine collecte.
 
-## 9. Reproduire
+## 10. Reproduire
 
 ```bash
 # depuis la base privée data/full_eu_20261125/crawl.sqlite (non versionnée)

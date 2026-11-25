@@ -10,7 +10,8 @@ Tracker Radar subset; no crawl, no network. Steps:
   2. paired_uncertainty.py   site-bootstrap intervals against the repeat baseline
   3. label_purposes.py       script inventory, purpose labels, capability, harm class
   4. purpose_results.py      results by purpose and by harm class, validity, validation sheet
-  5. export_public_results   privacy-reduced bundle in public_results/<batch> (with --export)
+  5. id_sharing.py           identifier-like cookie values sent to other parties
+  6. export_public_results   privacy-reduced bundle in public_results/<batch> (with --export)
 
 Each step's output goes to results/<batch>/<step>.log; the run stops at the first failure.
 """
@@ -41,6 +42,8 @@ def main():
         ("label_purposes", [py, "scripts/label_purposes.py", str(db), str(res),
                             "--radar", "reference/tracker_radar_subset.json"]),
         ("purpose_results", [py, "scripts/purpose_results.py", str(res), "--sites", str(sites)]),
+        ("id_sharing", [py, "scripts/id_sharing.py", str(db), str(res),
+                        "--radar", "reference/tracker_radar_subset.json"]),
     ]
     if a.export:
         steps.append(("export", [py, "scripts/export_public_results.py", str(res), "--sites", str(sites),

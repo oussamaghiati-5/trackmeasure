@@ -8,6 +8,24 @@ This is the last validation step. It measures how often the detector is right (p
 - `results/<batch>/validation/annotation_key.csv` holds the rule labels. **Do not open it until both annotators have finished.**
 - `make purpose` regenerates both files. The fixed seed gives the same sample each time.
 
+## Separate sheets for each annotator
+
+Use one file per person, so neither can see the other's answers:
+1. Create the two sheets:
+   ```
+   python scripts/annotation_kit.py split results/<batch>
+   ```
+   This writes `validation/kit/annotateur_A.csv` and `annotateur_B.csv`, plus `LISEZMOI.md`, the instructions in French.
+2. Send each person their own file, privately. The files contain script URLs.
+3. When both are filled, merge them:
+   ```
+   python scripts/annotation_kit.py merge results/<batch>
+   ```
+   This copies the answers into `annotation_sheet.csv` and writes `kit/desaccords.csv`.
+4. Settle each disagreement together in `desaccords.csv`, then run `merge` again.
+
+The files use `;` and a UTF-8 BOM, so French Excel opens them in columns.
+
 ## Procedure
 
 1. Two team members work independently and fill only their own columns (`a1_*` or `a2_*`).

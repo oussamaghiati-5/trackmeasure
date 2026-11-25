@@ -9,7 +9,7 @@ STUDY_BATCH ?= study
 SITE        ?= theguardian.com
 ACTION      ?= reject
 
-.PHONY: uncertainty tracker-radar purpose agreement build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout reject gpc accept respawn analyze
+.PHONY: uncertainty tracker-radar purpose annotation-kit annotation-merge id-sharing agreement build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout reject gpc accept respawn analyze
 
 dirs:
 	mkdir -p data ext results
@@ -108,6 +108,18 @@ purpose:
 	python3 scripts/label_purposes.py data/$(STUDY_BATCH)/crawl.sqlite results/$(STUDY_BATCH) \
 	    --radar reference/tracker_radar_subset.json
 	python3 scripts/purpose_results.py results/$(STUDY_BATCH) --sites data/$(STUDY_BATCH)/sites.csv
+
+# One sheet per annotator, then merge their answers into annotation_sheet.csv
+annotation-kit:
+	python3 scripts/annotation_kit.py split results/$(STUDY_BATCH)
+
+annotation-merge:
+	python3 scripts/annotation_kit.py merge results/$(STUDY_BATCH)
+
+# Identifier-like cookie values sent to other parties (offline, needs analyze + purpose first)
+id-sharing:
+	python3 scripts/id_sharing.py data/$(STUDY_BATCH)/crawl.sqlite results/$(STUDY_BATCH) \
+	    --radar reference/tracker_radar_subset.json
 
 # After two annotators fill results/$(STUDY_BATCH)/validation/annotation_sheet.csv
 agreement:
