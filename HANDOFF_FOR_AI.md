@@ -78,7 +78,11 @@ The project relates to this prior work through browser-based measurement, behavi
    - Measure time drift. The conditions run in sequence over about 7 hours, while `baseline2` runs only 23 minutes after the baseline. Randomize the condition order per site, or add a closing baseline.
    - Prevent host sleep while plugged in, and avoid a Wi-Fi network that blocks OpenVPN. Both happened on 2026-11-25; see the incidents in `vpn_provenance.json`.
    - Still not done: login and checkout pages for stronger page-context evidence.
-   - The paper draft and reports still quote `full_eu_20261122`. Update them with the new batch only after deciding which batch is primary.
+   - The paper is now `paper/main.tex`, in AsiaCCS acmart format. It uses `full_eu_20261125` as the primary batch and `full_eu_20261122` as the replication. The talk is `docs/presentation.html`.
+   - `PAPER_DRAFT.md`, `ETUDE_RAPPORT.md` and `NASROU_REPORT.md` are older and still quote 2026-11-22. Treat the LaTeX paper as current.
+   - Still open in the paper: the `[TBD]` for the two-annotator κ and precision. The kit is in `results/full_eu_20261125/validation/kit/`; merge it with `scripts/annotation_kit.py merge`, then run `make agreement`.
+   - The paper was not compiled here: no LaTeX on the host, and the TeX Live image download was stopped for low memory. A static check passed (no missing citation or reference, balanced environments). Compile and read it before submitting.
+   - main's `paper/` also exists. Merging main will give add/add conflicts there; keep this version, which fills main's TBDs.
 4. If evaluating blocker costs, measure page completion/rendering or another predefined compatibility/performance metric on real sites; current fixture verification only checks extension setup and controlled blocking.
 5. Preserve the access failures, denominators, uncertainty intervals, and heuristic caveats in the final paper.
 

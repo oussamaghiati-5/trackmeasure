@@ -269,6 +269,13 @@ New in this batch:
 - Accepting adds a median of 50 third-party domains.
 - Verified acceptances rose from 44 to 56.
 
+Cookie identifiers also keep reaching known trackers after a verified rejection, on 21 of 31 sites. The figure was 19 at baseline, and the same holds on 2026-11-22. `scripts/id_sharing.py` measures this offline (`make id-sharing`).
+
+Paper and presentation:
+- The AsiaCCS-format paper is [`paper/main.tex`](paper/main.tex), with `references.bib`. It merges main's LaTeX skeleton with this branch's results. Build it with `make -C paper pdf` or on Overleaf.
+- The talk is [`docs/presentation.html`](docs/presentation.html), a self-contained deck: open it in a browser, and print it to PDF if needed.
+- The only result still missing is the two-annotator validation. Run `make annotation-kit STUDY_BATCH=full_eu_20261125` and follow `validation/kit/LISEZMOI.md`.
+
 The sections below describe the 2026-11-22 batch.
 
 The six-condition EU study batch `full_eu_20261122` completed on 2026-11-22. Its shareable, privacy-reduced outputs are in [`public_results/full_eu_20261122/`](public_results/full_eu_20261122/). The full local batch remains under ignored `results/` and its SQLite database under ignored `data/`; neither should be committed as-is.

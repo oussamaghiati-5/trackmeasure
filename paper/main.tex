@@ -1,0 +1,634 @@
+%% TrackMeasure -- course project paper, ACM AsiaCCS format (acmart, sigconf).
+%% Built from PAPER_DRAFT.md (branch Nasrou) on the skeleton of main's paper/main.tex.
+%% Primary data: public_results/full_eu_20261125 (8 conditions, 25 Nov 2026);
+%% replication: public_results/full_eu_20261122 (6 conditions, 22 Nov 2026).
+%% Every number below comes from those bundles; regenerate them with
+%%   python scripts/reproduce_results.py --batch full_eu_20261125 --export
+%% Red [TBD: ...] marks the two-annotator validation, which is still to be done.
+%% Final version: add the authors and drop `review,anonymous`.
+\documentclass[sigconf,review,anonymous]{acmart}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit}
+
+\setlength{\emergencystretch}{2em}
+\newcommand{\TBD}[1]{\textcolor{red}{[TBD: #1]}}
+\newcommand{\sys}{\textsc{TrackMeasure}}
+\newcommand{\pp}{\,pp}
+
+\setcopyright{none}
+\acmConference[AsiaCCS '27]{ACM Asia Conference on Computer and Communications Security}{2027}{}
+\acmYear{2027}
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+
+\begin{document}
+
+\title{Does Opting Out Stop Fingerprinting? Separating Tracking from Security Fingerprinting under Verified Consent and Blockers}
+
+% Authors withheld for now (anonymous draft). Add the group members and drop `anonymous`.
+\author{Anonymous Author(s)}
+\affiliation{\institution{Anonymous Institution}\city{Anonymous}\country{Anonymous}}
+
+\begin{abstract}
+Fingerprinting detectors report \emph{that} a script fingerprints the browser, not \emph{why}.
+The same canvas read-back recognises a visitor for advertising or tells a bot-management
+service that the visitor is human. Only the first needs consent under the EU ePrivacy rules.
+We separate the two and ask whether the opt-outs available to users stop the harmful kind.
+
+We crawled 149 popular news, e-commerce and social websites from a German VPN exit, using an
+instrumented Chromium under eight conditions:
+baseline, repeat baseline, uBlock Origin Lite, Privacy Badger, verified rejection with and
+without Global Privacy Control (GPC), GPC alone, and verified acceptance. We repeated the core
+conditions in a second crawl three days earlier.
+
+Each fingerprinting script receives a purpose, from vendor signatures, Tracker Radar,
+first-party path clusters and page context, and a tracking capability. We verify consent from
+the CMP API and from decoded consent cookies. Beyond API calls, we look for direct evidence that
+data leaves the browser: the browser's own attribute values, and single-profile cookie
+identifiers sent to other companies.
+
+On 97 reachable sites, 66 fingerprint. 62\% of the detected (site, script, technique) pairs
+serve security and 11\% advertising or analytics, on 18 sites. 17 of those 18 sites run it
+before any consent interaction. A verified rejection cuts third-party cookies (median 1, against
+27 after acceptance) but leaves all 13 tracking-fingerprinting pairs in place. It does not reduce identifier
+sharing with known trackers either (19 to 21 of 31 sites). GPC alone has no measurable effect.
+Only content blockers cut tracking fingerprinting ($-86$\pp{} with uBlock Origin Lite), and they
+also remove part of the anti-fraud fingerprinting ($-16$\pp{}). The findings replicate across
+both crawls.
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+<concept><concept_id>10002978.10003022.10003026</concept_id>
+<concept_desc>Security and privacy~Web application security</concept_desc>
+<concept_significance>500</concept_significance></concept>
+<concept><concept_id>10002978.10003029.10011150</concept_id>
+<concept_desc>Security and privacy~Privacy protections</concept_desc>
+<concept_significance>300</concept_significance></concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Security and privacy~Web application security}
+\ccsdesc[300]{Security and privacy~Privacy protections}
+\keywords{browser fingerprinting, web measurement, consent management, GDPR, ePrivacy, content blockers}
+
+\maketitle
+
+%% ======================================================================
+\section{Introduction}
+%% ======================================================================
+Browser fingerprinting combines stable properties of the browser and device, such as canvas
+rendering, fonts, audio processing, WebGL and navigator attributes, to recognise a browser
+without cookies~\cite{eckersley2010unique,mowery2012pixel,laperdrix2020survey}. Detection rules
+since Englehardt and Narayanan~\cite{englehardt2016online}, and the classifier
+FP-Inspector~\cite{iqbal2021fingerprinting}, flag scripts that call these APIs in characteristic
+ways. A detection does not say why the script runs. FP-Redemption~\cite{durey2021fpredemption}
+and Senol et al.~\cite{senol2024doubleedged} show that much fingerprinting defends sites against
+bots and fraud. European law draws the same line: accessing device information needs consent
+unless it is strictly necessary for the service the user asked for, and the EDPB states that
+fingerprinting falls under this rule~\cite{edpb2023scope}.
+
+Prior work found that many sites fingerprint regardless of the consent
+choice~\cite{papadogiannakis2021postcookie}, and that fingerprints are used for ad
+targeting~\cite{liu2025fptrace}. Such measurements count all fingerprinting together. They often
+infer the user's choice from a click rather than from the stored consent state, which
+diverges from it surprisingly often~\cite{matte2020cookie}. A site that keeps fingerprinting after
+``reject all'' may be breaking the rules, or it may be protecting its checkout.
+
+We ask three questions:
+\begin{itemize}
+\item \textbf{RQ1.} Can tracking fingerprinting be told apart from security fingerprinting, and
+  how much of each is there on popular sites?
+\item \textbf{RQ2.} Does a \emph{verified} consent rejection, with or without GPC~\cite{gpcspec},
+  or GPC alone, stop tracking fingerprinting and identifier sharing?
+\item \textbf{RQ3.} Do content blockers stop it, and what else do they remove?
+\end{itemize}
+
+\noindent Our contributions:
+\begin{enumerate}
+\item A \textbf{harm classification} of fingerprinting scripts. Purpose comes from vendor
+  signatures, Tracker Radar~\cite{trackerradar}, first-party path clusters, vendor cookies and
+  page context. A second axis measures tracking capability. The classification comes with
+  validity checks and an explicit upper bound for what stays undetermined.
+\item \textbf{Two-source consent verification}: the live CMP API and offline decoding of stored
+  IAB TCF~\cite{iabtcf}, OneTrust and Cookiebot cookies. Our decoder agrees with IAB's reference
+  library on all 21 stored TC strings. Separate conditions isolate the banner choice from GPC.
+\item \textbf{Evidence beyond API calls.} We observe the browser's own attribute values in
+  request URLs and bodies. We also observe cookie identifiers that occur in a single browser
+  profile and are sent to another company.
+\item A \textbf{replicated EU measurement}: two crawls three days apart, paired comparisons
+  against a repeat-baseline noise floor, a public privacy-reduced dataset, and a one-command
+  offline reproduction.
+\end{enumerate}
+
+%% ======================================================================
+\section{Background and Related Work}
+%% ======================================================================
+\paragraph{Detecting fingerprinting.} Large crawls documented canvas, font, WebRTC and audio
+fingerprinting~\cite{acar2013fpdetective,acar2014web,englehardt2016online}.
+FP-Inspector~\cite{iqbal2021fingerprinting} learns fingerprinting behaviour and finds more
+scripts than hand-written rules. We keep the transparent rules of~\cite{englehardt2016online},
+as adapted in~\cite{iqbal2021fingerprinting}, and add purpose labels instead of a classifier.
+FP-tracer~\cite{boussaha2024fptracer} follows attribute values from source to network sink.
+FPTrace~\cite{liu2025fptrace} shows the use of fingerprints for ad targeting by altering the
+fingerprint and watching ad bids. Both establish use more directly than API patterns. Our
+value-level evidence (\S\ref{sec:value}) is a lightweight step in that direction.
+
+\paragraph{Why scripts fingerprint.} FP-Redemption~\cite{durey2021fpredemption} infers security
+use from page context: scripts on every page suggest bot detection, scripts only on sign-up or
+payment pages suggest fraud prevention. Senol et al.~\cite{senol2024doubleedged} stress the
+dual use of fingerprinting on authentication pages. DuckDuckGo Tracker
+Radar~\cite{trackerradar} gives usage categories and a fingerprinting score per domain. The
+score measures API use, not intent.
+
+\paragraph{Consent and opt-out signals.} Consent management platforms spread after the
+GDPR~\cite{hils2020cmp}. Their interfaces nudge acceptance~\cite{nouwens2020dark,utz2019consent},
+and stored TCF strings do not always match the user's choice~\cite{matte2020cookie}. Automated
+consent handling has been used to detect violations~\cite{bollinger2022cookieblock}.
+Papadogiannakis et al.~\cite{papadogiannakis2021postcookie} report that most fingerprinting
+sites fingerprint regardless of consent. Cookie syncing shares identifiers between third
+parties~\cite{acar2014web,papadopoulos2019cookiesync}, and cookies can be respawned from
+fingerprints~\cite{fouad2022phoenix}. We repeat the consent question with the saved state
+verified, with purpose labels, and with reject and GPC separated.
+
+\paragraph{Blockers and measurement validity.} Tracker blockers have been benchmarked
+before~\cite{traverso2017blockers,merzdovnik2017block}. Blocking mixed scripts breaks
+sites~\cite{amjad2023blocking}, and CNAME cloaking makes third parties look
+first-party~\cite{dimova2021cname}. Manifest~V3 limits what blockers can do~\cite{chromemv3}.
+Measurement tools can be detected~\cite{krumnow2022gullible}. This matters here because the
+scripts we see most often are bot detectors.
+
+%% ======================================================================
+\section{Methodology}\label{sec:method}
+%% ======================================================================
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[node distance=4mm and 4mm, font=\footnotesize,
+  box/.style={draw, rounded corners, align=center, minimum height=7mm, inner sep=2pt},
+  >={Stealth[length=2mm]}]
+\node[box] (sites) {149 sites\\(Tranco)};
+\node[box, right=of sites] (crawl) {Crawler\\8 conditions};
+\node[box, above=of crawl] (inst) {API hooks\\requests, cookies};
+\node[box, below=of crawl] (cons) {Consent\\action + state};
+\node[box, right=of crawl] (db) {SQLite};
+\node[box, right=of db] (an) {Detection\\purpose, harm};
+\node[box, above=of an] (st) {Survival vs\\noise floor};
+\node[box, below=of an] (ev) {Consent verif.\\ID sharing};
+\draw[->] (sites) -- (crawl); \draw[->] (inst) -- (crawl); \draw[<->] (cons) -- (crawl);
+\draw[->] (crawl) -- (db); \draw[->] (db) -- (an); \draw[->] (an) -- (st); \draw[->] (db) |- (ev);
+\node[draw, dashed, inner sep=3pt, fit=(inst)(cons)(crawl)(db),
+  label={[font=\scriptsize]below:Docker + seccomp sandbox, fixed EU VPN exit}] {};
+\end{tikzpicture}
+\Description{Block diagram. The site list feeds the crawler, which records API calls, requests
+and cookies and performs the consent action under eight conditions, writing to SQLite inside a
+sandbox behind a fixed EU VPN exit. Offline analysis detects fingerprinting, labels purpose and
+harm, compares survival against the noise floor, verifies consent and measures identifier
+sharing.}
+\caption{Pipeline. Browsing runs in a sandboxed container behind one fixed VPN exit; all
+analysis is offline and reproducible from the stored database.}
+\label{fig:pipeline}
+\end{figure}
+
+\subsection{Sites and crawl}
+The frozen input list holds 149 domains from the Tranco list~\cite{lepochat2019tranco} (list
+\texttt{46YLX}, 22 Nov 2026): 50 news, 50 e-commerce, 37 social and 12 affiliate sites. A headful
+Chromium (Playwright~1.63, Xvfb) visits each site with a fresh profile per condition through four
+phases: \emph{landing} (no banner interaction), \emph{after\_consent} (the condition's consent
+action, or none), \emph{home\_reload} (stored consent state) and one \emph{subpage}. The subpage
+is chosen in the baseline and reused in every condition. A failed subpage is replaced by one of
+two spares. Settings are identical in every condition: two workers, 5\,s of scripted scrolling
+per page, 45\,s navigation and 180\,s site timeouts, \texttt{en-US} locale, and a time zone that
+matches the exit (\texttt{Europe/Berlin}). The crawler runs in Docker with dropped capabilities
+and a seccomp profile. All traffic leaves through one OpenVPN exit in Germany, checked before and
+after every condition. A manifest freezes the settings, the input list and source hashes.
+
+\paragraph{Instrumentation.} An init script, injected into every frame, wraps canvas, WebGL, Web
+Audio, WebRTC, navigator and screen getters, font measurement, storage and \texttt{document.cookie}.
+Each call is attributed to the calling script through the stack trace. We log every request
+with its URL (up to 16\,KB) and, for POST/PUT/PATCH, its body (up to 32\,KB), whether an
+extension blocked it, and the final cookie jar.
+
+\paragraph{Conditions.} Table~\ref{tab:conditions} lists them. They run back to back from the
+same exit. Rejection is measured alone and combined with GPC, so that an effect can be attributed
+to the banner choice, to GPC, or to both.
+
+\begin{table}[t]
+\caption{Crawl conditions (25 Nov 2026 batch). The 22 Nov batch had the first six, with reject
+and GPC only combined.}\label{tab:conditions}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Run & Setup & Role \\
+\midrule
+baseline   & plain browser                    & reference \\
+baseline2  & identical repeat                 & noise floor \\
+ubol       & uBlock Origin Lite$^\ast$        & MV3 blocker \\
+pbadger    & Privacy Badger$^\ast$            & MV3 blocker \\
+optout     & reject + GPC (verified)          & full opt-out \\
+reject     & reject only (verified)           & banner choice \\
+gpc        & GPC only, no banner action       & browser signal \\
+accept     & accept (verified)                & upper bound \\
+\bottomrule
+\end{tabular}\\[2pt]
+{\footnotesize $^\ast$uBOL 2026.1110.1816, Privacy Badger 2026.9.15.2, hash-pinned official packages.}
+\end{table}
+
+\subsection{Fingerprinting detection}
+Per script, frame and visit, we apply the rules of~\cite{englehardt2016online} as adapted
+in~\cite{iqbal2021fingerprinting}:
+\begin{itemize}
+\item \emph{canvas}: text with at least 10 distinct characters, plus a non-lossy read-back of at
+  least $16\times16$ pixels;
+\item \emph{canvas font}: at least 50 distinct fonts measured;
+\item \emph{WebRTC}: a data channel plus an offer;
+\item \emph{audio}: an oscillator, a compressor and a read-back;
+\item \emph{WebGL}: an unmasked vendor or renderer query;
+\item \emph{attribute enumeration}: at least 12 distinct navigator or screen attributes read.
+\end{itemize}
+The first four are \emph{strong} techniques. WebGL and attribute enumeration are \emph{weak},
+since ordinary rendering and feature detection trigger them too. A \emph{pair} is
+(site, script eTLD+1, purpose, technique). Calls in the landing phase are \emph{pre-consent},
+calls in the other phases \emph{post-consent}.
+
+\subsection{Purpose and harm classes}
+The unit is a \emph{script}: (site, script domain, path template). Templates collapse random
+path segments, so a bot-manager sensor whose URL changes on every visit stays one script.
+Purpose follows an evidence ladder:
+\begin{enumerate}
+\item \textbf{Vendor signatures.} There are 35 third-party patterns, from HUMAN, DataDome and
+  reCAPTCHA to Integral Ad Science, Prebid and AppsFlyer, and 8 first-party path signatures
+  for bot managers served from the site's own domain (Akamai \texttt{/akam/}, Kasada, Cloudflare
+  challenge, Fastly, DataDome).
+\item \textbf{Tracker Radar categories}, for third parties not owned by the site's owner.
+\item \textbf{Path clusters}: a template served by two or more sites under different domains
+  exposes a \emph{hidden first-party vendor}. Vendor cookies corroborate it.
+\item \textbf{Page context and behaviour}, at low confidence. A script present only on login or
+  checkout pages is anti-fraud. A script present on every page that probes
+  \texttt{navigator.webdriver} with a strong technique is anti-bot.
+\item Otherwise the purpose is \emph{Unknown}; we never force a category.
+\end{enumerate}
+
+Purpose alone does not say how much a script can track, so we also score its \emph{tracking
+capability}:
+\begin{itemize}
+\item identifying power: high for a strong technique or three techniques combined;
+\item cross-site reach of the vendor;
+\item \emph{attribute transmission}: a request to the vendor carries the browser's own time zone
+  or platform string, raw or encoded;
+\item storage writes.
+\end{itemize}
+The \textbf{harm class} follows:
+\begin{itemize}
+\item \emph{Tracking}: advertising or analytics purpose. This is the harmful class and the study's
+  focus.
+\item \emph{Service}: security or functional purpose.
+\item \emph{Dual-use}: ad verification, an advertising purpose with a security secondary purpose.
+\item \emph{Undetermined}: unknown purpose, split by high and low capability.
+\end{itemize}
+We report every tracking result twice: for the Tracking class, and for an \emph{upper bound}
+that adds the Dual-use and high-capability Undetermined scripts.
+
+\subsection{Consent actuation and verification}\label{sec:consent}
+The crawler calls the CMP's JavaScript API (OneTrust, Cookiebot, Didomi, Usercentrics). It then
+falls back to clicking banner buttons, matched by accessible name or visible text in seven
+languages, including two-layer ``manage, then reject'' flows. A click alone never counts.
+A choice is \emph{verified} when at least one of two sources matches the request and neither
+shows the opposite:
+\begin{itemize}
+\item \textbf{the live CMP state} (\texttt{\_\_tcfapi}, Cookiebot), read after the action and
+  after a reload;
+\item \textbf{the stored consent cookies}, decoded offline: the TCF \texttt{euconsent-v2} core
+  string, OneTrust \texttt{OptanonConsent} (counted only with a closed banner) and Cookiebot.
+\end{itemize}
+A rejection must leave no purpose, vendor or special-feature consent. An empty purpose map is a
+rejection, not an unreadable state. An acceptance must grant at least 9 of TCF purposes 1--10
+and at least one vendor. The vendor map spans the whole vendor list, so requiring every vendor
+would reject real acceptances. Our TCF decoder agrees with the live API on 20 of 20 visits, and
+with IAB's reference library~\cite{iabtcfcore} on all 21 stored TC strings.
+
+Conflicting sources make a choice \emph{unknown}, and only verified site-runs enter the
+comparisons. A rejection that is impossible without paying (a ``reject and subscribe'' wall)
+is recorded as such and never clicked.
+
+\subsection{Evidence that data leaves the browser}\label{sec:value}
+\paragraph{Attribute transmission.} We search request URLs and bodies for the browser's own time
+zone and Linux platform string. We match them raw, URL-encoded once or twice, and inside base64.
+\paragraph{Identifier sharing.} A token of a cookie value counts as an \emph{identifier} when all
+of these hold:
+\begin{itemize}
+\item it has at least 10 characters from \texttt{[A-Za-z0-9\_-]}, a digit and more than 4
+  distinct characters;
+\item it is not a recent Unix timestamp;
+\item it is not part of a consent cookie;
+\item it occurs in exactly one browser profile, that is one (condition, site). Each visit starts
+  from a fresh profile, so a value repeated across sites or conditions is a constant, not an
+  identifier.
+\end{itemize}
+It is \emph{shared} when it appears, raw or URL-decoded, in the URL or body of an unblocked
+request to another registrable domain not owned by the cookie's owner. We report receivers on
+DuckDuckGo's tracker list (\emph{known trackers}); all third parties together give an upper
+bound. A third-party cookie sent to another third party is \emph{cookie syncing}. This is a lower
+bound: we search neither headers nor hashed identifiers.
+
+\subsection{Comparisons and uncertainty}
+A condition is compared with the baseline on sites with complete measurements in the condition,
+the baseline and the repeat baseline. For consent conditions, the choice must also be verified.
+A baseline pair \emph{survives} when it is seen again post-consent in the condition. We report
+the survival minus the repeat baseline's survival on the same sites, with 95\% percentile
+intervals from 2,000 site-level bootstrap resamples. For identifier sharing, we count the sites
+that send an identifier to a known tracker in the baseline, the repeat and the condition, on the
+same sites.
+
+\subsection{Validity checks}
+Without ground truth, we use four checks:
+\begin{enumerate}
+\item agreement between two independent label sources, vendor signatures and Tracker Radar;
+\item convergent validity: security scripts should probe for automation more often than ad scripts;
+\item technique composition by purpose;
+\item a stratified 80-script sample, labelled by two annotators working independently.
+\end{enumerate}
+We also re-analyse the data under alternative choices (\S\ref{sec:robust}).
+
+%% ======================================================================
+\section{Results}\label{sec:results}
+%% ======================================================================
+Unless stated otherwise, numbers are from the 25 Nov 2026 crawl. Section~\ref{sec:replication}
+compares them with the 22 Nov crawl.
+
+\subsection{Coverage}
+The baseline was usable on 97 of 149 sites: news 43/50, e-commerce 23/50, social 25/37 and
+affiliate 6/12. Of the 52 failures, 51 were HTTP 400, 401, 403 or 429 answers, mostly 403. They
+are bot blocking of the VPN's data-centre address, and they hit e-commerce hardest. Every other
+condition completed 94 to 97 of the 97 reachable sites. Consent was verified on 56 acceptances,
+31 rejections and 34 rejections with GPC. 29 sites were verified in both reject conditions, and
+31 sites were verified both ways (reject+GPC and accept).
+
+\subsection{RQ1: tracking versus security fingerprinting}
+66 of the 97 sites ran fingerprinting in the baseline, giving 285 pairs. Purposes cover 73\% of
+the pairs and 86\% of the strong-technique pairs. Table~\ref{tab:harm} gives the harm classes.
+
+\begin{table}[t]
+\caption{Harm classes of baseline fingerprinting pairs (97 sites).}\label{tab:harm}
+\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Harm class & Pairs & Strong pairs & Sites \\
+\midrule
+\textbf{Tracking} (ads, analytics) & \textbf{29 (10\%)} & \textbf{3} & \textbf{18} \\
+Tracking, upper bound      & 67 (24\%)  & 16 & 30 \\
+Service (security, functional) & 179 (63\%) & 89 & 47 \\
+Undetermined, high capability  & 37 (13\%)  & 13 & 12 \\
+Undetermined, low capability   & 39 (14\%)  & 2  & 23 \\
+Dual-use                       & 1 (0.4\%)  & 0  & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Most fingerprinting serves security.}
+\begin{itemize}
+\item 177 pairs (62\%) are anti-fraud or security, and they account for 89 of the 107
+  strong-technique pairs (83\%).
+\item Ad-tech and analytics scripts mostly use the weak techniques: attribute enumeration and
+  the WebGL renderer query. Only 3 of their 29 pairs use a strong technique.
+\item E-commerce fingerprinting is bot and fraud management. 22 of 23 reachable e-commerce sites
+  fingerprint, 21 of them for security, and 10 for nothing else.
+\item On news sites, 26 of 43 fingerprint and 10 do so for advertising or analytics.
+\end{itemize}
+
+\paragraph{Hidden first-party vendors.} 79 pairs (28\%) come from vendors served through the
+site's own URLs: 100 scripts on 31 sites. 80 of those scripts are Akamai Bot Manager; the others
+are Fastly, Kasada, DataDome, HUMAN and Cloudflare challenges. One ad-recovery network also falls
+back to the first party. Domain-based attribution counts all of these as first-party, and domain
+blocklists cannot remove them.
+
+\paragraph{Tracking fingerprinting runs before consent.} 17 of the 18 sites with tracking
+fingerprinting run it before any consent interaction, 12 of them with a high-capability script.
+Across all conditions, the 58 tracking scripts are:
+\begin{itemize}
+\item an ad-recovery network (\texttt{html-load}), the X Ads pixel, AppsFlyer, Wunderkind,
+  Prebid, Microsoft Clarity, Adobe tags and HubSpot, among others;
+\item embedded across sites in 52 cases;
+\item writing storage in 39 cases;
+\item in 37 cases, sending the browser's time zone or platform to the vendor in a URL or POST
+  body.
+\end{itemize}
+
+\subsection{RQ2: does opting out stop it?}
+Table~\ref{tab:effects} summarises every condition.
+
+\begin{table*}[t]
+\caption{Effect of each condition, on sites measured in the condition, the baseline and the repeat
+baseline (consent conditions: verified choice only). Survival differences are against the repeat
+baseline on the same sites, in percentage points, with 95\% site-bootstrap intervals. ID sharing:
+sites sending a single-profile cookie identifier to a known tracker after the consent step, in the
+baseline and in the condition. Third parties: median per-site change in contacted third-party
+domains.}\label{tab:effects}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Condition & Sites & Tracking FP survival & Service FP survival & All FP survival & ID sharing (base $\rightarrow$ cond.) & Third parties \\
+\midrule
+reject (verified)        & 31 & 13/13, $0.0$ [$0.0$, $0.0$]            & $-16.7$ [$-39.3$, $0.0$] & $-3.9$ [$-18.2$, $+8.5$]  & 19 $\rightarrow$ 21 & $+2$ [0, 3] \\
+reject + GPC (verified)  & 34 & 14/15, $-6.7$ [$-25.0$, $0.0$]         & $-21.4$ [$-45.0$, $0.0$] & $-12.5$ [$-31.0$, $+2.5$] & 19 $\rightarrow$ 22 & $+2$ [0, 3] \\
+GPC only                 & 95 & 26/29, $-10.3$ [$-23.3$, $0.0$]        & $-9.4$ [$-19.4$, $-1.4$] & $-8.6$ [$-15.2$, $-3.1$]  & 49 $\rightarrow$ 46 & $0$ [0, 0] \\
+accept (verified)        & 56 & 23/23, $0.0$; +22 new                  & $-11.1$ [$-26.0$, $-1.9$] & $-6.5$ [$-16.5$, $+1.2$] & 28 $\rightarrow$ 54 & $+50.5$ [40, 61.5] \\
+\midrule
+uBlock Origin Lite       & 95 & 4/29, $\mathbf{-86.2}$ [$-96.8$, $-72.0$] & $-16.2$ [$-30.7$, $-1.6$] & $-22.9$ [$-36.2$, $-8.9$] & 49 $\rightarrow$ 17 & $-6$ [$-10$, $-4$] \\
+Privacy Badger           & 95 & 16/29, $\mathbf{-44.8}$ [$-67.7$, $-19.4$] & $-12.8$ [$-23.3$, $-3.6$] & $-18.8$ [$-29.7$, $-8.6$] & 49 $\rightarrow$ 21 & $0$ [$-1$, 0] \\
+\bottomrule
+\end{tabular}}
+\end{table*}
+
+\paragraph{A verified rejection leaves tracking in place.}
+\begin{itemize}
+\item \textbf{Fingerprinting.} All 13 tracking pairs present at baseline survive a verified
+  rejection, and 14 of 15 survive rejection with GPC. 8 of the 31 sites with a verified
+  rejection still run tracking fingerprinting afterwards, 5 of them with high capability. The
+  vendors are the ad-recovery network, Adobe Experience Platform, AnyClip and Prebid, AppsFlyer,
+  GumGum, HubSpot, Microsoft Clarity and the X Ads pixel.
+\item \textbf{Identifiers.} Identifier sharing does not drop either. On the same 31 sites, 19 send
+  a cookie identifier to a known tracker in the baseline, 19 in the repeat, and 21 after the
+  rejection. Six of them do cookie syncing. The receivers include googlesyndication.com (10
+  sites), google.com (7), parsely.com (5), Google Analytics, Rubicon, comScore, Facebook, Adobe,
+  LiveIntent, Criteo and The Trade Desk. The identifiers include \texttt{\_ga},
+  \texttt{\_gcl\_au}, \texttt{\_fbp}, Adobe's \texttt{AMCV}, LiveIntent's \texttt{\_lc2\_fpi} and
+  Microsoft's \texttt{MUID}.
+\item \textbf{Cookies and third parties.} The rejection does work on this layer. On the 31 sites
+  verified both ways, a rejection leaves a median of 22 third-party domains against 50 after
+  acceptance, and 1 third-party cookie against 27. 29 of the 31 sites contact more third parties
+  after acceptance.
+\end{itemize}
+
+\paragraph{GPC adds nothing.} GPC alone changes neither the third parties (median 0) nor the
+tracking pairs: the interval contains 0. Adding it to a rejection gives the same result as the
+rejection alone: 8 sites keep tracking fingerprinting in both cases.
+
+\paragraph{Accepting adds tracking on top.} Every baseline tracking pair survives, and 22 new
+ones appear. Identifier sharing with known trackers doubles (28 to 54 sites), and 47 of the 56
+sites do cookie syncing. On the dual-verified sites, the median number of identifier receivers
+is 16 after acceptance against 2 after rejection.
+
+\paragraph{Obstacles.}
+\begin{itemize}
+\item Three sites offer rejection only with a paid subscription (repubblica.it, theguardian.com,
+  goal.com). They never count as verified rejections.
+\item On six US-oriented OneTrust sites, the stored cookie shows an accepted or mixed state after
+  the reject click, or contradicts the API. These are excluded as failed or unknown.
+\end{itemize}
+
+\paragraph{Losses of security fingerprinting under consent conditions.} These come from one to
+three sites per condition, with bot managers that do not fire on every visit (Kasada, Akamai,
+Stripe Radar, HUMAN). The intervals are wide (30 to 54 baseline pairs). We do not read them as
+an effect of the consent signal.
+
+\subsection{RQ3: content blockers}
+Blockers are the only intervention that cuts tracking:
+\begin{itemize}
+\item \textbf{uBlock Origin Lite} removes 25 of 29 tracking pairs ($-86$\pp{}) and two thirds of
+  identifier sharing with known trackers (49 to 17 sites).
+\item \textbf{Privacy Badger} removes 13 of 29 ($-45$\pp{}). It starts from its bundled seed data
+  in every fresh profile.
+\item \textbf{Collateral.} Both also remove part of the security fingerprinting: $-16$ and
+  $-13$\pp{}, mostly HUMAN (PerimeterX) on three sites, and Forter, Riskified and Akamai, which
+  protect checkouts.
+\item \textbf{The upper bound} falls less ($-33$ and $-25$\pp{}), because first-party platform
+  bundles of unknown purpose are untouched.
+\end{itemize}
+In the first crawl we also saw circumvention. Forter's script loaded from a CloudFront host
+under both blockers. An ad-recovery network reappeared as UUID paths on the site's own domain.
+
+\subsection{Replication}\label{sec:replication}
+Table~\ref{tab:replication} compares the two crawls. Prevalence, purpose shares, the effect of
+blockers and the survival of tracking after a verified rejection all replicate. Two differences
+come from the methods, not from the sites:
+\begin{itemize}
+\item verified acceptances rose from 44 to 56 after we added button matching by visible text;
+\item scripts seen sending attributes rose from 12 to 37 after we captured request bodies and
+  aligned the time zone with the exit.
+\end{itemize}
+
+\begin{table}[t]
+\caption{The two crawls. Reject = reject + GPC (the only reject condition of 22 Nov). ID sharing
+counts sites on the same verified sites.}\label{tab:replication}
+\small
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Measure & 22 Nov & 25 Nov \\
+\midrule
+Reachable sites / with fingerprinting & 93 / 64 & 97 / 66 \\
+Pairs: security / ads+analytics & 63\% / 11\% & 62\% / 11\% \\
+Tracking FP: sites (upper bound) & 17 (23) & 18 (30) \\
+Tracking sites before consent & 17 & 17 \\
+Verified rejections / acceptances & 36 / 44 & 34 / 56 \\
+Tracking pairs surviving reject & 15/16 & 14/15 \\
+Sites with tracking FP after reject & 8/36 & 8/34 \\
+ID sharing, baseline $\rightarrow$ reject & 17 $\rightarrow$ 18 & 19 $\rightarrow$ 22 \\
+ID sharing, baseline $\rightarrow$ accept & 18 $\rightarrow$ 41 & 28 $\rightarrow$ 54 \\
+uBlock, tracking survival & $-88$\pp{} & $-86$\pp{} \\
+Privacy Badger, tracking survival & $-40$\pp{} & $-45$\pp{} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Validity and robustness}\label{sec:robust}
+\begin{itemize}
+\item \textbf{Behaviour agrees with the labels.} 96.5\% of security scripts read
+  \texttt{navigator.webdriver} (139/144, 95\% CI 92--99\%), against 70.8\% of ad and analytics
+  scripts (46/65, CI 59--80\%), Fisher $p=3\times10^{-7}$. 87\% of security scripts use a strong
+  technique, against 12\% of ad and analytics scripts.
+\item \textbf{Two sources agree moderately.} On the 11 third-party domains with both a vendor
+  signature and a Tracker Radar purpose, $\kappa=0.45$ (64\% raw agreement). The disagreements
+  are secondary purposes: Stripe, Cloudflare, Adobe and HubSpot. Tracker Radar knows 47 of 60
+  third-party script domains but categorises only 16. Its fingerprinting score does not separate
+  purposes (2.31 for advertising, 1.79 for security).
+\item \textbf{Manual validation.} Two annotators label 80 scripts independently, stratified by
+  technique and party. Inter-annotator $\kappa$: \TBD{kappa}. Detector precision per technique:
+  \TBD{precision}. Label precision per purpose: \TBD{precision}.
+\item \textbf{Phase attribution.} API calls are stored under the visit that is active when they
+  reach the crawler. Re-assigning each call by its own timestamp moves 0.9\% of calls and changes
+  0 to 5 post-consent pairs per condition. It changes no tracking pair on a site with a verified
+  choice.
+\item \textbf{Host interruptions.} One visit was frozen by a host suspension. Excluding it leaves
+  every result unchanged.
+\end{itemize}
+
+%% ======================================================================
+\section{Discussion}
+%% ======================================================================
+\paragraph{Harm is defined by purpose.} Purpose is established for three quarters of the
+detections, and the rest is bounded rather than guessed. Vendor identity is the strongest
+signal, and it can be recovered even behind first-party URLs through path templates and vendor
+cookies. Behaviour agrees with it: bot managers run on every page and probe for automation,
+while ad-tech enumerates attributes and sends them home.
+
+\paragraph{Counting all fingerprinting together hides both effects.} Measured as a whole,
+fingerprinting would appear to drop by 23\pp{} under uBlock and not significantly under
+rejection ($-3.9$\pp{}, interval $[-18.2, +8.5]$).
+Separated by purpose, the picture is different:
+\begin{itemize}
+\item tracking fingerprinting is a minority (10--24\% of pairs) that runs before consent;
+\item it survives a verified ``no'', and so does identifier sharing with known trackers;
+\item a blocker removes most of it, together with a sixth of the security fingerprinting.
+\end{itemize}
+
+\paragraph{Consent and blockers act on different layers.} A verified rejection works where the
+CMP is in control: third-party cookies and third-party contacts. It does not touch the
+fingerprinting and identifier flows that run before or outside it. Under the EDPB's reading of
+Art.~5(3)~\cite{edpb2023scope}, tracking fingerprinting before consent, or after a rejection, is
+the clearest candidate for non-compliance in our data. We report candidates, not legal findings:
+a lawyer, and the site's own justification, would be needed. The security majority may be
+exempt as strictly necessary, and neither consent nor filter lists should be expected to remove
+it.
+
+%% ======================================================================
+\section{Limitations}
+%% ======================================================================
+\begin{itemize}
+\item \textbf{An API read is not proof of tracking.} Attribute transmission and identifier
+  sharing give direct but lower-bound evidence. Headers, hashed values and server-side use are
+  not observed.
+\item \textbf{Purpose labels are estimates.} 27\% of pairs have no supported purpose, and the
+  upper bound covers its high-capability part. The signatures were developed on these data.
+  Manual validation is pending.
+\item \textbf{Scale and selection.} We cover 97 reachable sites. The data-centre exit is blocked
+  by many e-commerce sites. The consent comparisons rest on 31 to 56 verified sites, so tracking
+  counts are small and the intervals wide.
+\item \textbf{Conditions run in sequence.} They span about seven hours, while the repeat baseline
+  ran 23 minutes after the baseline, so later conditions carry some time drift. The noise floor,
+  the replication and the GPC condition (no effect on tracking) bound it. A randomised order per
+  site would remove it.
+\item \textbf{One vantage point.} We used one exit (Germany), one browser configuration, the
+  home page plus one subpage, and no login or checkout pages.
+\item \textbf{Blocker costs.} Breakage and page-load costs of the blockers are not
+  measured~\cite{amjad2023blocking}.
+\item \textbf{Identifier sharing.} We do not establish the direction of the exchange, and a few
+  same-company domains are not recognised as such.
+\end{itemize}
+
+%% ======================================================================
+\section{Ethics and Reproducibility}
+%% ======================================================================
+The crawler visits public pages without logging in. It interacts only with consent controls, never
+clicks a paid option, and runs at most two browsers at once, each with a fresh profile. No personal
+data is collected. Raw databases, which contain cookie values, and crawl logs stay private. The
+public bundles (\texttt{public\_results/}) contain per-site tables, comparisons, purpose labels and
+identifier-sharing aggregates. They contain no script URLs, cookie values or VPN exit address.
+\texttt{scripts/reproduce\_results.py} regenerates every number offline from the private database.
+The Tracker Radar subset (CC BY-NC-SA 4.0) is pinned to commit \texttt{a358dac}.
+
+%% ======================================================================
+\section{Conclusion}
+%% ======================================================================
+Tracking and security fingerprinting can be separated by purpose, with tracking capability as a
+second axis and an explicit bound for what remains undetermined. On popular sites reached from
+the EU, most fingerprinting, and almost all strong fingerprinting, is bot and fraud management.
+Tracking fingerprinting is a minority. It runs before consent, survives a verified rejection,
+and comes with identifier sharing that the rejection does not stop either. GPC adds nothing, and
+only blockers remove it, at some cost to security. The next steps are to complete the manual
+validation, to randomise the condition order, and to link fingerprint values to identifiers
+directly.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\end{document}
