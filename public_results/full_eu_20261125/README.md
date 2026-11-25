@@ -20,6 +20,10 @@ This directory contains selected aggregate and per-site outputs for the complete
   - A value counts as an identifier only if it occurs in one browser profile (one run and site).
   - `receiver_known_tracker` marks receivers on DuckDuckGo's tracker list.
   - The files contain cookie names and domains, never cookie values or URLs.
+- `validation_agreement.json` (when present): scores for the 80-script validation sample.
+  - It holds the agreement between the two annotators, the detector's precision per technique, and the rule labels' precision per purpose.
+  - `method` says who annotated. For 2026-11-25, that was two independent AI annotators, not humans.
+  - The sheets themselves contain script URLs and stay private.
 - `manifest.json`: crawl settings and source hashes; exact VPN exit IP removed.
 - `vpn_provenance.json`: public provider/region, resolver-change and collection-incident summary; credential-bearing profile hashes and exact timestamps omitted.
 

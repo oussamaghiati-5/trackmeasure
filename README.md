@@ -274,7 +274,12 @@ Cookie identifiers also keep reaching known trackers after a verified rejection,
 Paper and presentation:
 - The AsiaCCS-format paper is [`paper/main.tex`](paper/main.tex), with `references.bib`. It merges main's LaTeX skeleton with this branch's results. Build it with `make -C paper pdf` or on Overleaf.
 - The talk is [`docs/presentation.html`](docs/presentation.html), a self-contained deck: open it in a browser, and print it to PDF if needed.
-- The only result still missing is the two-annotator validation. Run `make annotation-kit STUDY_BATCH=full_eu_20261125` and follow `validation/kit/LISEZMOI.md`.
+- Validation: two blind AI annotators (Claude Haiku and Claude Sonnet, not humans) labelled the 80-script sample.
+  - Security labels confirmed: 33/33.
+  - Tracking labels confirmed: 11/14.
+  - Detector right on 41 of 43 decided scripts.
+  - Purpose κ = 0.92.
+  - Scores and method are in `public_results/full_eu_20261125/validation_agreement.json`. A human can still settle the 16 disagreements in `validation/kit/desaccords.csv`.
 
 The sections below describe the 2026-11-22 batch.
 

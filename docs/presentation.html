@@ -245,7 +245,10 @@
           <li>Frozen visit (host sleep) excluded: no change.</li>
           <li>Noise floor: repeat baseline on the same sites.</li>
         </ul></div>
-      <div class="card"><h3>Manual validation</h3>80 scripts, two independent annotators → κ and precision per technique/purpose. <span class="accent">[to fill]</span></div>
+      <div class="card"><h3>80-script sample, 2 blind AI annotators</h3>
+        <span class="small">Haiku + Sonnet, no access to our labels or to each other.<br>
+        Security labels confirmed <b>33/33</b> · tracking labels <b>11/14</b> · detector right on <b>41/43</b> decided scripts · purpose κ = <b>0.92</b>.<br>
+        <span class="muted">A consistency check, not human ground truth.</span></span></div>
     </div>
   </div>
   <div class="footer"><span>Validity</span><span>9</span></div>
@@ -256,7 +259,7 @@
   <h2>Limitations</h2>
   <ul>
     <li><b>API use ≠ proven tracking</b> — attribute and identifier flows are direct but lower-bound evidence.</li>
-    <li><b>Labels are estimates</b> — 27% of pairs stay Unknown (bounded by the upper bound); manual validation pending.</li>
+    <li><b>Labels are estimates</b> — 27% of pairs stay Unknown (bounded by the upper bound); validated by two AI annotators, not humans; tracking precision rests on 14 scripts.</li>
     <li><b>Scale</b> — 97 reachable sites; the VPN’s data-centre IP is blocked by many e-commerce sites; consent comparisons rest on 31–56 verified sites.</li>
     <li><b>Sequential conditions</b> over ~7 h — noise floor + replication bound the drift; randomised order is future work.</li>
     <li><b>One vantage point</b> (Germany), home page + one subpage, no login/checkout; blocker breakage not measured.</li>
@@ -271,7 +274,7 @@
   <div class="takeaway"><b>Separate by purpose.</b> Two thirds of fingerprinting — and almost all strong fingerprinting — is bot &amp; fraud management, often hidden behind first-party URLs.</div>
   <div class="takeaway"><b>Opt-outs act on cookies, not on fingerprinting.</b> Tracking fingerprinting runs before consent and survives a verified “no”; identifiers keep flowing to trackers; GPC adds nothing.</div>
   <div class="takeaway"><b>Blockers work — with collateral.</b> −86 pp tracking with uBlock, but anti-fraud scripts go too.</div>
-  <p class="small muted" style="margin-top:1em">Next: finish two-annotator validation · randomise condition order · link fingerprint values to identifiers (taint / bid experiments).</p>
+  <p class="small muted" style="margin-top:1em">Next: human adjudication of the validation sample · randomise condition order · link fingerprint values to identifiers (taint / bid experiments).</p>
   <p class="tiny">Data &amp; code: public_results/full_eu_20261125 · scripts/reproduce_results.py · paper/main.tex</p>
   <div class="footer"><span>Conclusion</span><span>11</span></div>
 </section>

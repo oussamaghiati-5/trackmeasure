@@ -1,0 +1,105 @@
+{
+  "method": {
+    "annotators": "AI annotators, not human: two independent Claude subagents with different models (A: Claude Haiku, B: Claude Sonnet), run on 2026-11-25.",
+    "blinding": "Each annotator saw only its own sheet (site, script domain, script URL, runtime technique, page context, stratum) and a shared evidence folder. Neither saw the rule labels (annotation_key.csv), the repository or the other annotator's answers.",
+    "evidence": "The 80 sampled scripts were downloaded once, never executed. 62 of 80 were retrievable; 10 inline scripts and 8 others (HTTP 404, empty answers, timeout) had no file. Each sample also had a neutral card: HTTP status, size, sha256, header comments, referenced domains, API keyword counts and the first 1,500 characters. Annotators searched the files with targeted greps; no web access.",
+    "instructions": "Same definitions as docs/annotation_guide.md (is_fp yes/no/unsure; one purpose among Advertising, Analytics, Anti-fraud/security, Functional, CDN, Unknown; evidence notes).",
+    "adjudication": "None. Reference label = shared label when both agree; the 16 disagreements are excluded from precision.",
+    "limits": "Static reading of mostly minified code; both annotators rely partly on vendor recognition, which overlaps with the vendor signatures behind the rule labels; AI annotators may share errors. This is a consistency check, not human ground truth."
+  },
+  "n_rows": 80,
+  "kappa_is_fingerprinting": {
+    "kappa": 0.6326905417814509,
+    "n": 80
+  },
+  "kappa_purpose": {
+    "kappa": 0.9200399800099949,
+    "n": 80
+  },
+  "detector_precision_by_technique": {
+    "attr_enum": {
+      "n_judged": 31,
+      "precision": 0.967741935483871
+    },
+    "audio": {
+      "n_judged": 22,
+      "precision": 1.0
+    },
+    "canvas": {
+      "n_judged": 25,
+      "precision": 1.0
+    },
+    "canvas_font": {
+      "n_judged": 5,
+      "precision": 1.0
+    },
+    "webgl": {
+      "n_judged": 35,
+      "precision": 0.9714285714285714
+    },
+    "webrtc": {
+      "n_judged": 8,
+      "precision": 1.0
+    }
+  },
+  "rule_precision_by_purpose": {
+    "Advertising": {
+      "n_judged": 11,
+      "precision": 0.7272727272727273
+    },
+    "Analytics": {
+      "n_judged": 3,
+      "precision": 1.0
+    },
+    "Anti-fraud/security": {
+      "n_judged": 33,
+      "precision": 1.0
+    },
+    "Functional": {
+      "n_judged": 1,
+      "precision": 1.0
+    },
+    "Unknown": {
+      "n_judged": 28,
+      "precision": 0.5
+    }
+  },
+  "rule_accuracy_overall": 0.7763157894736842,
+  "confusion_rule_vs_reference": {
+    "Advertising": {
+      "Advertising": 8,
+      "Analytics": 0,
+      "Anti-fraud/security": 0,
+      "Functional": 0,
+      "Unknown": 5
+    },
+    "Analytics": {
+      "Advertising": 0,
+      "Analytics": 3,
+      "Anti-fraud/security": 0,
+      "Functional": 0,
+      "Unknown": 0
+    },
+    "Anti-fraud/security": {
+      "Advertising": 1,
+      "Analytics": 0,
+      "Anti-fraud/security": 33,
+      "Functional": 0,
+      "Unknown": 8
+    },
+    "Functional": {
+      "Advertising": 0,
+      "Analytics": 0,
+      "Anti-fraud/security": 0,
+      "Functional": 1,
+      "Unknown": 1
+    },
+    "Unknown": {
+      "Advertising": 2,
+      "Analytics": 0,
+      "Anti-fraud/security": 0,
+      "Functional": 0,
+      "Unknown": 14
+    }
+  }
+}

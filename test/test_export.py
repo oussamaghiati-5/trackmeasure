@@ -53,6 +53,20 @@ class PublicExport(unittest.TestCase):
             self.assertNotIn("token=1", (out / "per_site.csv").read_text())
             self.assertNotIn("script_url", (out / "fp_scripts.csv").read_text())
 
+    def test_validation_scores_and_method_are_exported_but_not_the_sheets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            batch, sites = self.make_batch(Path(tmp), {"provider": "P"})
+            (batch / "validation").mkdir()
+            write(batch / "validation" / "agreement.json", json.dumps({"kappa_purpose": {"kappa": 0.9, "n": 80}}))
+            write(batch / "validation" / "method.json", json.dumps({"annotators": "two AI annotators"}))
+            write(batch / "validation" / "annotation_sheet.csv", "sample_id,example_url\nS001,https://x.com/a.js\n")
+            out = Path(tmp) / "public"
+            export.export(batch, sites, out)
+            scores = json.loads((out / "validation_agreement.json").read_text(encoding="utf-8"))
+            self.assertEqual(scores["method"]["annotators"], "two AI annotators")
+            self.assertEqual(scores["kappa_purpose"]["kappa"], 0.9)
+            self.assertFalse(any("annotation_sheet" in p.name for p in out.iterdir()))
+
     def test_no_incidents_key_without_incidents(self):
         with tempfile.TemporaryDirectory() as tmp:
             batch, sites = self.make_batch(Path(tmp), {"provider": "P"})

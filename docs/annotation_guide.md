@@ -26,6 +26,13 @@ Use one file per person, so neither can see the other's answers:
 
 The files use `;` and a UTF-8 BOM, so French Excel opens them in columns.
 
+**AI annotators (2026-11-25 batch).** The `full_eu_20261125` sample was labelled by two independent AI annotators instead of people:
+- two Claude subagents on different models, given this guide;
+- each saw only its own sheet, plus the scripts downloaded once (never executed) and a neutral evidence card;
+- neither saw the rule labels or the other's answers.
+
+`validation/method.json` records the procedure. Report the results as AI annotations, a consistency check, never as human validation.
+
 ## Procedure
 
 1. Two team members work independently and fill only their own columns (`a1_*` or `a2_*`).

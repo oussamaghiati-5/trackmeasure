@@ -277,7 +277,31 @@ Ces deux tests indirects confirment que les deux groupes se comportent différem
 
 **Couverture des étiquettes** : 73 % des paires ont une finalité, 86 % des paires à technique forte. Sur 351 scripts, la confiance est haute pour 127, moyenne pour 79 et basse pour 145.
 
-La validation manuelle à deux annotateurs n'est **pas encore faite**. La feuille d'annotation de 80 scripts est générée dans `results/full_eu_20261125/validation/` (privé). Elle est à remplir avant de publier un κ inter-annotateurs.
+**Échantillon annoté (80 scripts, annotateurs IA).** L'échantillon est stratifié par technique × origine. Il a été annoté indépendamment par **deux agents IA** de modèles différents (Claude Haiku et Claude Sonnet), et **non par des humains** :
+- ils suivent le guide `docs/annotation_guide.md` ;
+- aucun ne voit les étiquettes de nos règles ni les réponses de l'autre ;
+- ils travaillent sur les scripts téléchargés une fois et jamais exécutés (62 sur 80 récupérables), avec une fiche neutre par script ;
+- la méthode est décrite dans `validation_agreement.json` (champ `method`).
+
+Résultats :
+
+| Mesure | Résultat |
+|---|---|
+| Accord sur la finalité / sur « fingerprinting oui ou non » | κ = **0,92** / κ = 0,63 (14 des 16 désaccords opposent « yes » à « unsure ») |
+| Précision du détecteur, sur les scripts tranchés par les deux | **41/43 = 95 %** (IC95 85–99 %) ; 22 scripts sur 80 restent indécidables par lecture statique |
+| Étiquettes « sécurité » de nos règles confirmées | **33/33** (IC95 90–100 %) |
+| Étiquettes « tracking » confirmées | **11/14** (IC95 52–92 %) : 1 s'avère de l'anti-fraude, 2 restent indécidables |
+| Scripts que nos règles laissent « Unknown » | 8 sécurité, 5 publicité, 1 fonctionnel, 14 indécidables |
+
+**Lecture.**
+- Les étiquettes « sécurité » sont fiables. Les étiquettes « tracking » le sont à environ 80 %, sur un petit nombre de scripts.
+- Le groupe « Unknown » penche plutôt vers la sécurité. Cela justifie de le traiter comme une borne haute et non comme du tracking.
+
+**Limite.** C'est un contrôle de cohérence, pas une vérité terrain humaine :
+- les deux agents s'appuient en partie sur la reconnaissance des fournisseurs, comme nos signatures ;
+- ils lisent du code surtout minifié.
+
+Il reste possible de faire trancher les 16 désaccords par un humain, avec la commande `annotation_kit.py merge` et le fichier `desaccords.csv`, soit environ 30 min.
 
 ## 8. Comparaison avec le batch du 22 novembre
 
@@ -312,7 +336,7 @@ La validation manuelle à deux annotateurs n'est **pas encore faite**. La feuill
 - **Conditions séquentielles.** Les conditions ont tourné l'une après l'autre sur 7 h. Le plancher de bruit (`baseline2`) est mesuré 23 min après la baseline, alors que `gpc` et `accept` tournent 6 à 7 h après. La dérive temporelle (rotation des scripts, réputation de l'IP) n'est donc pas couverte par le plancher. Les pertes de scripts de sécurité sous `gpc` (−9 pts) en donnent un ordre de grandeur. Un ordre aléatoire des conditions par site, ou une `baseline3` en fin de collecte, mesurerait cette dérive.
 - **Petits dénominateurs sous consentement.** Il n'y a que 13 à 23 paires de tracking sur 8 à 14 sites, d'où des IC larges.
 - **IP de datacenter.** Les 52 sites bloqués, surtout en e-commerce, manquent à toutes les conditions. Les résultats décrivent les sites accessibles depuis un VPN.
-- **Étiquettes heuristiques.** Les finalités sont des estimations fondées sur des preuves (signatures, Tracker Radar, contexte), pas des déclarations des vendeurs. 27 % des paires restent de finalité inconnue, et la validation à deux annotateurs n'est pas faite.
+- **Étiquettes heuristiques.** Les finalités sont des estimations fondées sur des preuves (signatures, Tracker Radar, contexte), pas des déclarations des vendeurs. 27 % des paires restent de finalité inconnue. L'échantillon de validation a été annoté par deux agents IA, pas par des humains (section 7), et la précision « tracking » repose sur 14 scripts.
 - **Consentement.** 42 % des acceptations et environ 65 % des refus restent « échoué » ou « inconnu ». La cause : bannière non trouvée ou non cliquée, mur payant, ou CMP sans lecteur d'état (par exemple Reddit, Temu, YouTube). Les comparaisons de consentement portent donc sur un sous-ensemble de sites, et le détecteur de murs payants a des faux positifs (section 5).
 - **Machine hôte.** Il y a eu deux suspensions et une coupure réseau (section 2). Elles sont sans effet mesuré sur les résultats, mais il faudra empêcher la veille sur secteur et éviter le Wi-Fi campus, qui bloque OpenVPN, pour la prochaine collecte.
 

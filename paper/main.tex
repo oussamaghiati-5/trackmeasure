@@ -4,7 +4,8 @@
 %% replication: public_results/full_eu_20261122 (6 conditions, 22 Nov 2026).
 %% Every number below comes from those bundles; regenerate them with
 %%   python scripts/reproduce_results.py --batch full_eu_20261125 --export
-%% Red [TBD: ...] marks the two-annotator validation, which is still to be done.
+%% Validation sample: two independent AI annotators (Claude Haiku, Claude Sonnet), blind to the
+%% rule labels; scores in public_results/full_eu_20261125/validation_agreement.json.
 %% Final version: add the authors and drop `review,anonymous`.
 \documentclass[sigconf,review,anonymous]{acmart}
 
@@ -55,7 +56,8 @@ before any consent interaction. A verified rejection cuts third-party cookies (m
 sharing with known trackers either (19 to 21 of 31 sites). GPC alone has no measurable effect.
 Only content blockers cut tracking fingerprinting ($-86$\pp{} with uBlock Origin Lite), and they
 also remove part of the anti-fraud fingerprinting ($-16$\pp{}). The findings replicate across
-both crawls.
+both crawls. In an 80-script sample, two blind AI annotators confirm 33 of 33 security labels and
+11 of 14 tracking labels (purpose $\kappa=0.92$).
 \end{abstract}
 
 \begin{CCSXML}
@@ -345,8 +347,14 @@ Without ground truth, we use four checks:
 \item agreement between two independent label sources, vendor signatures and Tracker Radar;
 \item convergent validity: security scripts should probe for automation more often than ad scripts;
 \item technique composition by purpose;
-\item a stratified 80-script sample, labelled by two annotators working independently.
+\item a stratified sample of 80 scripts (technique $\times$ party), labelled independently by
+  two AI annotators.
 \end{enumerate}
+The annotators are two Claude subagents running different models (Haiku and Sonnet), so that
+they do not share all their errors. Both follow the written human-annotation guide. Each sees only
+its own sheet and the scripts, downloaded once and never executed, with a neutral evidence card:
+size, header comments, referenced domains and API keyword counts. Neither sees the rule labels or
+the other's answers. We report this as a consistency check, not human ground truth.
 We also re-analyse the data under alternative choices (\S\ref{sec:robust}).
 
 %% ======================================================================
@@ -541,9 +549,19 @@ Privacy Badger, tracking survival & $-40$\pp{} & $-45$\pp{} \\
   are secondary purposes: Stripe, Cloudflare, Adobe and HubSpot. Tracker Radar knows 47 of 60
   third-party script domains but categorises only 16. Its fingerprinting score does not separate
   purposes (2.31 for advertising, 1.79 for security).
-\item \textbf{Manual validation.} Two annotators label 80 scripts independently, stratified by
-  technique and party. Inter-annotator $\kappa$: \TBD{kappa}. Detector precision per technique:
-  \TBD{precision}. Label precision per purpose: \TBD{precision}.
+\item \textbf{Annotated sample (AI annotators).}
+  \begin{itemize}
+  \item The two annotators agree on purpose with $\kappa=0.92$, and on whether a script
+    fingerprints with $\kappa=0.63$. 14 of the 16 disagreements are ``yes'' against ``unsure''.
+  \item Where both decide, the detector is right on 41 of 43 scripts (95\%, Wilson CI 85--99\%).
+    Static reading leaves many scripts undecided: 22 of 80 are ``unsure'' for both, mostly
+    obfuscated or no longer served.
+  \item Rule labels: all 33 security labels are confirmed (CI 90--100\%). 11 of 14 tracking
+    labels are confirmed (CI 52--92\%): one is anti-fraud and two are undecidable.
+  \item Scripts our rules leave Unknown split into 8 security, 5 advertising and 14 undecidable.
+    Unknown leans towards security, which supports reporting it as an upper bound rather than
+    as tracking.
+  \end{itemize}
 \item \textbf{Phase attribution.} API calls are stored under the visit that is active when they
   reach the crawler. Re-assigning each call by its own timestamp moves 0.9\% of calls and changes
   0 to 5 post-consent pairs per condition. It changes no tracking pair on a site with a verified
@@ -589,7 +607,9 @@ it.
   not observed.
 \item \textbf{Purpose labels are estimates.} 27\% of pairs have no supported purpose, and the
   upper bound covers its high-capability part. The signatures were developed on these data.
-  Manual validation is pending.
+  The validation sample was labelled by AI annotators reading static, mostly minified code,
+  not by humans. Their vendor recognition overlaps with our signatures, so their agreement is
+  partly circular. The tracking precision rests on 14 scripts.
 \item \textbf{Scale and selection.} We cover 97 reachable sites. The data-centre exit is blocked
   by many e-commerce sites. The consent comparisons rest on 31 to 56 verified sites, so tracking
   counts are small and the intervals wide.
@@ -624,9 +644,9 @@ second axis and an explicit bound for what remains undetermined. On popular site
 the EU, most fingerprinting, and almost all strong fingerprinting, is bot and fraud management.
 Tracking fingerprinting is a minority. It runs before consent, survives a verified rejection,
 and comes with identifier sharing that the rejection does not stop either. GPC adds nothing, and
-only blockers remove it, at some cost to security. The next steps are to complete the manual
-validation, to randomise the condition order, and to link fingerprint values to identifiers
-directly.
+only blockers remove it, at some cost to security. The next steps are to add a human
+adjudication of the validation sample, to randomise the condition order, and to link fingerprint
+values to identifiers directly.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
