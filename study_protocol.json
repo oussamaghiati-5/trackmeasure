@@ -1,0 +1,38 @@
+{
+  "version": "profile-evidence-study-v3-53-site-single-pass",
+  "question": "How do privacy-tool effect estimates differ between raw API-pattern candidates and evidence-supported browser-profile collection on a purposive website sample?",
+  "sample": {
+    "file": "sites_final_experiment.csv",
+    "candidates": 53,
+    "origin": "Purposive consent-verifiable sample assembled from public Cookiebot technology lists, earlier project TCF checks and related-work CMP test sites; provenance and exclusions are frozen in sites_final_experiment.audit.md.",
+    "selection": "Sites were selected only from access and consent verification performed before the final fingerprinting experiment. Fingerprinting outcomes were not inspected or used for selection. This is not a probability sample or a representative web sample.",
+    "categories": {"advertising-technology": 2, "ai-software": 2, "arts": 1, "business-services": 1, "communications-software": 1, "ecommerce-technology": 1, "education": 6, "entertainment": 1, "financial-technology": 1, "gaming": 1, "government-security": 1, "industry": 1, "internet-infrastructure": 3, "market-research": 1, "media": 1, "media-technology": 1, "news": 4, "nonprofit": 5, "publishing": 4, "security": 2, "software": 9, "telecommunications-research": 1, "web-hosting": 3},
+    "consent_systems": {"Cookiebot": 51, "TCF": 2},
+    "eligibility": "Report all 53 attempted candidates. Final comparisons require successful paired navigation and, for accept/reject+GPC, a confirmed saved Cookiebot or loaded GDPR-applicable TCF choice after reload. Sites that changed after screening remain documented exclusions rather than being replaced.",
+    "no_replacement": "Do not replace failures after inspecting protection outcomes. Related domains may share ownership; no independent-owner/population inference."
+  },
+  "conditions": ["baseline", "reject_gpc", "accept", "ubol"],
+  "repetitions": 1,
+  "seed": 42,
+  "procedure": "Single pass through the 53 candidates in four conditions (212 scheduled site-visits). Seeded randomized condition and site order, shared site order across conditions, fresh profile per site/condition, fixed Netherlands VPN exit, en-US locale, Europe/Amsterdam timezone, 5 second dwell and no subpages. Earlier validation batches are retained separately; the single final pass does not independently establish temporal repeatability.",
+  "detector": "Frozen evidence-v3 six-family candidate rules. Attribute enumeration requires four distinct successful Navigator/Screen reads per script/document; candidates are not confirmed fingerprinting.",
+  "review": {
+    "reviewer": "Codex main reviewer; source-assisted single-reviewer provisional assessments. No independent agreement/accuracy claim without a separate completed review.",
+    "supported_collection": "Observed successful operations plus callsite-linked source establish assembly of multiple browser/device properties into a client/device model used for analytics, advertising, identity or anti-abuse; or source/payload/initiator corroboration establishes transmission of that model. Document properties, source hashes and code locations, purpose basis and evidence strength. Neither domain reputation, a keyword, nor mere co-occurrence is sufficient.",
+    "ordinary_usage": "Every observed operation in the counted pair has a concrete functional explanation supported by code context, with no observed supported collection in that pair. This does not certify the vendor or entire script as benign.",
+    "uncertain": "Use when purpose, executed source version, attribution or combination/use is insufficiently established; do not force a decision. Missing matches are not evidence of absence.",
+    "pair_aggregation": "Any supported observation makes its site/condition/domain/technique pair supported. Ordinary requires all observations ordinary. Any unresolved observation otherwise keeps the pair uncertain. Unreviewed is distinct from uncertain.",
+    "evidence_levels": ["API access", "callsite-linked model assembly", "corroborated request transmission"],
+    "not_claimed": ["fingerprint uniqueness", "server receipt", "returning-browser recognition", "tracking intent solely from profile assembly"],
+    "version_control": "Freeze before final visits; deviations require a dated amendment and separate sensitivity analysis. Existing inspected sites/patterns are development examples, not held-out accuracy validation."
+  },
+  "metrics": {
+    "unit": "Unique (site, condition, repetition, script eTLD+1 domain, technique) pair over after_consent/home_reload; landing diagnostic only.",
+    "primary": "Paired per-site raw and reviewed net count reduction: 1 - treatment/baseline. Supported-only reductions are descriptive comparisons of lower bounds until all labels are decisive.",
+    "uncertainty": "For fully reviewed pairs: B_min=supported baseline, B_max=B_min+uncertain baseline, T_min=supported treatment, T_max=T_min+uncertain treatment; reduction lies between 1-T_max/B_min and 1-T_min/B_max where denominators exist. Undefined denominators stay undefined. These bounds are not confidence intervals.",
+    "secondary": "Baseline-pair survival, disappearance and treatment-only pairs are reported separately from net reductions; same-key persistence is not proof of identical code.",
+    "repetition": "Report per-round counts and paired eligibility. Complete-site analyses keep all repetitions of a website together; no treating repetitions as independent sites. Bootstrap intervals are exploratory and undefined resamples are not silently discarded.",
+    "attribution_sensitivity": "Retain generated-source/missing-body pairs as uncertain; do not merge them with another script without verified execution/source identity. Report code hashes/callsite diagnostics alongside domain counts.",
+    "interpretation": "No systematic underestimation claim unless supported across the selected sample; outcomes may show higher, lower, unchanged or unresolved estimates. Rejection+GPC is a combined intervention, not separate effects."
+  }
+}

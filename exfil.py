@@ -131,7 +131,7 @@ def find_exfil(con):
             for sdom, kind, enc, tok, ci, vts in toks:
                 if (ts or 0) >= vts - 1 and matches(tok, ci, hay):
                     hits.append(((run, site, phase, kind, sdom, domain, tp, enc), url))
-    return _aggregate(hits, EXFIL_COLUMNS[:-2])
+    return _aggregate(hits, EXFIL_COLUMNS)
 
 
 def find_sharing(con, owner=None):
@@ -153,7 +153,7 @@ def find_sharing(con, owner=None):
             for name, cown, toks in items:
                 if domain and domain != cown and any(t in hay[0] for t in toks):
                     hits.append(((run, site, phase, name, cown, domain), url))
-    return _aggregate(hits, SHARING_COLUMNS[:-2])
+    return _aggregate(hits, SHARING_COLUMNS)
 
 
 def analyze_db(path):

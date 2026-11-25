@@ -5,6 +5,7 @@ import shutil
 import sqlite3
 import tempfile
 import time
+import uuid
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -83,6 +84,18 @@ CREATE TABLE IF NOT EXISTS fp_values(
   ci INT, ts REAL);
 CREATE INDEX IF NOT EXISTS ix_api_visit ON api_calls(visit_id);
 CREATE INDEX IF NOT EXISTS ix_req_visit ON requests(visit_id);
+CREATE TABLE IF NOT EXISTS measurement_meta(key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS script_sources(
+  id INTEGER PRIMARY KEY, visit_id INT, url TEXT, frame_url TEXT, status TEXT,
+  sha256 TEXT, bytes INT, http_status INT, detail TEXT);
+CREATE TABLE IF NOT EXISTS request_payloads(
+  request_id INTEGER PRIMARY KEY, status TEXT, content_type TEXT,
+  original_bytes INT, captured_bytes INT, sha256 TEXT, body BLOB, detail TEXT);
+CREATE TABLE IF NOT EXISTS request_context(
+  request_id INTEGER PRIMARY KEY, frame_id TEXT);
+CREATE TABLE IF NOT EXISTS network_initiators(
+  id INTEGER PRIMARY KEY, visit_id INT, session_id TEXT, request_id TEXT,
+  frame_id TEXT, loader_id TEXT, url TEXT, method TEXT, wall_time REAL, initiator TEXT);
 CREATE INDEX IF NOT EXISTS ix_val_visit ON fp_values(visit_id);
 """
 
@@ -91,8 +104,10 @@ def open_db(path):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path)
     db.executescript(SCHEMA)
+    db.execute("INSERT OR IGNORE INTO measurement_meta VALUES ('dataset_id', ?)", (str(uuid.uuid4()),))
     if not any(r[1] == "post_data" for r in db.execute("PRAGMA table_info(requests)")):
         db.execute("ALTER TABLE requests ADD COLUMN post_data TEXT")  # pre-exfiltration databases
+    db.commit()
     db.execute("PRAGMA journal_mode=WAL")
     return db
 

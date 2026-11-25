@@ -162,6 +162,32 @@ Run `make build` if the crawler image is missing, then `make preflight-vpn` **be
 
 The pilot writes SQLite and input copies under `data/pilot/`, and logs, CSVs and settings/exit metadata under `results/pilot/`. It requires a Netherlands exit, checks that the exit stays fixed before/after each condition, and refuses to mix changed settings or exits into the same batch. It does not run the disruptive VPN-loss test during crawling. Baseline failures and unconfirmed consent remain diagnostic exclusions, not successful protection. Review the raw visit URLs for unexpected redirects or HTTP-200 challenge pages before interpreting any tracking counts.
 
+### Final fingerprint-evidence study
+
+The final candidate study uses one pass (53 sites × 4 conditions = 212
+scheduled site-visits): baseline, confirmed reject+GPC, confirmed accept and
+uBlock Origin Lite. `sites_final_experiment.audit.md` records the consent-based
+selection and exclusions; fingerprinting outcomes were not used to select sites.
+
+```bash
+make final-study-prepare
+```
+
+Preparation visits no sites. It freezes the randomized order, original candidate
+CSV, protocol, code hashes and blocker version. Execute or resume the printed path:
+
+```bash
+python3 scripts/run_repeated_validation.py --resume results/repeated-validation/STUDY
+```
+
+Each completed condition is checkpointed; interrupted conditions reuse the
+crawler's site checkpoints. Resume rejects changed code, inputs, protocol,
+browser versions, blocker files or VPN exit. The batch preserves API calls,
+script bodies, screenshots, consent state, request evidence and bounded primitive
+attribute values. Findings remain candidates until classified as
+`supported_collection`, `ordinary_usage` or `uncertain`; matching a browser value
+to a request supports collection but does not prove server use or returning-browser tracking.
+
 Crawls resume: completed sites are skipped, failed ones are retried from scratch. The base image tag must match the pinned `playwright` version in `requirements.txt`.
 
 Build through `make`: it passes your uid/gid (`PW_UID`/`PW_GID`) so the container user can write the bind-mounted `data/` and `results/`. With plain `docker compose build` the user stays uid 1001, which cannot write those folders on a host whose uid differs (e.g. most single-user Linux machines, uid 1000).
@@ -181,7 +207,7 @@ Compose uses `security/seccomp_profile.json`, based on [Playwright v1.63.0's pro
 
 Without Docker: `pip install -r requirements.txt && python -m playwright install --with-deps chromium`.
 
-**Timing.** Defaults are 10 s dwell, 3 subpages and up to 10 s consent wait, about 1.5-2.5 min per site. With `--workers 4`, 150 sites take roughly 1-1.5 h per run.
+**Final-study timing.** The frozen runner uses one worker, a 5 s dwell, no subpages, a 45 s navigation timeout and a 240 s site timeout. The 53-site, four-condition study schedules 212 visits and is resumable after each completed condition and site.
 
 ## Smoke test
 
@@ -202,22 +228,24 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 | Tests | `make smoke` passes (76 unit tests plus the browser smoke test), last on 18 Nov on a uid-1000 Linux host |
 | Five-site pilot | Ran 16 Nov, diagnostic only, before the consent and canvas-rule updates (details below) |
 | Site list, Tranco cross-check, respawn subset | Not done: `check_tranco.py` and `pick_respawn_sites.py` not yet exercised |
-| Full experiment (150 sites, all runs) | Not run |
+| Full experiment (53 consent-verifiable sites, four conditions) | Not run |
 | Paper (`paper/`) | Draft compiles (5 pages, acmart sigconf). Authors anonymised for now (`anonymous` class option); results are placeholders; three citations marked `VERIFY` plus two missing references (behavioural tracking, pay-or-OK) |
 
-**Next steps:** agree on the methodology as a group, then
-1. Test consent on 5-10 varied real sites (including a TCF site), and re-check the Guardian for `pay_or_ok`.
-2. Finalise the site list with `check_tranco.py`, making sure enough sites expose TCF or Cookiebot state so the verified opt-out comparison has enough sites.
-3. Re-run the pilot with the current code, then the full runs, `make analyze stats validation-sample`, and manual labelling.
-4. Fill the paper's results, verify citations and add authors.
+**Next steps:** run the frozen 53-site experiment, review every evidence pair,
+regenerate the reviewed report, then fill the paper's results.
 
 **Pilot details (16 Nov 2026).** The Guardian, Le Monde and Reddit completed baseline and all five comparison conditions; IKEA failed on a homepage reload with HTTP 403 and Slickdeals failed on landing with HTTP 403. All three reject actions failed to complete; all three accept actions clicked a control but remained unconfirmed, so these consent conditions are excluded from verified comparisons. uBOL and Privacy Badger recorded 69 and 6 blocked requests across the three sites. These are diagnostic observations, not effectiveness estimates. Artifacts are in `data/pilot/` and `results/pilot/`. A later Guardian check still did not complete rejection: its banner offered a paid subscription instead of a free reject-all button, which the new pay-or-OK classification is meant to label.
 
 ## Pitfalls (read before the real crawl)
 
+The frozen sample is `sites_final_experiment.csv`; provenance, screen records and
+exclusions are documented in `sites_final_experiment.audit.md`. Future visits must
+still pass the live consent/navigation gates, and failures are excluded rather
+than replaced after looking at fingerprinting outcomes.
+
 1. **Geolocation.** From a Moroccan IP most CMPs show no GDPR banner and `gdprApplies` is false. Run *all* runs through the same EU exit (gluetun sidecar), plus a separate US exit for CCPA "do not sell". Only confirmed choices support verified opt-out claims; inspect `consent_coverage.csv` for failures and unknown cases. A non-empty `consent_method` alone is insufficient.
 2. **MV2 extensions won't load** in current Chromium. Use the pinned MV3 Chromium packages for uBlock Origin Lite and Privacy Badger, not Privacy Badger's default MV2 source branch. Filtering modes change across releases: this pinned uBOL uses optimal mode. Inspect `blocker_verification.json` and saved run metadata rather than assuming an older basic-mode default. MV3 blockers can't do everything MV2 uBO could.
-3. **Noise floor.** Always run `baseline2`.
+3. **Noise floor.** Earlier validation used repeated baselines to expose ordinary variation. The frozen final protocol is a single pass and does not claim temporal repeatability; do not silently add `baseline2` after freezing it.
 4. **Bot detection.** Headless runs can change tracker behaviour; use `--headful` under `xvfb-run` for final runs. Verify extensions block requests (> 0) under your chosen mode.
 5. **Blind spots.** Web/Service Workers aren't instrumented. Scripts can detect the hooks (`toString` is spoofed; other checks aren't). Bundled or eval'd code is attributed to the bundle's host. CNAME-cloaked trackers look first-party.
 6. **Heuristics.** Thresholds follow E&N/FP-Inspector, including the save/restore/animation exclusion (since 18 Nov 2026; pilot canvas counts predate it). Changing a threshold changes the paper's numbers: document any change, and measure precision with `make validation-sample`.

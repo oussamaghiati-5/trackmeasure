@@ -8,6 +8,7 @@ results/
 __pycache__/
 _metadata/
 *.pyc
+.DS_Store
 .env
 # Private VPN configuration files must never be committed.
 *.conf

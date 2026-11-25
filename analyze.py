@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Per-site metrics, fingerprinting-technique detection and run-vs-baseline comparison.
+"""Per-site API metrics, rule candidates and run-vs-baseline comparison.
 
   python analyze.py data/crawl.sqlite --baseline baseline --outdir results/
 
-Techniques (per script, per frame, per page visit), after Englehardt & Narayanan (CCS'16)
-as adapted by FP-Inspector (S&P'21):
-  canvas        text drawn with >=10 distinct chars AND image read back from a >=16x16
-                canvas (toDataURL/toBlob non-lossy, or getImageData >=16x16), AND the script
-                never calls save/restore or adds a canvas event listener (E&N animation exclusion)
+Rules are implemented in fingerprinting.py; API use is not proof of tracking.
+New Canvas traces require successful draw-before-read on the same document,
+canvas and script. Legacy records are explicitly unlinked.
+  canvas        >=10 distinct characters, then non-lossy image read >=16x16
   canvas_font   measureText with >=50 distinct fonts
   webrtc        createDataChannel + createOffer
   audio         createOscillator + createDynamicsCompressor + a readback
@@ -21,7 +20,6 @@ Also written: fp_exfil.csv (canvas/WebGL values found in later requests), id_sha
 import argparse
 import json
 import sqlite3
-from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -29,11 +27,11 @@ import pandas as pd
 import exfil as exfil_mod
 from navigation import measurement_error
 from consent import consent_record
+from fingerprinting import arguments, find_candidates, legacy_techniques, dataset_identity
 
 PRE_PHASES = {"landing"}
 POST_PHASES = {"after_consent", "home_reload", "subpage"}
 TECHNIQUES = ["canvas", "canvas_font", "webrtc", "audio", "webgl", "attr_enum"]
-LOSSY = ("image/jpeg", "image/webp")
 COMPARISON_COLUMNS = [
     "run", "site", "fp_pairs_baseline", "fp_pairs_surviving", "fp_pairs_new", "survival",
     "tp_domains_baseline", "tp_domains_run", "fp_calls_baseline", "fp_calls_run",
@@ -57,7 +55,12 @@ def category(api):
         return "beacon"
     if api.startswith(("Event.", "Sensor.")):
         return "behavior"
-    if api in ("Canvas.getContext", *ANIMATION):
+    if api.startswith("Instrumentation."):
+        return "metadata"
+    if api.startswith(("Event.", "Sensor.")):
+        return "behavior"
+    if api in ("Canvas.getContext", "Canvas.width.set", "Canvas.height.set", "Canvas2D.clearRect",
+               "Canvas2D.reset", *ANIMATION):
         return "other"
     return "fingerprinting"
 
@@ -69,67 +72,42 @@ def behavior_family(api):
 
 
 def techniques(calls):
-    """calls: list of (api, args_dict) for one script in one frame/visit."""
-    by = defaultdict(list)
-    for api, a in calls:
-        by[api].append(a or {})
-    found = set()
-    chars = set()
-    for a in by["Canvas2D.fillText"] + by["Canvas2D.strokeText"]:
-        chars |= set(a.get("text") or "")
-    readback = any((a.get("w") or 0) >= 16 and (a.get("h") or 0) >= 16 and a.get("type") not in LOSSY
-                   for a in by["Canvas.toDataURL"] + by["Canvas.toBlob"]) or \
-        any((a.get("sw") or 0) >= 16 and (a.get("sh") or 0) >= 16 for a in by["Canvas2D.getImageData"])
-    animates = any(by[name] for name in ANIMATION)
-    if len(chars) >= 10 and readback and not animates:
-        found.add("canvas")
-    if len({a.get("font") for a in by["Canvas2D.measureText"]}) >= 50:
-        found.add("canvas_font")
-    if by["WebRTC.createDataChannel"] and by["WebRTC.createOffer"]:
-        found.add("webrtc")
-    if by["Audio.createOscillator"] and by["Audio.createDynamicsCompressor"] and (
-            by["Audio.startRendering"] or by["Audio.getFloatFrequencyData"] or by["Audio.getChannelData"]):
-        found.add("audio")
-    if any(a.get("p") in (37445, 37446) for a in by["WebGL.getParameter"]):
-        found.add("webgl")
-    methods = {"Navigator.sendBeacon", "Navigator.getBattery", "Navigator.getGamepads", "Navigator.javaEnabled"}
-    if len([k for k in by if k.startswith(("Navigator.", "Screen.")) and k not in methods]) >= 12:
-        found.add("attr_enum")
-    return found
+    """Compatibility entry point for old tuple-only traces."""
+    return legacy_techniques(calls)
 
 
 def load(dbs):
     frames = {k: [] for k in ("visits", "requests", "api", "cookies", "done")}
+    seen = set()
     for path in dbs:
         con = sqlite3.connect(path)
+        keys = set(con.execute("SELECT DISTINCT run,site FROM visits"))
+        if seen & keys:
+            con.close()
+            raise ValueError("Duplicate run/site measurements across databases; analyze batches separately: " + str(sorted(seen & keys)))
+        seen.update(keys)
+        identity = dataset_identity(con, path)
         frames["visits"].append(pd.read_sql("SELECT * FROM visits", con))
         frames["requests"].append(pd.read_sql(
             "SELECT r.visit_id, r.domain, r.third_party, r.failure, v.run, v.site, v.phase "
             "FROM requests r JOIN visits v ON v.id=r.visit_id", con))
         frames["api"].append(pd.read_sql(
-            "SELECT a.visit_id, a.frame_url, a.script_url, a.script_domain, a.third_party, a.api, a.args, "
+            "SELECT a.rowid AS call_id, a.ts, a.visit_id, a.frame_url, a.script_url, a.script_domain, a.third_party, a.api, a.args, "
             "v.run, v.site, v.phase FROM api_calls a JOIN visits v ON v.id=a.visit_id", con))
         frames["cookies"].append(pd.read_sql("SELECT * FROM cookies", con))
         frames["done"].append(pd.read_sql("SELECT * FROM sites_done", con))
+        for group in frames.values():
+            group[-1]["database_id"] = identity
         con.close()
     return {k: pd.concat(v, ignore_index=True) if v else pd.DataFrame() for k, v in frames.items()}
 
 
 def detect(api):
-    """-> DataFrame(run, site, phase_group, script_domain, script_url, third_party, technique)"""
-    rows = []
-    api = api.copy()
-    api["argd"] = api["args"].map(lambda s: json.loads(s) if isinstance(s, str) else {})
-    for (vid, frame, script), g in api.groupby(["visit_id", "frame_url", "script_url"], dropna=False):
-        found = techniques(list(zip(g["api"], g["argd"])))
-        if not found:
-            continue
-        r0 = g.iloc[0]
-        pg = "pre" if r0["phase"] in PRE_PHASES else "post"
-        for t in found:
-            rows.append((r0["run"], r0["site"], pg, r0["script_domain"] or "(inline/unknown)", script,
-                         int(r0["third_party"]), t))
-    return pd.DataFrame(rows, columns=["run", "site", "phase_group", "script_domain", "script_url", "third_party", "technique"])
+    """Candidate patterns; raw calls and weak signals are not proven tracking."""
+    fields = ["run", "site", "phase_group", "script_domain", "script_url", "third_party", "technique",
+              "finding_id", "rule_version", "evidence_level", "document_id", "object_id", "reason"]
+    found = find_candidates(api.to_dict("records"))
+    return pd.DataFrame([{k: f.get(k) for k in fields} for f in found if f["counts_as_candidate"]], columns=fields)
 
 
 def behavior(api):
@@ -152,6 +130,13 @@ def per_site(d, det, exfil=None, sharing=None, beh=None):
     api = api.assign(cat=api["api"].map(category))
     g = ["run", "site"]
     out = d["done"][["run", "site", "ok", "error", "seconds"]].set_index(g)
+    argd = api.get("args", pd.Series(index=api.index, dtype=object)).map(arguments)
+    capped = argd.map(lambda a: a.get("capped") is True).astype(bool)
+    trace_meta = argd.map(lambda a: a.get("_tm") if isinstance(a.get("_tm"), dict) else {})
+    out["trace_cap_markers"] = api[capped].groupby(g).size()
+    out["failed_api_operations"] = api[trace_meta.map(lambda m: m.get("success") is False).astype(bool)].groupby(g).size()
+    out["async_api_requests"] = api[trace_meta.map(lambda m: m.get("status") == "async_requested").astype(bool)].groupby(g).size()
+    api = api[~capped]  # cap notices are metadata, not additional detailed calls
     problems = {}
     for key, visits in d["visits"].groupby(g, sort=False):
         # SQL NULLs in numeric columns become NaN in pandas. Restore None for
@@ -167,6 +152,9 @@ def per_site(d, det, exfil=None, sharing=None, beh=None):
     out["tp_domains"] = tp.groupby(g)["domain"].nunique()
     out["blocked_requests"] = req[blocked].groupby(g).size()
     out["fp_calls"] = api[api.cat == "fingerprinting"].groupby(g).size()
+    # Old fp_* columns remain compatibility aliases, not tracking verdicts.
+    out["monitored_api_calls"] = api[api.cat != "metadata"].groupby(g).size()
+    out["nonstorage_api_calls"] = api[~api.cat.isin(["metadata", "storage"])].groupby(g).size()
     out["fp_apis_distinct"] = api[api.cat == "fingerprinting"].groupby(g)["api"].nunique()
     out["tp_fp_calls"] = api[(api.cat == "fingerprinting") & (api.third_party == 1)].groupby(g).size()
     out["storage_ops"] = api[api.cat == "storage"].groupby(g).size()
@@ -174,6 +162,11 @@ def per_site(d, det, exfil=None, sharing=None, beh=None):
     out["cookies_final"] = ck.groupby(g).size()
     out["tp_cookies_final"] = ck[ck.third_party == 1].groupby(g).size()
     out["fp_scripts"] = det.groupby(g)["script_url"].nunique() if len(det) else 0
+    out["candidate_scripts"] = out["fp_scripts"]
+    out["candidate_findings"] = det.groupby(g).size() if len(det) else 0
+    levels = det.get("evidence_level", pd.Series("legacy_unlinked", index=det.index))
+    out["weak_signals"] = det[levels == "weak_signal"].groupby(g).size() if len(det) else 0
+    out["legacy_unlinked_findings"] = det[levels == "legacy_unlinked"].groupby(g).size() if len(det) else 0
     for t in TECHNIQUES:
         sub = det[det.technique == t] if len(det) else det
         out[t] = sub.groupby(g)["script_domain"].nunique() if len(sub) else 0
@@ -199,6 +192,10 @@ def per_site(d, det, exfil=None, sharing=None, beh=None):
     records = cons.map(consent_record).reindex(out.index).map(consent_record)
     for field in ("method", "action", "outcome", "reason"):
         out["consent_" + field] = records.map(lambda r: r.get(field))
+    out["consent_obstacle"] = records.map(lambda r: r.get("obstacle") or "not_observed")
+    out["consent_cmp_signals"] = records.map(lambda r: ",".join(r.get("cmp_signals") or []))
+    out["consent_scope"] = records.map(lambda r: r.get("scope") or "legacy_unknown")
+    out["consent_reason_code"] = records.map(lambda r: r.get("reason_code") or "legacy_unknown")
     out["consent_pay_or_ok"] = records.map(lambda r: int(r.get("pay_or_ok") is True))
     out["gpc"] = records.map(lambda r: {True: "enabled", False: "disabled"}.get(r.get("gpc"), "unknown"))
     out["comparison_eligible"] = ((out["ok"] == 1) & (out["measurement_ok"] == 1)
@@ -207,7 +204,8 @@ def per_site(d, det, exfil=None, sharing=None, beh=None):
         lambda t: ",".join(map(str, t.get("purposesConsented", []))) if isinstance(t, dict) else t)
     num = [c for c in out.columns if c not in (
         "ok", "error", "seconds", "measurement_error", "consent_method", "consent_action",
-        "consent_outcome", "consent_reason", "gpc", "tcf_purposes")]
+        "consent_outcome", "consent_reason", "consent_obstacle", "consent_cmp_signals", "consent_scope",
+        "consent_reason_code", "gpc", "tcf_purposes")]
     out[num] = out[num].fillna(0).astype(int)
     return out.reset_index()
 
@@ -276,7 +274,7 @@ def main():
     ex.to_csv(out / "fp_exfil.csv", index=False)
     sh.to_csv(out / "id_sharing.csv", index=False)
     beh.to_csv(out / "behavior.csv", index=False)
-    coverage = ps.groupby(["run", "consent_action", "consent_outcome"], dropna=False).agg(
+    coverage = ps.groupby(["run", "consent_action", "consent_outcome", "consent_obstacle"], dropna=False).agg(
         site_runs=("site", "size"), usable_navigation=("measurement_ok", "sum"),
         eligible_site_runs=("comparison_eligible", "sum"),
         pay_or_ok=("consent_pay_or_ok", "sum")).reset_index()
@@ -300,17 +298,20 @@ def main():
                                  blocked_requests=("blocked_requests", "sum"),
                                  sites_fp_exfil=("fp_exfil_tp_receivers", lambda s: int((s > 0).sum())),
                                  sites_id_sharing=("id_sharing_receivers", lambda s: int((s > 0).sum())),
-                                 sites_behavior_tp=("behavior_tp_domains", lambda s: int((s > 0).sum())))
+                                 sites_behavior_tp=("behavior_tp_domains", lambda s: int((s > 0).sum())),
+                                 median_nonstorage_api_calls=("nonstorage_api_calls", "median"),
+                                 sites_with_candidates=("candidate_scripts", lambda s: int((s > 0).sum())),
+                                 sites_candidates_pre_consent=("fp_scripts_pre_consent", lambda s: int((s > 0).sum())))
     for t in TECHNIQUES:
         summ[f"sites_{t}"] = ok.groupby("run")[t].apply(lambda s: int((s > 0).sum()))
     print(summ.to_string())
     usable_det = det.merge(ok[["run", "site"]].drop_duplicates(), on=["run", "site"], how="inner")
     if len(usable_det):
-        print("\n== Top fingerprinting script domains ==")
+        print("\n== Top candidate script domains (includes weak signals; not tracking verdicts) ==")
         top = usable_det[usable_det.run == a.baseline] if a.baseline in set(usable_det.run) else usable_det
         print(top.groupby("script_domain")["site"].nunique().sort_values(ascending=False).head(15).to_string())
     if len(cmp_):
-        print(f"\n== vs. {a.baseline}: (script domain, technique) pairs surviving, post-consent ==")
+        print(f"\n== vs. {a.baseline}: candidate (script domain, technique) pairs surviving, post-consent ==")
         agg = cmp_.groupby("run").agg(sites=("site", "count"), pairs_baseline=("fp_pairs_baseline", "sum"),
                                       pairs_surviving=("fp_pairs_surviving", "sum"), pairs_new=("fp_pairs_new", "sum"),
                                       median_tp_domains_run=("tp_domains_run", "median"))

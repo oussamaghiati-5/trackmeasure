@@ -32,30 +32,61 @@ import exfil
 from common import HERE, etld1, host_of, launch, load_sites, open_db, site_url
 from navigation import measurement_error, navigation_error
 from extension_state import wait_for_extensions
+from script_evidence import ScriptCapture
+from request_evidence import RequestPayloadCapture
+from network_evidence import attach_initiators
+from coverage_status import site_status, progress_line
+import uuid
+import weakref
 
 INSTRUMENT = (HERE / "instrument.js").read_text()
+
+def instrument_source(attribute_evidence=False):
+    return INSTRUMENT.replace('const ATTRIBUTE_EVIDENCE = false;',
+                              'const ATTRIBUTE_EVIDENCE = true;') if attribute_evidence else INSTRUMENT
 SKIP_EXT = (".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".mp4", ".mp3", ".xml", ".rss", ".svg", ".webp")
 SKIP_WORDS = ("logout", "signout", "sign-out", "login", "signin", "sign-in", "register", "cart", "checkout", "mailto:", "tel:")
 POST_CAP = 64 * 1024  # bytes of request body kept for exfiltration matching
 
 
 class SiteState:
-    def __init__(self, db, run, site, category, site_domain):
+    def __init__(self, db, run, site, category, site_domain, capture_payloads=False):
         self.db, self.run, self.site, self.category = db, run, site, category
         self.site_domain = site_domain
         self.visit_id = None
         self.req_rows = {}
+        self.intervals = []
+        self.payload_capture = RequestPayloadCapture(db) if capture_payloads else None
+        self.frame_ids = weakref.WeakKeyDictionary()
+
+    def frame_id(self, frame):
+        if frame is None:
+            return None
+        try:
+            if frame not in self.frame_ids:
+                self.frame_ids[frame] = str(uuid.uuid4())
+            return self.frame_ids[frame]
+        except TypeError:
+            return None  # Synthetic/unsupported frame handles have no identity evidence.
 
     def new_visit(self, url, phase):
+        started = time.time()
         cur = self.db.execute(
             "INSERT INTO visits(run, site, category, url, phase, started) VALUES (?,?,?,?,?,?)",
-            (self.run, self.site, self.category, url, phase, time.time()))
+            (self.run, self.site, self.category, url, phase, started))
         self.visit_id = cur.lastrowid
+        self.intervals.append([self.visit_id, started, None])
         return self.visit_id
 
     def end_visit(self, vid, status=None, error=None, final_url=None, consent_res=None):
+        ended = time.time()
         self.db.execute("UPDATE visits SET ended=?, status=?, error=?, final_url=?, consent=? WHERE id=?",
-                        (time.time(), status, error, final_url, consent_res, vid))
+                        (ended, status, error, final_url, consent_res, vid))
+        for interval in self.intervals:
+            if interval[0] == vid:
+                interval[2] = ended
+        if self.visit_id == vid:
+            self.visit_id = None
         self.db.commit()
 
     # --- event handlers ---
@@ -84,6 +115,13 @@ class SiteState:
             (self.visit_id, url[:8000], host_of(url), dom, int(dom != self.site_domain),
              req.resource_type, req.method, frame_url, time.time(), post))
         self.req_rows[req] = cur.lastrowid
+        if self.payload_capture:
+            self.payload_capture.capture(cur.lastrowid, req)
+            try:
+                fid = self.frame_id(req.frame)
+            except Exception:
+                fid = None
+            self.db.execute('INSERT INTO request_context VALUES(?,?)', (cur.lastrowid, fid))
 
     def on_request_failed(self, req):
         row = self.req_rows.pop(req, None)
@@ -94,7 +132,7 @@ class SiteState:
         self.req_rows.pop(req, None)
 
     def on_log(self, source, batch):
-        if self.visit_id is None or not isinstance(batch, list):
+        if not isinstance(batch, list):
             return
         try:
             frame_url = source["frame"].url
@@ -102,9 +140,19 @@ class SiteState:
             frame_url = None
         rows, values = [], []
         for ev in batch:
+            ts = (ev.get("ts") or 0) / 1000
+            # Batches can arrive after a phase boundary: use event time, not
+            # whichever visit happens to be active at delivery time.
+            vid = next((v for v, start, end in reversed(self.intervals)
+                        if start <= ts and (end is None or ts <= end)), None)
+            if vid is None:
+                continue
             script = ev.get("script") or ""
             sdom = etld1(script) if script.startswith("http") else ""
             args, ts = ev.get("args"), (ev.get("ts") or 0) / 1000
+            args = dict(args) if isinstance(args, dict) else args
+            if isinstance(args, dict) and isinstance(args.get('_tm'), dict):
+                args['_tm'] = dict(args['_tm'], frame_id=self.frame_id(source.get('frame')))
             if isinstance(args, dict) and "value" in args:
                 # Keep only match tokens and a short digest, never the raw canvas image.
                 value = args.pop("value")
@@ -112,13 +160,23 @@ class SiteState:
                 if isinstance(value, str):
                     args["value_sha256"] = hashlib.sha256(value.encode("utf-8", "surrogatepass")).hexdigest()[:16]
                 for enc, tok, ci in exfil.value_tokens(kind, value) if kind else ():
-                    values.append((self.visit_id, script[:1000], sdom, kind, enc, tok, int(ci), ts))
-            rows.append((self.visit_id, frame_url, script[:1000], sdom,
+                    values.append((vid, script[:1000], sdom, kind, enc, tok, int(ci), ts))
+            rows.append((vid, ev.get("frame_url") or frame_url, script[:1000], sdom,
                          int(bool(sdom) and sdom != self.site_domain), ev.get("api"),
                          json.dumps(args) if args is not None else None, ts))
         self.db.executemany("INSERT INTO api_calls VALUES (?,?,?,?,?,?,?,?)", rows)
         if values:
             self.db.executemany("INSERT INTO fp_values VALUES (?,?,?,?,?,?,?,?)", values)
+
+
+async def flush_frames(ctx):
+    """Await binding delivery at phase boundaries, tolerating detached frames."""
+    async def flush(frame):
+        try:
+            await asyncio.wait_for(frame.evaluate("() => window.__tmFlush && window.__tmFlush()"), 2)
+        except Exception:
+            pass
+    await asyncio.gather(*(flush(frame) for page in ctx.pages for frame in page.frames))
 
 
 async def interact(page, dwell, rng):
@@ -155,7 +213,20 @@ async def navigate(page, url, phase, args, st, rng):
             await interact(page, args.dwell, rng)
         except Exception as e:
             error = (str(e).splitlines()[0] if str(e) else type(e).__name__)[:300]
+    await flush_frames(page.context)
     st.end_visit(vid, status, error, page.url)
+    artifacts = getattr(args, "page_artifacts", None)
+    if artifacts:
+        directory = Path(artifacts)
+        directory.mkdir(parents=True, exist_ok=True)
+        stem = hashlib.sha256((st.run + ":" + st.site).encode()).hexdigest()[:16] + "-" + str(vid)
+        evidence = dict(run=st.run, site=st.site, phase=phase, url=page.url, status=status, navigation_error=error)
+        try:
+            await page.screenshot(path=str(directory / (stem + ".png")), timeout=8000)
+            evidence["screenshot"] = stem + ".png"
+        except Exception as capture_error:
+            evidence["capture_error"] = str(capture_error)[:200]
+        (directory / (stem + ".json")).write_text(json.dumps(evidence, indent=2) + "\n")
     if error:
         raise RuntimeError(f"{phase} {url}: {error}")
     return page.url
@@ -196,10 +267,12 @@ def reused_urls(spec, site):
 
 async def crawl_site(pw, args, db, domain, category):
     url = site_url(domain)
-    st = SiteState(db, args.run, domain, category, etld1(url))
+    st = SiteState(db, args.run, domain, category, etld1(url),
+                   capture_payloads=getattr(args, "capture_request_payloads", False))
     rng = random.Random(f"{args.seed}:{domain}")
     profile = Path(tempfile.mkdtemp(prefix="tm_profile_"))
     ctx = None
+    capture = None
     extension_info = []
     try:
         ctx = await launch(pw, profile, headless=not args.headful, extensions=args.extension,
@@ -209,12 +282,19 @@ async def crawl_site(pw, args, db, domain, category):
             await asyncio.sleep(args.ext_warmup)  # let filter lists / rulesets initialise
             extension_info = await wait_for_extensions(ctx, args.extension)
             print(f"[{args.run}] {domain} extensions: {json.dumps(extension_info)}", file=sys.stderr)
-        await ctx.expose_binding("__tmLog", st.on_log)
-        await ctx.add_init_script(INSTRUMENT)
-        ctx.on("request", st.on_request)
+        if not getattr(args,'screen_only',False):
+            await ctx.expose_binding("__tmLog", st.on_log)
+            await ctx.add_init_script(instrument_source(getattr(args, 'attribute_evidence', False)))
+            ctx.on("request", st.on_request)
+        if getattr(args, "script_artifacts", None):
+            capture = ScriptCapture(db, st, args.script_artifacts)
+            ctx.on("response", capture.on_response)
+            ctx.on("requestfailed", capture.on_failed)
         ctx.on("requestfailed", st.on_request_failed)
         ctx.on("requestfinished", st.on_request_finished)
         page = ctx.pages[0] if ctx.pages else await ctx.new_page()
+        if getattr(args, 'attribute_evidence', False):
+            await attach_initiators(ctx, page, st)
 
         # 1. landing
         final_home = await navigate(page, url, "landing", args, st, rng)
@@ -231,6 +311,7 @@ async def crawl_site(pw, args, db, domain, category):
         res["gpc"] = None
         res["extensions"] = extension_info
         await page.wait_for_timeout(args.dwell * 500)
+        await flush_frames(ctx)
         st.end_visit(consent_vid, None, None, page.url, consent.dumps(res))
 
         # 3. reload homepage with stored consent state
@@ -260,7 +341,7 @@ async def crawl_site(pw, args, db, domain, category):
             res["gpc"] = None
         res["gpc_source"] = "navigator.globalPrivacyControl on final page"
         db.execute("UPDATE visits SET consent=? WHERE id=?", (consent.dumps(res), consent_vid))
-        for c in await ctx.cookies():
+        for c in ([] if getattr(args,'screen_only',False) else await ctx.cookies()):
             db.execute("INSERT INTO cookies VALUES (?,?,?,?,?,?,?,?,?,?)",
                        (args.run, domain, c["name"], c["domain"], c["value"][:1000], c.get("expires"),
                         int(etld1(c["domain"]) != st.site_domain), int(c.get("httpOnly", False)),
@@ -268,6 +349,11 @@ async def crawl_site(pw, args, db, domain, category):
         db.commit()
     finally:
         st.visit_id = None
+        for interval in st.intervals:
+            if interval[2] is None:
+                interval[2] = time.time()
+        if capture:
+            await capture.finish()
         if ctx:
             try:
                 await asyncio.wait_for(ctx.close(), 20)
@@ -280,6 +366,7 @@ async def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sites", required=True)
     ap.add_argument("--run", required=True, help="label for this run, e.g. baseline / ubol / optout")
+    ap.add_argument('--screen-only',action='store_true',help='access/consent diagnostics only: no fingerprint instrumentation, network logging or cookie-value capture')
     ap.add_argument("--out", default="data/crawl.sqlite")
     ap.add_argument("--consent", choices=["none", "accept", "reject"], default="none")
     ap.add_argument("--gpc", action="store_true", help="send Sec-GPC: 1 and expose navigator.globalPrivacyControl")
@@ -292,6 +379,11 @@ async def main():
     ap.add_argument("--site-timeout", type=float, default=300)
     ap.add_argument("--consent-wait", type=float, default=10)
     ap.add_argument("--consent-artifacts", help="save failed/unknown consent screenshots and control labels here")
+    ap.add_argument("--script-artifacts", help="save loaded script sources by SHA256 here (2 MiB/script, 20 MiB/site)")
+    ap.add_argument("--capture-request-payloads", action="store_true",
+                    help="record request bodies up to 64 KiB/request and 2 MiB/site; includes sensitive local evidence")
+    ap.add_argument("--attribute-evidence", action="store_true", help="capture bounded primitive browser attribute values for local evidence review")
+    ap.add_argument("--page-artifacts", help="save measured navigation screenshots and outcomes for manual challenge-page review")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--proxy", help="e.g. socks5://127.0.0.1:1080 (use an EU exit for GDPR banners)")
     ap.add_argument("--locale", default="en-US")
@@ -301,6 +393,8 @@ async def main():
     ap.add_argument("--limit", type=int)
     ap.add_argument("--chromium-arg", action="append", default=[])
     args = ap.parse_args()
+    if args.screen_only and (args.attribute_evidence or args.capture_request_payloads or args.script_artifacts):
+        ap.error('--screen-only cannot be combined with fingerprint/source/payload evidence capture')
 
     db = open_db(args.out)
     done = set()
@@ -318,6 +412,10 @@ async def main():
     # Failed/partial sites get retried from scratch: drop their partial rows.
     for (site,) in db.execute("SELECT DISTINCT site FROM visits WHERE run=?", (args.run,)).fetchall():
         if site not in done:
+            db.execute("DELETE FROM request_payloads WHERE request_id IN "
+                       "(SELECT r.id FROM requests r JOIN visits v ON v.id=r.visit_id WHERE v.run=? AND v.site=?)",
+                       (args.run, site))
+            db.execute("DELETE FROM script_sources WHERE visit_id IN (SELECT id FROM visits WHERE run=? AND site=?)", (args.run, site))
             db.execute("DELETE FROM api_calls WHERE visit_id IN (SELECT id FROM visits WHERE run=? AND site=?)", (args.run, site))
             db.execute("DELETE FROM fp_values WHERE visit_id IN (SELECT id FROM visits WHERE run=? AND site=?)", (args.run, site))
             db.execute("DELETE FROM requests WHERE visit_id IN (SELECT id FROM visits WHERE run=? AND site=?)", (args.run, site))
@@ -340,7 +438,9 @@ async def main():
                 db.execute("INSERT OR REPLACE INTO sites_done VALUES (?,?,?,?,?)",
                            (args.run, domain, ok, err, time.time() - t0))
                 db.commit()
-                print(f"[{args.run}] {i + 1}/{len(sites)} {domain} {'ok' if ok else 'FAIL ' + err} "
+                status=site_status(db,args.run,domain,args.consent,bool(ok))
+                print(f"[{args.run}] {i + 1}/{len(sites)} {domain} {progress_line(status)} "
+                      f"{('error=' + err) if err else ''} "
                       f"({time.time() - t0:.0f}s)", file=sys.stderr)
 
         await asyncio.gather(*(one(i, d, c) for i, (d, c) in enumerate(sites)))

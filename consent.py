@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import re
 import time
+import tcf
 
 REJECT = re.compile(
     r"^\s*(reject( all)?( cookies)?|refuse( all)?|decline( all)?|deny( all)?|disagree|"
@@ -25,6 +26,23 @@ MANAGE = re.compile(
 SAVE = re.compile(
     r"^\s*(save( (and|&) exit| (my )?(choices|preferences|settings))?|confirm( my)? (choices|selection)|"
     r"enregistrer( et fermer)?|speichern|guardar|salva)\s*$", re.I)
+
+# Observe explicit rejection + payment/subscription labels. Never click these.
+# "Offered" deliberately does not assert that every free route is unavailable.
+PAID_REJECT = re.compile(
+    r"^\s*(?:reject(?: all)?(?: cookies)?\s+(?:and|&)\s+(?:subscribe|pay)\b|"
+    r"refuser(?: tout| tous les cookies)?\s+et\s+(?:s['’]abonner|payer)\b|"
+    r"(?:alle )?ablehnen\s+und\s+(?:abonnieren|bezahlen)\b|"
+    r"rechazar(?: todo| todas)?\s+y\s+(?:suscribirse|pagar)\b|"
+    r"rifiuta(?: tutto)?\s+e\s+(?:abbonati|paga)\b|"
+    r"rejeitar(?: tudo)?\s+e\s+(?:assinar|pagar)\b|"
+    r"(?:alles )?weigeren\s+en\s+(?:abonneren|betalen)\b).*\s*$", re.I)
+
+SIGNALS_JS = """() => [
+  ['cookiebot', !!window.Cookiebot], ['onetrust', !!(window.OneTrust || window.Optanon)],
+  ['didomi', !!window.Didomi], ['usercentrics', !!(window.UC_UI || window.__ucCmp)],
+  ['sourcepoint', !!window._sp_], ['tcf_api', typeof window.__tcfapi === 'function']
+].filter(item => item[1]).map(item => item[0])"""
 
 # Pay-or-OK ("consent or pay") walls: the only alternative to accepting is a subscription.
 PAYWALL = re.compile(
@@ -49,45 +67,26 @@ def classify_pay_or_ok(labels):
     free_reject = any(REJECT.match(label) for label in labels)
     return bool(paid and accept and not free_reject), paid[:3]
 
-
 JS_API = {
-    "reject": """() => { const r = [];
-      try { if (window.OneTrust && OneTrust.RejectAll) { OneTrust.RejectAll(); r.push('onetrust'); } } catch (e) {}
-      try { if (window.Cookiebot && Cookiebot.decline) { Cookiebot.decline(); r.push('cookiebot'); } } catch (e) {}
-      try { if (window.Didomi && Didomi.setUserDisagreeToAll) { Didomi.setUserDisagreeToAll(); r.push('didomi'); } } catch (e) {}
-      try { if (window.UC_UI && UC_UI.denyAllConsents) { UC_UI.denyAllConsents(); UC_UI.closeCMP && UC_UI.closeCMP(); r.push('usercentrics2'); } } catch (e) {}
-      try { if (window.__ucCmp && __ucCmp.denyAllConsents) { __ucCmp.denyAllConsents(); __ucCmp.saveConsents && __ucCmp.saveConsents(); r.push('usercentrics3'); } } catch (e) {}
+    "reject": """async () => { const r = [];
+      try { if (window.OneTrust && OneTrust.RejectAll) { await OneTrust.RejectAll(); r.push('onetrust'); } } catch (e) {}
+      try { if (window.Cookiebot && Cookiebot.decline) { await Cookiebot.decline(); r.push('cookiebot'); } } catch (e) {}
+      try { if (window.Didomi && Didomi.setUserDisagreeToAll) { await Didomi.setUserDisagreeToAll(); r.push('didomi'); } } catch (e) {}
+      try { if (window.UC_UI && UC_UI.denyAllConsents) { await UC_UI.denyAllConsents(); if (UC_UI.closeCMP) await UC_UI.closeCMP(); r.push('usercentrics2'); } } catch (e) {}
+      try { if (window.__ucCmp && __ucCmp.denyAllConsents) { await __ucCmp.denyAllConsents(); if (__ucCmp.saveConsents) await __ucCmp.saveConsents(); r.push('usercentrics3'); } } catch (e) {}
       return r; }""",
-    "accept": """() => { const r = [];
-      try { if (window.OneTrust && OneTrust.AllowAll) { OneTrust.AllowAll(); r.push('onetrust'); } } catch (e) {}
-      try { if (window.Cookiebot && Cookiebot.submitCustomConsent) { Cookiebot.submitCustomConsent(true, true, true); r.push('cookiebot'); } } catch (e) {}
-      try { if (window.Didomi && Didomi.setUserAgreeToAll) { Didomi.setUserAgreeToAll(); r.push('didomi'); } } catch (e) {}
-      try { if (window.UC_UI && UC_UI.acceptAllConsents) { UC_UI.acceptAllConsents(); UC_UI.closeCMP && UC_UI.closeCMP(); r.push('usercentrics2'); } } catch (e) {}
-      try { if (window.__ucCmp && __ucCmp.acceptAllConsents) { __ucCmp.acceptAllConsents(); __ucCmp.saveConsents && __ucCmp.saveConsents(); r.push('usercentrics3'); } } catch (e) {}
+    "accept": """async () => { const r = [];
+      try { if (window.OneTrust && OneTrust.AllowAll) { await OneTrust.AllowAll(); r.push('onetrust'); } } catch (e) {}
+      try { if (window.Cookiebot && Cookiebot.submitCustomConsent) { await Cookiebot.submitCustomConsent(true, true, true); r.push('cookiebot'); } } catch (e) {}
+      try { if (window.Didomi && Didomi.setUserAgreeToAll) { await Didomi.setUserAgreeToAll(); r.push('didomi'); } } catch (e) {}
+      try { if (window.UC_UI && UC_UI.acceptAllConsents) { await UC_UI.acceptAllConsents(); if (UC_UI.closeCMP) await UC_UI.closeCMP(); r.push('usercentrics2'); } } catch (e) {}
+      try { if (window.__ucCmp && __ucCmp.acceptAllConsents) { await __ucCmp.acceptAllConsents(); if (__ucCmp.saveConsents) await __ucCmp.saveConsents(); r.push('usercentrics3'); } } catch (e) {}
       return r; }""",
 }
 
-TCF_JS = """() => new Promise(res => {
-  if (typeof window.__tcfapi !== 'function') return res(null);
-  let done = false, id = null;
-  const finish = value => {
-    if (done) return; done = true; clearTimeout(timer);
-    if (id != null) { try { window.__tcfapi('removeEventListener', 2, () => {}, id); } catch (e) {} }
-    res(value);
-  };
-  const timer = setTimeout(() => finish('timeout'), 2000);
-  try { window.__tcfapi('addEventListener', 2, (d, ok) => {
-    if (d && d.listenerId != null) id = d.listenerId;
-    if (!ok || !d) return finish('error');
-    const pc = d.purpose && d.purpose.consents;
-    const vc = d.vendor && d.vendor.consents;
-    finish({ cmpId: d.cmpId, cmpStatus: d.cmpStatus,
-          gdprApplies: d.gdprApplies, eventStatus: d.eventStatus,
-          purposeConsents: pc, vendorConsents: vc, specialFeatureOptins: d.specialFeatureOptins,
-          purposesConsented: Object.keys(pc || {}).filter(k => pc[k]).map(Number),
-          vendorsConsented: Object.keys(vc || {}).filter(k => vc[k]).length });
-  }); } catch (e) { finish('error'); }
-})"""
+TCF_BRIDGE = (Path(__file__).parent / "consent_tcf.js").read_text()
+TCF_JS = f"() => ({TCF_BRIDGE})('read')"
+TCF_OPERATIONS = {op: f"() => ({TCF_BRIDGE})('{op}')" for op in ("start", "arm", "stop")}
 
 COOKIEBOT_JS = """() => {
   const c = window.Cookiebot;
@@ -112,9 +111,19 @@ async def _eval(frame, js):
 
 
 async def read_state(frame):
-    tcf, cookiebot, usp = await asyncio.gather(
-        _eval(frame, TCF_JS), _eval(frame, COOKIEBOT_JS), _eval(frame, USP_JS))
-    return dict(frame=frame.url[:200], tcf=tcf, cookiebot=cookiebot, usp=usp)
+    tc, cookiebot, usp, signals = await asyncio.gather(
+        _eval(frame, TCF_JS), _eval(frame, COOKIEBOT_JS), _eval(frame, USP_JS),
+        _eval(frame, SIGNALS_JS))
+    if isinstance(tc, dict) and any((tc.get("purposeConsents") or {}).values()):
+        try:
+            decoded = tcf.validated(tc)
+            gvl, provenance = await asyncio.to_thread(tcf.load_gvl, decoded["vendor_list_version"], decoded["policy"])
+            tc["vendorScope"] = tcf.vendor_scope(decoded, gvl)
+            tc["vendorScope"]["gvl"] = provenance
+        except Exception as exc:
+            tc["scopeError"] = str(exc)[:200]
+    return dict(frame=frame.url[:200], tcf=tc, cookiebot=cookiebot, usp=usp,
+                cmp_signals=signals if isinstance(signals, list) else [])
 
 
 def page_frames(page):
@@ -124,6 +133,10 @@ def page_frames(page):
         if not any(frame is other for other in frames):
             frames.append(frame)
     return frames
+
+
+async def observe(page, operation):
+    await asyncio.gather(*(_eval(frame, TCF_OPERATIONS[operation]) for frame in page_frames(page)))
 
 
 async def read_page_state(page):
@@ -136,6 +149,8 @@ async def read_page_state(page):
 
     states = await asyncio.gather(*(read(frame) for frame in page_frames(page)))
     result = dict(frame=page.main_frame.url[:200], states=states)
+    result["cmp_signals"] = sorted({signal for state in states
+                                    for signal in state.get("cmp_signals", [])})
     # Retain legacy summary fields for CSV readers. Assessment uses all states,
     # so selecting a convenient summary can never hide a contradictory CMP.
     for key in ("tcf", "cookiebot", "usp"):
@@ -165,31 +180,22 @@ def assess_choice(action, completed, state, *, require_action_event=True):
         if len({outcome for outcome, _ in known}) > 1:
             return "unknown", "Supported CMP reports disagree across frames"
         return known[0]
-    expected = action == "accept"
     checks = []
-    tcf = state.get("tcf")
-    if isinstance(tcf, dict):
-        pc, vc = tcf.get("purposeConsents"), tcf.get("vendorConsents")
-        event_ok = tcf.get("eventStatus") == "useractioncomplete" or (
-            not require_action_event and tcf.get("eventStatus") == "tcloaded")
-        maps_known = (isinstance(pc, dict) and bool(pc) and isinstance(vc, dict)
-                      and all(type(v) is bool for v in [*pc.values(), *vc.values()]))
-        if tcf.get("gdprApplies") is True and tcf.get("cmpStatus") == "loaded" and event_ok and maps_known:
-            values = [*pc.values(), *vc.values()]
-            # Rejection must also leave no explicit special-feature opt-ins.
-            features = tcf.get("specialFeatureOptins")
-            if isinstance(features, dict) and all(type(v) is bool for v in features.values()):
-                matches = all(v is expected for v in values)
-                if action == "reject":
-                    matches = matches and not any(features.values())
-                checks.append(("TCF", matches))
+    tc = state.get("tcf")
+    inconclusive = None
+    if isinstance(tc, dict):
+        outcome, reason = tcf.assess(action, tc, require_action_event)
+        if outcome == "unknown":
+            inconclusive = reason
+        else:
+            checks.append(("TCF", outcome == "confirmed"))
     cb = state.get("cookiebot")
     if isinstance(cb, dict) and cb.get("hasResponse") is True:
         values = [cb.get(k) for k in ("preferences", "statistics", "marketing")]
         if all(type(v) is bool for v in values):
-            checks.append(("Cookiebot", all(v is expected for v in values)))
+            checks.append(("Cookiebot", all(v is (action == "accept") for v in values)))
     if not checks:
-        return "unknown", "No supported CMP reports a complete saved choice"
+        return "unknown", inconclusive or "No supported CMP reports a complete saved choice"
     if all(matches for _, matches in checks):
         return "confirmed", "Saved choice matches request: " + ", ".join(name for name, _ in checks)
     if any(matches for _, matches in checks):
@@ -225,7 +231,10 @@ async def click_matching(page, pattern):
                 for i in range(min(n, 8)):
                     el = loc.nth(i)
                     if await el.is_visible():
-                        label = (await el.inner_text(timeout=1000)).strip()[:60]
+                        label = (await el.get_attribute("aria-label", timeout=1000)
+                                 or await el.inner_text(timeout=1000)
+                                 or await el.get_attribute("value", timeout=1000) or "").strip()[:200]
+                        await observe(page, "arm")
                         await el.click(timeout=3000)
                         return {"frame": frame.url[:200], "label": label, "_frame": frame}
             except Exception:
@@ -233,22 +242,86 @@ async def click_matching(page, pattern):
     return None
 
 
-async def apply_consent(page, action, wait=10):
-    """action in {'none','accept','reject'}. Returns a JSON-serialisable result dict."""
-    res = {"action": action, "method": None, "detail": None, "action_completed": False,
-           "attempts": []}
-    if action == "none":
-        res.update(await read_page_state(page))
-        res["outcome"], res["reason"] = assess_choice(action, False, res)
-        return res
+async def label_paid_rejection(page, res):
+    """Annotate an unconfirmed rejection from visible labels, without clicking."""
+    if res.get("action") != "reject" or res.get("outcome") == "confirmed":
+        return
+    controls = []
+    for frame in page_frames(page):
+        for role in ("button", "link"):
+            try:
+                loc = frame.get_by_role(role, name=PAID_REJECT)
+                for i in range(min(await loc.count(), 8)):
+                    el = loc.nth(i)
+                    if await el.is_visible():
+                        label = (await el.get_attribute("aria-label", timeout=1000)
+                                 or await el.inner_text(timeout=1000)
+                                 or await el.get_attribute("value", timeout=1000) or "").strip()[:200]
+                        controls.append(dict(frame=frame.url[:200], label=label))
+            except Exception:
+                continue
+    if controls:
+        res["obstacle"] = "paid_rejection_offered"
+        res["paid_rejection_controls"] = controls
+
+
+def in_scope(state):
+    for item in state.get("states", [state]):
+        if isinstance(item.get("cookiebot"), dict):
+            return True
+        tc = item.get("tcf")
+        if isinstance(tc, dict) and tc.get("gdprApplies") is True and tc.get("cmpStatus") == "loaded":
+            return True
+    return False
+
+
+def decisions(state):
+    result = {}
+    for item in state.get("states", [state]):
+        tc = item.get("tcf")
+        if isinstance(tc, dict):
+            try:
+                value = tcf.decision(tc)
+                key = "tcf:" + str(tc["cmpId"])
+                if key in result and result[key] != value:
+                    raise RuntimeError("TCF reports disagree across frames")
+                result[key] = value
+            except ValueError:
+                pass
+        cb = item.get("cookiebot")
+        if isinstance(cb, dict) and cb.get("hasResponse") is True:
+            value = {k: cb.get(k) for k in ("preferences", "statistics", "marketing")}
+            if all(type(v) is bool for v in value.values()):
+                if "cookiebot" in result and result["cookiebot"] != value:
+                    raise RuntimeError("Cookiebot reports disagree across frames")
+                result["cookiebot"] = value
+    return result
+
+
+def reason_code(outcome, reason):
+    if outcome == "confirmed":
+        return "confirmed"
+    if "disagree" in reason:
+        return "conflicting_state"
+    if "action was not completed" in reason:
+        return "action_not_completed"
+    if "scope" in reason:
+        return "scope_unreadable"
+    if outcome == "failed":
+        return "choice_mismatch"
+    return "state_unreadable"
+
+
+async def _actuate(page, action, res, deadline):
     pat = REJECT if action == "reject" else ACCEPT
-    deadline = time.monotonic() + wait
     api_tried = []
     while time.monotonic() < deadline:
+        await observe(page, "start")
         apis = None
         for frame in page_frames(page):
             if any(frame is previous for previous in api_tried):
                 continue
+            await observe(page, "arm")
             found = await _eval(frame, JS_API[action])
             if found:
                 api_tried.append(frame)
@@ -274,25 +347,67 @@ async def apply_consent(page, action, wait=10):
             if first:
                 first.pop("_frame")
                 await page.wait_for_timeout(1500)
-                second = await click_matching(page, REJECT) or await click_matching(page, SAVE)
+                second = await click_matching(page, REJECT)
                 if second:
                     second.pop("_frame")
                 res.update(method="click-2layer", detail=[first, second], action_completed=bool(second))
                 res["attempts"].append(dict(method="click-2layer", detail=[first, second]))
+                if not second:
+                    res["obstacle"] = "settings_incomplete"
                 break
         await page.wait_for_timeout(1000)
     await page.wait_for_timeout(2000)
     res.update(await read_page_state(page))
     res["outcome"], res["reason"] = assess_choice(action, res["action_completed"], res)
+    if res["outcome"] == "confirmed":
+        try:
+            res["decision"] = decisions(res)
+        except RuntimeError as exc:
+            res.update(outcome="unknown", reason=str(exc))
+    res["reason_code"] = reason_code(res["outcome"], res["reason"])
+    await label_paid_rejection(page, res)
     if action == "reject" and not res["action_completed"]:
         labels = [c.get("label") for frame in page_frames(page)
                   for c in (await _eval(frame, CONTROLS_JS) or []) if isinstance(c, dict)]
         pay_or_ok, paid = classify_pay_or_ok(labels)
         if pay_or_ok:
             # Still a failed rejection, but a site design, not a detection gap.
-            res.update(pay_or_ok=True, pay_or_ok_labels=paid,
+            res.update(pay_or_ok=True, obstacle="pay_or_ok", reason_code="pay_or_ok",
+                       pay_or_ok_labels=paid,
                        reason="Pay-or-OK: no free reject control (" + "; ".join(paid) + ")")
     return res
+
+
+async def apply_consent(page, action, wait=10):
+    """Only Cookiebot/loaded GDPR-applicable TCF is in consent experiment scope."""
+    res = dict(action=action, method=None, detail=None, action_completed=False, attempts=[], obstacle=None)
+    if action == "none":
+        res.update(await read_page_state(page), scope="not_requested", outcome="not_requested",
+                   reason="No consent action requested", reason_code="not_requested")
+        return res
+    deadline = time.monotonic() + max(0, wait)
+    try:
+        while True:
+            await observe(page, "start")
+            state = await read_page_state(page)
+            if in_scope(state):
+                res.update(scope="cookiebot_tcf", before=state)
+                break
+            if time.monotonic() >= deadline:
+                states = state.get("states", [state])
+                not_applicable = any(isinstance(s.get("tcf"), dict) and
+                                     s["tcf"].get("gdprApplies") is False for s in states)
+                tcf_present = any(s.get("tcf") or "tcf_api" in s.get("cmp_signals", []) for s in states)
+                code = "gdpr_not_applicable" if not_applicable else "state_unreadable" if tcf_present else "unsupported_cmp"
+                res.update(state, scope="not_applicable" if not_applicable else "unsupported", outcome="unknown",
+                           obstacle=code, reason="Outside Cookiebot/loaded GDPR-applicable TCF scope",
+                           reason_code=code)
+                await label_paid_rejection(page, res)
+                return res
+            await asyncio.sleep(min(0.2, max(0, deadline - time.monotonic())))
+        return await _actuate(page, action, res, deadline)
+    finally:
+        await observe(page, "stop")
 
 
 async def recheck_consent(page, res, phase="home_reload", wait=2):
@@ -306,6 +421,13 @@ async def recheck_consent(page, res, phase="home_reload", wait=2):
         state = await read_page_state(page)
         polls += 1
         outcome, reason = assess_choice(res["action"], True, state, require_action_event=False)
+        if outcome == "confirmed" and res.get("decision"):
+            try:
+                current = decisions(state)
+                if any(current.get(k) != v for k, v in res["decision"].items()):
+                    outcome, reason = "unknown", "Saved consent decision changed or disappeared"
+            except RuntimeError as exc:
+                outcome, reason = "unknown", str(exc)
         remaining = deadline - time.monotonic()
         # Retry inconclusive loading/missing state only. A readable opposite
         # choice or conflicting CMPs must not be waited away or clicked again.
@@ -315,7 +437,8 @@ async def recheck_consent(page, res, phase="home_reload", wait=2):
     res.setdefault("checks", []).append(dict(state, phase=phase, outcome=outcome, reason=reason,
                                             polls=polls, seconds=time.monotonic() - started))
     if outcome != "confirmed":
-        res.update(outcome=outcome, reason=f"{phase}: " + reason)
+        res.update(outcome=outcome, reason=f"{phase}: " + reason,
+                   reason_code="state_lost" if "disappeared" in reason else reason_code(outcome, reason))
 
 
 async def save_diagnostics(page, res, directory, key, phase="after_consent"):
@@ -325,7 +448,9 @@ async def save_diagnostics(page, res, directory, key, phase="after_consent"):
     stem = hashlib.sha256(key.encode()).hexdigest()[:16] + f"-{phase}-{time.time_ns()}"
     root = Path(directory)
     evidence = {"phase": phase, "url": page.url, "outcome": res.get("outcome"),
-                "reason": res.get("reason"), "frames": []}
+                "reason": res.get("reason"), "obstacle": res.get("obstacle"),
+                "cmp_signals": res.get("cmp_signals", []),
+                "paid_rejection_controls": res.get("paid_rejection_controls", []), "frames": []}
     try:
         root.mkdir(parents=True, exist_ok=True)
         for frame in page_frames(page):

@@ -9,8 +9,10 @@ export PW_UID := $(shell id -u)
 export PW_GID := $(shell id -g)
 SITE        ?= theguardian.com
 ACTION      ?= reject
+FINAL_SITES ?= sites_final_experiment.csv
+FINAL_SEED ?= 42
 
-.PHONY: build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout accept respawn analyze rejectonly gpconly baseline3 stats validation-sample
+.PHONY: build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent final-study-prepare consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout accept rejectonly gpconly baseline3 respawn analyze stats validation-sample
 
 dirs:
 	mkdir -p data ext results
@@ -48,6 +50,10 @@ verify-blockers: dirs build
 verify-consent: dirs build
 	$(COMPOSE_TEST) run --rm crawler python -m unittest discover -s test -p 'test_consent*.py'
 	$(COMPOSE_TEST) run --rm crawler python -u test/verify_consent_frames.py
+
+# Freeze one randomized four-condition plan; this does not start live visits.
+final-study-prepare: dirs
+	python3 scripts/run_repeated_validation.py --sites "$(FINAL_SITES)" --repeats 1 --seed "$(FINAL_SEED)" --final-study
 
 # Fresh DB and timestamped evidence every time; completed pilot rows are untouched.
 consent-check: dirs build
