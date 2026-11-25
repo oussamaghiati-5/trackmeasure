@@ -100,8 +100,9 @@ def survival_table(ps, det, views=None, col="group"):
     elig = ps[ps.comparison_eligible == 1]
     sites_of = {run: set(elig[elig.run == run].site) for run in elig.run.unique()}
     rows, summary = [], {}
-    for run in ("ubol", "pbadger", "optout", "accept"):
-        common = sites_of["baseline"] & sites_of.get(run, set()) & sites_of["baseline2"]
+    # reject and gpc separate the two signals of optout (batches after 2026-11-22).
+    for run in [r for r in ("ubol", "pbadger", "optout", "reject", "gpc", "accept") if r in sites_of]:
+        common = sites_of["baseline"] & sites_of[run] & sites_of["baseline2"]
         for gname, groups in views:
             base = pair_sets(det, "baseline", common, groups, col)
             cond = pair_sets(det, run, common, groups, col)

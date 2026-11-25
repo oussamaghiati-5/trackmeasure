@@ -1,33 +1,96 @@
 #!/usr/bin/env python3
 """Run a reproducible browser measurement batch.
 
-Example: python scripts/run_study.py --sites sites_ranked.csv --modes baseline baseline2
-The input list, browser settings and VPN exit are frozen in data/study and
-results/study. Use a new --batch name for a different experiment.
+Example: python scripts/run_study.py --sites data/full_eu_20261122/sites.csv \
+             --batch full_eu_20261126 --workers 2 --modes baseline baseline2
+The input list, browser settings and VPN exit are frozen in data/BATCH and
+results/BATCH. Use a new --batch name for a different experiment.
+
+Every database read runs in the crawler container, so the same commands work
+whether data/ is a bind mount or the live database stays on a Docker volume
+(MEASUREMENT_DATA_OVERLAY=docker-compose.volume.yml, needed on Windows, where
+SQLite on a bind mount was corrupted). With the volume, a copy is exported to
+data/BATCH/crawl.sqlite after the requested conditions finish.
 """
 import argparse
 import csv
 import datetime
 import hashlib
 import json
+import os
 import shutil
-import sqlite3
 import subprocess
 
 from run_pilot import MODES, run
-from verify_vpn import ROOT, BASE, VPN, expected_country, trace
+from verify_vpn import ROOT, BASE, VPN, DATA_OVERLAY, VPN_OVERLAY, expected_country, trace
 
 SETTINGS = ["--headful", "--subpages", "1", "--dwell", "5",
             "--timeout", "45", "--site-timeout", "180", "--consent-wait", "20",
-            "--locale", "en-US", "--timezone", "Europe/Amsterdam", "--seed", "0"]
+            "--locale", "en-US", "--seed", "0"]
+# The browser time zone follows the verified exit country, so the IP and the
+# browser agree (the 2026-11-22 batch used Europe/Amsterdam behind a German exit).
+TIMEZONES = {"AT": "Europe/Vienna", "BE": "Europe/Brussels", "CH": "Europe/Zurich",
+             "DE": "Europe/Berlin", "DK": "Europe/Copenhagen", "ES": "Europe/Madrid",
+             "FI": "Europe/Helsinki", "FR": "Europe/Paris", "GB": "Europe/London",
+             "IE": "Europe/Dublin", "IT": "Europe/Rome", "NL": "Europe/Amsterdam",
+             "NO": "Europe/Oslo", "PL": "Europe/Warsaw", "PT": "Europe/Lisbon",
+             "SE": "Europe/Stockholm"}
 SOURCE_FILES = ("crawler.py", "instrument.js", "consent.py", "analyze.py",
                 "respawn.py", "common.py", "navigation.py", "extension_state.py",
                 "requirements.txt", "extensions.lock.json", "Dockerfile",
-                "docker-compose.yml", "docker-compose.vpn.yml", "scripts/run_study.py")
+                "docker-compose.yml", VPN_OVERLAY, *([DATA_OVERLAY] if DATA_OVERLAY else []),
+                "scripts/run_study.py", "scripts/run_pilot.py")
+OFFLINE = BASE + ["-f", "docker-compose.test.yml"]     # data mounts, no network
+MARKER = "STUDY_DB "
+QUERY = r'''
+import json, os, sqlite3, sys
+path, sql = sys.argv[1], sys.argv[2]
+rows = None
+if os.path.exists(path):
+    con = sqlite3.connect("file:" + path + "?mode=ro", uri=True)
+    rows = con.execute(sql).fetchall()
+    con.close()
+print("STUDY_DB " + json.dumps(rows), flush=True)
+'''
+EXPORT = r'''
+import sqlite3, sys
+src = sqlite3.connect("file:" + sys.argv[1] + "?mode=ro", uri=True)
+dst = sqlite3.connect(sys.argv[2])
+src.backup(dst)
+dst.close()
+src.close()
+'''
+
+
+def exit_timezone(country):
+    try:
+        return TIMEZONES[country.upper()]
+    except KeyError:
+        raise RuntimeError(f"No browser time zone set for exit country {country}; add it to TIMEZONES")
+
+
+def container_python(code, *argv, capture=False):
+    return subprocess.run(OFFLINE + ["run", "--rm", "--no-deps", "-T", "crawler", "python", "-c", code, *argv],
+                          cwd=ROOT, check=True, text=True, capture_output=capture)
+
+
+def query(batch, sql):
+    """Rows of a read-only query on the batch database, or None if it does not exist yet."""
+    out = container_python(QUERY, f"data/{batch}/crawl.sqlite", sql, capture=True).stdout
+    line = next(line for line in out.splitlines() if line.startswith(MARKER))
+    return json.loads(line[len(MARKER):])
+
+
+def export(batch):
+    """Copy the live database from the Docker volume to data/BATCH/crawl.sqlite on the host."""
+    staged = ROOT / "data" / f"{batch}-export.sqlite"
+    staged.unlink(missing_ok=True)
+    container_python(EXPORT, f"data/{batch}/crawl.sqlite", f"data/{batch}-export.sqlite")
+    os.replace(staged, ROOT / "data" / batch / "crawl.sqlite")
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--sites", required=True, help="final CSV with domain,category")
     ap.add_argument("--batch", default="study", help="name under data/ and results/")
     ap.add_argument("--network", choices=("vpn", "direct"), default="vpn",
@@ -38,6 +101,8 @@ def main():
     settings = ["--workers", str(args.workers), *SETTINGS]
     if not args.batch.replace("-", "").replace("_", "").isalnum():
         ap.error("--batch must contain only letters, digits, hyphens or underscores")
+    # docker-compose.volume.yml names the batch's volume after this variable.
+    os.environ["STUDY_BATCH"] = args.batch
     source = (ROOT / args.sites).resolve()
     if not source.is_file():
         ap.error(f"site list not found: {source}")
@@ -47,8 +112,9 @@ def main():
         ap.error("site list must contain unique domains")
     data = ROOT / "data" / args.batch
     results = ROOT / "results" / args.batch
-    data.mkdir(parents=True, exist_ok=True)
-    results.mkdir(parents=True, exist_ok=True)
+    inputs = results / "inputs"         # visible to the container in both data setups
+    for path in (data, results, inputs):
+        path.mkdir(parents=True, exist_ok=True)
     subprocess.run(["docker", "compose", "build", "crawler"], cwd=ROOT, check=True)
     network = VPN if args.network == "vpn" else BASE
     if args.network == "vpn":
@@ -57,61 +123,62 @@ def main():
     exit_info = trace(network)
     if args.network == "vpn" and exit_info["country"] != expected_country().upper():
         raise RuntimeError("VPN exit country does not match configuration")
+    settings += ["--timezone", exit_timezone(exit_info["country"])]
     manifest = {"sites_sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
                 "site_count": len(sites), "settings": settings, "exit": exit_info,
-                "network": args.network,
+                "network": args.network, "data_volume": bool(DATA_OVERLAY),
                 "source_sha256": {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
                                   for name in SOURCE_FILES}}
     manifest_path = results / "manifest.json"
     if manifest_path.exists():
         previous = json.loads(manifest_path.read_text())
-        if any(previous.get(key) != value for key, value in manifest.items()):
-            raise RuntimeError("Batch input, settings or VPN exit changed; use a new --batch")
+        changed = [key for key, value in manifest.items() if previous.get(key) != value]
+        if changed:
+            raise RuntimeError(f"Batch {', '.join(changed)} changed; use a new --batch")
     else:
         manifest["started_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n")
-    frozen = data / "sites.csv"
-    if frozen.exists() and frozen.read_bytes() != source.read_bytes():
-        raise RuntimeError("Frozen site list differs; use a new --batch")
-    if source != frozen.resolve():
-        shutil.copyfile(source, frozen)
-    db = data / "crawl.sqlite"
+    for frozen in (data / "sites.csv", inputs / "sites.csv"):
+        if frozen.exists() and frozen.read_bytes() != source.read_bytes():
+            raise RuntimeError("Frozen site list differs; use a new --batch")
+        if source != frozen.resolve():
+            shutil.copyfile(source, frozen)
     for mode in args.modes:
         if trace(network) != exit_info:
             raise RuntimeError("Network exit changed before run")
-        input_path = f"data/{args.batch}/sites.csv"
+        input_path = f"results/{args.batch}/inputs/sites.csv"
         if mode != "baseline":
-            if not db.exists():
+            rows = query(args.batch, "SELECT site FROM sites_done WHERE run='baseline' AND ok=1")
+            if rows is None:
                 raise RuntimeError("Run baseline before comparison conditions")
-            with sqlite3.connect(db) as con:
-                successful = {row[0] for row in con.execute(
-                    "SELECT site FROM sites_done WHERE run='baseline' AND ok=1")}
+            successful = {row[0] for row in rows}
             if not successful:
                 raise RuntimeError("No successful baseline sites; diagnose the baseline first")
             selected = [row for row in sites if row["domain"] in successful]
-            with (data / "successful_sites.csv").open("w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=["domain", "category"], extrasaction="ignore")
-                writer.writeheader()
-                writer.writerows(selected)
-            input_path = f"data/{args.batch}/successful_sites.csv"
+            for path in (data / "successful_sites.csv", inputs / "successful_sites.csv"):
+                with path.open("w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=["domain", "category"], extrasaction="ignore")
+                    writer.writeheader()
+                    writer.writerows(selected)
+            input_path = f"results/{args.batch}/inputs/successful_sites.csv"
         command = network + ["run", "--rm", "-T", "crawler", "xvfb-run", "-a", "python", "-u",
-                         "crawler.py", "--sites", input_path,
-                         "--out", f"data/{args.batch}/crawl.sqlite", "--run", mode,
-                         "--consent-artifacts", f"results/{args.batch}/consent", *settings, *MODES[mode]]
+                             "crawler.py", "--sites", input_path,
+                             "--out", f"data/{args.batch}/crawl.sqlite", "--run", mode,
+                             "--consent-artifacts", f"results/{args.batch}/consent", *settings, *MODES[mode]]
         if mode != "baseline":
             command += ["--reuse-urls-from", f"data/{args.batch}/crawl.sqlite:baseline"]
         run(command, results / f"{mode}.log")
         if trace(network) != exit_info:
             raise RuntimeError("Network exit changed during run; do not compare this batch")
-        with sqlite3.connect(db) as con:
-            ok, failed = con.execute(
-                "SELECT COALESCE(SUM(ok),0), COALESCE(SUM(1-ok),0) FROM sites_done WHERE run=?",
-                (mode,)).fetchone()
+        (ok, failed), = query(args.batch, "SELECT COALESCE(SUM(ok),0), COALESCE(SUM(1-ok),0) "
+                                          f"FROM sites_done WHERE run='{mode}'")
         print(f"{mode}: {ok} completed, {failed} failed; inspect {results / (mode + '.log')}", flush=True)
-        offline = ["docker", "compose", "-f", "docker-compose.yml", "-f", "docker-compose.test.yml"]
-        run(offline + ["run", "--rm", "-T", "crawler", "python", "analyze.py",
+        run(OFFLINE + ["run", "--rm", "-T", "crawler", "python", "analyze.py",
                        f"data/{args.batch}/crawl.sqlite", "--baseline", "baseline",
                        "--outdir", f"results/{args.batch}"], results / "analysis.log")
+    if DATA_OVERLAY:
+        export(args.batch)
+        print(f"Database copy: {data / 'crawl.sqlite'}", flush=True)
     print(f"Study outputs: {results}")
 
 

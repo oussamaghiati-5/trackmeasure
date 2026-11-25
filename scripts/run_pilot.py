@@ -18,6 +18,9 @@ from verify_vpn import ROOT, VPN, trace
 MODES = {
     "baseline": [], "baseline2": [],
     "optout": ["--consent", "reject", "--gpc"],
+    # Separate the two signals combined in optout.
+    "reject": ["--consent", "reject"],
+    "gpc": ["--gpc"],
     "accept": ["--consent", "accept"],
     "ubol": ["--extension", "ext/ubol"],
     "pbadger": ["--extension", "ext/privacybadger"],

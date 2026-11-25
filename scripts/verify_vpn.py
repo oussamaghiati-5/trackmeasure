@@ -22,11 +22,11 @@ if (ROOT / ".env").exists():
             _key, _value = _line.split("=", 1)
             _local_env[_key.strip()] = _value.strip()
 BASE = ["docker", "compose", "-f", "docker-compose.yml"]
-_data_overlay = os.environ.get("MEASUREMENT_DATA_OVERLAY", _local_env.get("MEASUREMENT_DATA_OVERLAY"))
-if _data_overlay:
-    BASE += ["-f", _data_overlay]
-_vpn_overlay = os.environ.get("VPN_COMPOSE_FILE", _local_env.get("VPN_COMPOSE_FILE"))
-VPN = BASE + ["-f", _vpn_overlay or "docker-compose.vpn.yml"]
+DATA_OVERLAY = os.environ.get("MEASUREMENT_DATA_OVERLAY", _local_env.get("MEASUREMENT_DATA_OVERLAY"))
+if DATA_OVERLAY:
+    BASE += ["-f", DATA_OVERLAY]
+VPN_OVERLAY = os.environ.get("VPN_COMPOSE_FILE", _local_env.get("VPN_COMPOSE_FILE")) or "docker-compose.vpn.yml"
+VPN = BASE + ["-f", VPN_OVERLAY]
 MARKER = "VPN_CHECK "
 PROBE = r'''
 import concurrent.futures, json, socket, sys, urllib.request

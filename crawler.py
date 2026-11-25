@@ -34,6 +34,32 @@ from extension_state import wait_for_extensions
 INSTRUMENT = (HERE / "instrument.js").read_text()
 SKIP_EXT = (".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".mp4", ".mp3", ".xml", ".rss", ".svg", ".webp")
 SKIP_WORDS = ("logout", "signout", "sign-out", "login", "signin", "sign-in", "register", "cart", "checkout", "mailto:", "tel:")
+# Tracking beacons often carry long query strings; 2000 characters cut 2,884 URLs in
+# the 2026-11-22 batch. Bodies are kept to search them for the browser's own values.
+URL_MAX = 16384
+BODY_MAX = 32768
+BODY_METHODS = ("POST", "PUT", "PATCH")
+# Extra fresh subpage candidates tried when one answers with an HTTP error.
+SUBPAGE_SPARES = 2
+
+
+class NavigationError(RuntimeError):
+    def __init__(self, message, status=None):
+        super().__init__(message)
+        self.status = status
+
+
+def request_body(req):
+    """(text, full size in bytes) of a request body, or (None, None)."""
+    if req.method not in BODY_METHODS:
+        return None, None
+    try:
+        raw = req.post_data_buffer
+    except Exception:
+        return None, None
+    if not raw:
+        return None, None
+    return raw[:BODY_MAX].decode("utf-8", "replace"), len(raw)
 
 
 class SiteState:
@@ -67,11 +93,23 @@ class SiteState:
         except Exception:
             frame_url = None
         dom = etld1(url)
+        body, body_size = request_body(req)
         cur = self.db.execute(
-            "INSERT INTO requests(visit_id,url,host,domain,third_party,rtype,method,frame_url,ts) VALUES (?,?,?,?,?,?,?,?,?)",
-            (self.visit_id, url[:2000], host_of(url), dom, int(dom != self.site_domain),
-             req.resource_type, req.method, frame_url, time.time()))
+            "INSERT INTO requests(visit_id,url,host,domain,third_party,rtype,method,frame_url,ts,body,body_size) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (self.visit_id, url[:URL_MAX], host_of(url), dom, int(dom != self.site_domain),
+             req.resource_type, req.method, frame_url, time.time(), body, body_size))
         self.req_rows[req] = cur.lastrowid
+
+    def discard_visit(self, vid, url, error):
+        """Drop a failed spare-subpage attempt and record it in subpage_skips."""
+        self.visit_id = None
+        self.db.execute("DELETE FROM api_calls WHERE visit_id=?", (vid,))
+        self.db.execute("DELETE FROM requests WHERE visit_id=?", (vid,))
+        self.db.execute("DELETE FROM visits WHERE id=?", (vid,))
+        self.db.execute("INSERT INTO subpage_skips(run, site, url, error) VALUES (?,?,?,?)",
+                        (self.run, self.site, url, error))
+        self.db.commit()
 
     def on_request_failed(self, req):
         row = self.req_rows.pop(req, None)
@@ -135,7 +173,7 @@ async def navigate(page, url, phase, args, st, rng):
             error = (str(e).splitlines()[0] if str(e) else type(e).__name__)[:300]
     st.end_visit(vid, status, error, page.url)
     if error:
-        raise RuntimeError(f"{phase} {url}: {error}")
+        raise NavigationError(f"{phase} {url}: {error}", status)
     return page.url
 
 
@@ -159,6 +197,28 @@ async def pick_subpages(page, site_domain, n, rng):
         seen.add(u)
         out.append(u)
     return rng.sample(out, min(n, len(out)))
+
+
+async def visit_subpages(page, subs, reused, args, st, rng, after_each):
+    """Measure args.subpages of subs. Reused URLs must be visited as they are. Freshly
+    picked ones have spares: a subpage that answers with an HTTP error is replaced by
+    the next candidate instead of losing the site. Timeouts are not retried."""
+    measured = 0
+    for i, url in enumerate(subs):
+        if measured == args.subpages:
+            break
+        try:
+            await navigate(page, url, "subpage", args, st, rng)
+        except NavigationError as e:
+            spares_left = len(subs) - i - 1 >= args.subpages - measured
+            http_error = e.status is not None and not 200 <= e.status < 300
+            if reused or not http_error or not spares_left:
+                raise
+            st.discard_visit(st.visit_id, url, str(e))
+            continue
+        measured += 1
+        await after_each()
+    return measured
 
 
 def reused_urls(spec, site):
@@ -221,13 +281,15 @@ async def crawl_site(pw, args, db, domain, category):
 
         # 4. subpages
         subs = reused_urls(args.reuse_urls_from, domain) if args.reuse_urls_from else []
+        reused = bool(subs)
         if not subs:
-            subs = await pick_subpages(page, st.site_domain, args.subpages, rng)
-        for su in subs[: args.subpages]:
-            await navigate(page, su, "subpage", args, st, rng)
+            subs = await pick_subpages(page, st.site_domain, args.subpages + SUBPAGE_SPARES, rng)
+
+        async def after_subpage():
             await consent.recheck_consent(page, res, phase="subpage")
             await consent.save_diagnostics(page, res, args.consent_artifacts,
                                            f"{args.run}:{domain}", phase="subpage")
+        await visit_subpages(page, subs, reused, args, st, rng, after_subpage)
 
         st.visit_id = None
         # Extensions such as Privacy Badger can enable GPC themselves. Read it
@@ -240,7 +302,7 @@ async def crawl_site(pw, args, db, domain, category):
         db.execute("UPDATE visits SET consent=? WHERE id=?", (consent.dumps(res), consent_vid))
         for c in await ctx.cookies():
             db.execute("INSERT INTO cookies VALUES (?,?,?,?,?,?,?,?,?,?)",
-                       (args.run, domain, c["name"], c["domain"], c["value"][:1000], c.get("expires"),
+                       (args.run, domain, c["name"], c["domain"], c["value"], c.get("expires"),
                         int(etld1(c["domain"]) != st.site_domain), int(c.get("httpOnly", False)),
                         int(c.get("secure", False)), c.get("sameSite")))
         db.commit()
@@ -300,6 +362,7 @@ async def main():
             db.execute("DELETE FROM requests WHERE visit_id IN (SELECT id FROM visits WHERE run=? AND site=?)", (args.run, site))
             db.execute("DELETE FROM visits WHERE run=? AND site=?", (args.run, site))
             db.execute("DELETE FROM cookies WHERE run=? AND site=?", (args.run, site))
+            db.execute("DELETE FROM subpage_skips WHERE run=? AND site=?", (args.run, site))
     db.commit()
     sites = [s for s in load_sites(args.sites) if s[0] not in done][: args.limit]
     print(f"[{args.run}] {len(sites)} sites to crawl ({len(done)} already done)", file=sys.stderr)

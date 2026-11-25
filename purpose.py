@@ -139,7 +139,16 @@ UNDETERMINED_HIGH, UNDETERMINED_LOW = "Undetermined (high capability)", "Undeter
 HARM_CLASSES = (TRACKING, DUAL_USE, SERVICE, UNDETERMINED_HIGH, UNDETERMINED_LOW)
 # Browser values the crawler controls and that only fingerprinting-style reads
 # expose: the configured time zone and the Linux platform in the user agent.
-KNOWN_VALUES = ("Europe/Amsterdam", "X11; Linux x86_64", "Linux x86_64")
+# The time zone is the batch's --timezone setting (Europe/Amsterdam until 2026-11-22).
+DEFAULT_TIMEZONE = "Europe/Amsterdam"
+PLATFORM_VALUES = ("X11; Linux x86_64", "Linux x86_64")
+
+
+def known_values(timezone=DEFAULT_TIMEZONE):
+    return (timezone, *PLATFORM_VALUES)
+
+
+KNOWN_VALUES = known_values()
 
 
 def value_patterns(values=KNOWN_VALUES):

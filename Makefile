@@ -9,7 +9,7 @@ STUDY_BATCH ?= study
 SITE        ?= theguardian.com
 ACTION      ?= reject
 
-.PHONY: uncertainty tracker-radar purpose agreement build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout accept respawn analyze
+.PHONY: uncertainty tracker-radar purpose agreement build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout reject gpc accept respawn analyze
 
 dirs:
 	mkdir -p data ext results
@@ -70,6 +70,12 @@ pbadger: dirs
 
 optout: dirs
 	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes optout
+
+reject: dirs
+	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes reject
+
+gpc: dirs
+	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes gpc
 
 accept: dirs
 	python3 scripts/run_study.py --sites $(STUDY_SITES) --batch $(STUDY_BATCH) --modes accept

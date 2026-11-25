@@ -1,11 +1,16 @@
 # Keep live SQLite files on Docker's Linux filesystem; export after the writer exits.
+# scripts/run_study.py sets STUDY_BATCH, so each new batch gets its own volume
+# (trackmeasure_<batch>_data) mounted over data/<batch>.
 services:
   crawler:
     volumes:
       - direct_study_data:/app/data/full_direct_20261122
       - eu_study_data:/app/data/full_eu_20261122
+      - batch_study_data:/app/data/${STUDY_BATCH:-no_batch}
 volumes:
   direct_study_data:
     name: trackmeasure_direct_study_data
   eu_study_data:
     name: trackmeasure_eu_study_data
+  batch_study_data:
+    name: trackmeasure_${STUDY_BATCH:-no_batch}_data

@@ -171,6 +171,78 @@ class CrawlerNavigation(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(url, self.page.url)
         self.assertEqual(self.db.execute("SELECT status,error FROM visits").fetchone(), (200, None))
 
+    def request(self, method="POST", body=b"", url="https://t.example/c?tz=Europe%2FBerlin"):
+        class Request:      # hashable, like Playwright's: the crawler keys pending requests by object
+            pass
+        req = Request()
+        req.__dict__.update(url=url, method=method, resource_type="xhr", post_data_buffer=body,
+                            frame=SimpleNamespace(url="http://example.test/"))
+        return req
+
+    def test_request_body_and_long_url_are_kept_up_to_their_caps(self):
+        self.state.new_visit("http://example.test/", "landing")
+        body = b'{"tz":"Europe/Berlin"}' + b"x" * self.crawler.BODY_MAX
+        self.state.on_request(self.request(body=body, url="https://t.example/c?" + "a" * 20000))
+        self.state.on_request(self.request(method="GET", body=b"ignored"))
+        rows = self.db.execute("SELECT method, length(url), body, body_size FROM requests ORDER BY id").fetchall()
+        self.assertEqual(rows[0][1], self.crawler.URL_MAX)
+        self.assertTrue(rows[0][2].startswith('{"tz":"Europe/Berlin"}'))
+        self.assertEqual(len(rows[0][2]), self.crawler.BODY_MAX)
+        self.assertEqual(rows[0][3], len(body))
+        self.assertEqual(rows[1], ("GET", len("https://t.example/c?tz=Europe%2FBerlin"), None, None))
+
+    async def test_http_error_on_fresh_subpage_uses_a_spare_and_is_logged(self):
+        import random
+        self.page.goto.side_effect = [SimpleNamespace(status=404), SimpleNamespace(status=200)]
+        after = AsyncMock()
+        args = SimpleNamespace(timeout=1, dwell=0, subpages=1)
+        measured = await self.crawler.visit_subpages(
+            self.page, ["http://example.test/a", "http://example.test/b", "http://example.test/c"],
+            False, args, self.state, random.Random(0), after)
+        self.assertEqual(measured, 1)
+        self.assertEqual(self.db.execute("SELECT url, status FROM visits").fetchall(),
+                         [("http://example.test/b", 200)])
+        self.assertEqual(self.db.execute("SELECT site, url, error FROM subpage_skips").fetchall(),
+                         [("example.test", "http://example.test/a", "subpage http://example.test/a: HTTP 404")])
+        after.assert_awaited_once()
+
+    async def test_reused_subpage_timeouts_and_last_candidate_are_not_replaced(self):
+        import random
+        args = SimpleNamespace(timeout=1, dwell=0, subpages=1)
+        cases = [(True, [SimpleNamespace(status=404)]),                      # reused URL
+                 (False, RuntimeError("Timeout 1000ms exceeded")),            # no HTTP answer
+                 (False, [SimpleNamespace(status=403), SimpleNamespace(status=403)])]  # no spare left
+        for reused, outcome in cases:
+            self.db.execute("DELETE FROM visits")
+            self.page.goto.side_effect = outcome
+            with self.assertRaises(RuntimeError):
+                await self.crawler.visit_subpages(self.page, ["http://example.test/a", "http://example.test/b"][
+                    :1 if reused or isinstance(outcome, Exception) else 2], reused, args, self.state,
+                    random.Random(0), AsyncMock())
+            self.assertIsNotNone(self.db.execute("SELECT error FROM visits ORDER BY id DESC").fetchone()[0])
+
+
+class DatabaseSchema(unittest.TestCase):
+    @unittest.skipUnless(HAS_BROWSER_DEPS, "tldextract required; available in project container")
+    def test_old_database_gains_request_body_columns(self):
+        import tempfile
+        from pathlib import Path
+        from common import open_db
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "old.sqlite"
+            con = sqlite3.connect(path)
+            con.execute("CREATE TABLE requests(id INTEGER PRIMARY KEY, visit_id INT, url TEXT, host TEXT, "
+                        "domain TEXT, third_party INT, rtype TEXT, method TEXT, frame_url TEXT, failure TEXT, ts REAL)")
+            con.execute("INSERT INTO requests(url) VALUES ('https://old.example/')")
+            con.commit()
+            con.close()
+            db = open_db(path)
+            columns = [row[1] for row in db.execute("PRAGMA table_info(requests)")]
+            self.assertEqual(columns[-2:], ["body", "body_size"])
+            self.assertEqual(db.execute("SELECT url, body FROM requests").fetchall(), [("https://old.example/", None)])
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM subpage_skips").fetchone(), (0,))
+            db.close()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -173,6 +173,73 @@ class ConsentVerificationFixes(unittest.TestCase):
             self.assertEqual(consent.combine_outcome("reject", live, reason, verdict)[0], expected)
 
 
+class ButtonLabels(unittest.TestCase):
+    """Labels seen on full_eu_20261122 pages where no consent click happened."""
+
+    def test_reject_labels(self):
+        for label in ("Reject all", "Cookies ablehnen", "Alle Einstellungen ablehnen", "Reject Optional Cookies",
+                      "Decline Non-Essential Cookies", "Decline optional cookies", "Do not consent",
+                      "I DO NOT CONSENT", "Continue without accepting", "Rifiuta tutto", "Nur erforderliche Cookies"):
+            self.assertRegex(label, consent.REJECT)
+
+    def test_accept_labels(self):
+        for label in ("Accept all", "Consent and continue", "Cookies akzeptieren", "Alle Einstellungen akzeptieren",
+                      "I Agree!", "Consent", "I CONSENT", "Accept All & Continue", "ACCETTA E CONTINUA",
+                      "Accepter et continuer", "Accept all the collection of your data", "Allow all cookies"):
+            self.assertRegex(label, consent.ACCEPT)
+
+    def test_paid_or_unrelated_controls_are_not_choices(self):
+        for label in ("Reject all and subscribe", "Reject and pay", "Reject & Pay", "Rifiuta e abbonati",
+                      "Subscribe now", "Continue Shopping", "Accept the use of cookies and other data for the "
+                      "purposes described", "Weiter", "Follow BBC on facebook"):
+            self.assertNotRegex(label, consent.REJECT)
+            self.assertNotRegex(label, consent.ACCEPT)
+        for label in ("Reject all and subscribe", "Reject and pay", "Reject & Pay", "Rifiuta e abbonati",
+                      "Subscribe now", "S'abonner"):
+            self.assertRegex(label, consent.PAY_TO_REJECT)
+        self.assertNotRegex("Reject all", consent.PAY_TO_REJECT)
+
+    def test_second_layer_entry_points(self):
+        for label in ("Preferences", "PREFERENZE", "Manage options", "More options", "Privacy settings"):
+            self.assertRegex(label, consent.MANAGE)
+
+
+@unittest.skipUnless(measurements.HAS_BROWSER_DEPS, "Playwright required; available in project container")
+class ConsentButtonsInBrowser(unittest.IsolatedAsyncioTestCase):
+    """click_matching on real DOM: the YouTube-style aria-label case and a pay wall."""
+
+    async def asyncSetUp(self):
+        from playwright.async_api import async_playwright
+        self.pw = await async_playwright().start()
+        self.browser = await self.pw.chromium.launch()
+        self.page = await self.browser.new_page()
+
+    async def asyncTearDown(self):
+        await self.browser.close()
+        await self.pw.stop()
+
+    async def test_visible_text_is_used_when_the_accessible_name_is_long(self):
+        await self.page.set_content(
+            '<div id=out></div><div role=dialog>'
+            '<button aria-label="Reject the use of cookies and other data for the purposes described" '
+            'onclick="out.textContent=\'rejected\'"><span>Reject all</span></button>'
+            '<button aria-label="Accept the use of cookies and other data for the purposes described" '
+            'onclick="out.textContent=\'accepted\'"><span>Accept all</span></button></div>')
+        hit = await consent.click_matching(self.page, consent.REJECT)
+        self.assertEqual(hit["label"], "Reject all")
+        self.assertEqual(await self.page.text_content("#out"), "rejected")
+
+    async def test_pay_wall_is_recorded_and_not_clicked(self):
+        await self.page.set_content(
+            '<div id=out>untouched</div><button onclick="out.textContent=\'paid\'">Rifiuta e abbonati</button>'
+            '<button onclick="out.textContent=\'accepted\'">Accetta e continua</button>')
+        result = await consent.apply_consent(self.page, "reject", wait=1)
+        self.assertFalse(result["action_completed"])
+        self.assertEqual(result["consent_or_pay"]["label"], "Rifiuta e abbonati")
+        self.assertEqual(await self.page.text_content("#out"), "untouched")
+        json.dumps(result)
+
+
 class ConsentFlow(unittest.IsolatedAsyncioTestCase):
     def page(self):
         frame = SimpleNamespace(url="http://news.test/")
@@ -182,7 +249,7 @@ class ConsentFlow(unittest.IsolatedAsyncioTestCase):
         page = self.page()
         hit = dict(frame=page.main_frame.url, label="Manage settings", _frame=page.main_frame)
         with patch.object(consent, "_eval", AsyncMock(return_value=[])), \
-             patch.object(consent, "click_matching", AsyncMock(side_effect=[None, hit, None, None])), \
+             patch.object(consent, "click_matching", AsyncMock(side_effect=[None, hit, None, None, None])), \
              patch.object(consent, "read_state", AsyncMock(return_value=tcf_state())):
             result = await consent.apply_consent(page, "reject", wait=1)
         self.assertEqual(result["outcome"], "failed")

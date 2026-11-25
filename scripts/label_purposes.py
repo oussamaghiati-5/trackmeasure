@@ -40,7 +40,16 @@ def strip(url):
     return (url or "").split("?")[0].split("#")[0]
 
 
-def load(db):
+def batch_timezone(results):
+    """The browser time zone a batch ran with, from results/BATCH/manifest.json."""
+    path = Path(results) / "manifest.json"
+    settings = json.loads(path.read_text(encoding="utf-8")).get("settings", []) if path.exists() else []
+    if "--timezone" in settings:
+        return settings[settings.index("--timezone") + 1]
+    return purpose.DEFAULT_TIMEZONE
+
+
+def load(db, timezone=purpose.DEFAULT_TIMEZONE):
     con = sqlite3.connect(Path(db).resolve().as_uri() + "?immutable=1", uri=True)
     visits = pd.read_sql("SELECT id AS visit_id, run, site, phase, url FROM visits", con)
     present = pd.read_sql("SELECT DISTINCT visit_id, script_url, script_domain FROM api_calls", con)
@@ -49,12 +58,15 @@ def load(db):
                          "'Document.cookie.set', 'Storage.setItem')", con)
     posts = pd.read_sql("SELECT DISTINCT visit_id, domain FROM requests WHERE method='POST'", con)
     cookies = pd.read_sql("SELECT DISTINCT run, site, name FROM cookies", con)
-    # Requests whose URL carries a browser value the crawler controls (time zone,
-    # Linux platform string): evidence that fingerprint attributes left the browser.
-    rx = re.compile("|".join(re.escape(p) for p in purpose.value_patterns()))
-    sent = {(site, dom) for site, dom, url in con.execute(
-        "SELECT v.site, r.domain, r.url FROM requests r JOIN visits v ON v.id = r.visit_id")
-        if url and dom and rx.search(url)}
+    # Requests whose URL, or body when captured (batches after 2026-11-22), carries a
+    # browser value the crawler controls (time zone, Linux platform string): evidence
+    # that fingerprint attributes left the browser.
+    rx = re.compile("|".join(re.escape(p) for p in purpose.value_patterns(purpose.known_values(timezone))))
+    columns = {row[1] for row in con.execute("PRAGMA table_info(requests)")}
+    body = "r.body" if "body" in columns else "NULL"
+    sent = {(site, dom) for site, dom, url, text in con.execute(
+        f"SELECT v.site, r.domain, r.url, {body} FROM requests r JOIN visits v ON v.id = r.visit_id")
+        if dom and ((url and rx.search(url)) or (text and rx.search(text)))}
     con.close()
     return visits, present, probes, posts, cookies, sent
 
@@ -89,7 +101,7 @@ def build(db, results, radar_path):
     radar = json.loads(Path(radar_path).read_text(encoding="utf-8")) if radar_path else {}
     tr, owners = radar.get("tracker_radar", {}), radar.get("owners", {})
 
-    visits, present, probes, posts, cookies, sent = load(db)
+    visits, present, probes, posts, cookies, sent = load(db, batch_timezone(results))
     vinfo = visits.set_index("visit_id")
     present = present.join(vinfo[["run", "site", "phase", "url"]], on="visit_id")
     present["base"] = present.script_url.map(strip)

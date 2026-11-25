@@ -121,6 +121,28 @@ class Harm(unittest.TestCase):
             self.assertTrue(rx.search("https://a.com/c?d=" + blob), prefix)
         self.assertFalse(rx.search("https://a.com/c?tz=Europe%2FParis&platform=Win32"))
 
+    def test_batch_time_zone_comes_from_its_manifest(self):
+        import json
+        import re
+        import tempfile
+        import label_purposes
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(label_purposes.batch_timezone(tmp), "Europe/Amsterdam")   # no manifest
+            (Path(tmp) / "manifest.json").write_text(json.dumps(
+                {"settings": ["--workers", "2", "--timezone", "Europe/Berlin", "--seed", "0"]}))
+            tz = label_purposes.batch_timezone(tmp)
+        self.assertEqual(tz, "Europe/Berlin")
+        rx = re.compile("|".join(re.escape(p) for p in purpose.value_patterns(purpose.known_values(tz))))
+        self.assertTrue(rx.search('{"timeZone":"Europe/Berlin"}'))
+        self.assertFalse(rx.search('{"timeZone":"Europe/Amsterdam"}'))
+
+    def test_exit_country_sets_browser_time_zone(self):
+        import run_study
+        self.assertEqual(run_study.exit_timezone("de"), "Europe/Berlin")
+        self.assertEqual(run_study.exit_timezone("NL"), "Europe/Amsterdam")
+        with self.assertRaises(RuntimeError):
+            run_study.exit_timezone("US")
+
     def test_identifying_power_and_capability(self):
         self.assertEqual(purpose.identifying_power(["canvas"]), "High")
         self.assertEqual(purpose.identifying_power(["attr_enum", "webgl", "audio"]), "High")

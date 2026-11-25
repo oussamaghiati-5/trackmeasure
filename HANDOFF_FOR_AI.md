@@ -72,10 +72,13 @@ The project relates to this prior work through browser-based measurement, behavi
 
 1. Convert `PAPER_DRAFT.md` to the required ACM AsiaCCS template; fill in authors/course details and verify all citations and final numbers.
 2. Two team members annotate `results/full_eu_20261122/validation/annotation_sheet.csv` independently (`docs/annotation_guide.md`), then run `make agreement` and report κ and precision per technique and per purpose in paper Section 4.5. Do not invent precision or recall. Recall is not estimable from this sample.
-3. A follow-up crawl, if feasible:
-   - separate rejection from GPC;
-   - capture request bodies to test whether fingerprint values leave the browser (FP-tracer- or FPTrace-style);
-   - crawl login and checkout pages for stronger page-context evidence.
+3. A follow-up crawl. The crawler is ready for it (2026-11-25):
+   - `reject` and `gpc` conditions separate the two signals combined in `optout`;
+   - request bodies are captured, and `label_purposes.py` searches them for the browser's time zone and platform;
+   - consent buttons are matched by visible text as well as accessible name; consent-or-pay walls are recorded;
+   - the time zone follows the VPN exit; failed baseline subpages are replaced by spares (`subpage_skips`);
+   - `run_study.py` works with the Docker data volume and exports `data/<batch>/crawl.sqlite`.
+   Still not done: login and checkout pages for stronger page-context evidence.
 4. If evaluating blocker costs, measure page completion/rendering or another predefined compatibility/performance metric on real sites; current fixture verification only checks extension setup and controlled blocking.
 5. Preserve the access failures, denominators, uncertainty intervals, and heuristic caveats in the final paper.
 

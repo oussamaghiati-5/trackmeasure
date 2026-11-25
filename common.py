@@ -69,7 +69,8 @@ CREATE TABLE IF NOT EXISTS visits(
   phase TEXT, started REAL, ended REAL, status INTEGER, error TEXT, consent TEXT);
 CREATE TABLE IF NOT EXISTS requests(
   id INTEGER PRIMARY KEY, visit_id INT, url TEXT, host TEXT, domain TEXT, third_party INT,
-  rtype TEXT, method TEXT, frame_url TEXT, failure TEXT, ts REAL);
+  rtype TEXT, method TEXT, frame_url TEXT, failure TEXT, ts REAL, body TEXT, body_size INT);
+CREATE TABLE IF NOT EXISTS subpage_skips(run TEXT, site TEXT, url TEXT, error TEXT);
 CREATE TABLE IF NOT EXISTS api_calls(
   visit_id INT, frame_url TEXT, script_url TEXT, script_domain TEXT, third_party INT,
   api TEXT, args TEXT, ts REAL);
@@ -87,6 +88,11 @@ def open_db(path):
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path)
     db.executescript(SCHEMA)
+    # Databases from before request bodies were captured gain the columns, empty.
+    have = {row[1] for row in db.execute("PRAGMA table_info(requests)")}
+    for column, kind in (("body", "TEXT"), ("body_size", "INT")):
+        if column not in have:
+            db.execute(f"ALTER TABLE requests ADD COLUMN {column} {kind}")
     # A crawl uses one SQLite connection even with multiple browser workers.
     # DELETE journaling also survives reopening the DB from a new container on
     # Windows/OneDrive bind mounts, where WAL sidecars can fail with disk I/O.

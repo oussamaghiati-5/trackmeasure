@@ -43,10 +43,12 @@ One fresh Chromium profile per site. Every run uses the same four phases, so run
 | `ubol` | uBlock Origin Lite (MV3) | blocker effectiveness |
 | `pbadger` | Privacy Badger | blocker effectiveness |
 | `optout` | CMP reject + `Sec-GPC: 1` | does opt-out stop tracking? |
+| `reject` | CMP reject only | effect of the banner choice alone |
+| `gpc` | `Sec-GPC: 1` only, no banner click | effect of the browser signal alone |
 | `accept` | CMP accept | upper bound |
 
 ### 3. Consent automation (`consent.py`)
-Tries the CMP's JavaScript API (OneTrust, Cookiebot, Didomi, Usercentrics v2/v3), then visible controls if the API does not produce confirmation: a role-based button click with anchored multilingual regexes (EN/FR/DE/ES/IT/PT/NL), or a two-layer "manage, then reject/save" flow.
+Tries the CMP's JavaScript API (OneTrust, Cookiebot, Didomi, Usercentrics v2/v3), then visible controls if the API does not produce confirmation: a button click matched by accessible name or, failing that, visible text with anchored multilingual regexes (EN/FR/DE/ES/IT/PT/NL), or a two-layer "manage, then reject/save" flow. The visible-text fallback covers CMPs that give buttons a long `aria-label`, such as YouTube's. Consent-or-pay walls, where the only refusal is a subscription ("Reject and pay", "Rifiuta e abbonati"), are recorded as `consent_or_pay` in the consent JSON and never clicked.
 
 APIs are tried in the main page and child frames; missing APIs are retried within the consent wait because CMP code may load late. State is read concurrently across the current main/child frames after an action and on reload/subpages. This handles a cross-origin banner whose button updates the parent's API, even when the banner removes its own frame. Supported reports that disagree keep the result unknown; a convenient frame cannot override a contradictory supported report. Existing verification requirements remain unchanged, so unsupported CMPs and incomplete TCF events/maps still remain unknown. This change does not claim universal banner support or address every TCF timing/vendor-scope issue.
 
@@ -162,7 +164,7 @@ make verify-blockers           # actual extension startup/blocking, local fixtur
 python scripts/check_tranco.py --out data/sites_ranked.csv --save-zip data/tranco_latest.zip
 
 make smoke                      # local fixture, no internet, no VPN
-make baseline baseline2 blockers optout accept STUDY_SITES=data/sites_ranked.csv
+make baseline baseline2 blockers optout reject gpc accept STUDY_SITES=data/sites_ranked.csv
 make respawn
 make analyze
 ```
@@ -174,7 +176,13 @@ selection rules in the paper. The Make targets now use `scripts/run_study.py`:
 they copy and hash the site list, record fixed browser settings and the VPN
 exit in `results/study/manifest.json`, check the exit before and after each
 condition, run headfully with one worker, and save failed-consent diagnostics.
-Use `STUDY_BATCH=<new-name>` for a changed input or experimental setup.
+Use `STUDY_BATCH=<new-name>` for a changed input or experimental setup. The
+browser time zone follows the verified exit country (`Europe/Berlin` for a German
+exit). Baseline subpages that answer with an HTTP error are replaced by up to two
+spare candidates and listed in the `subpage_skips` table; comparison runs revisit
+the baseline's URLs unchanged. Request bodies of POST/PUT/PATCH requests are kept
+(first 32 KB, full size in `body_size`), request URLs up to 16 KB, and cookie
+values whole.
 Outputs are in `data/<batch>/` and `results/<batch>/`. A completed command can
 still contain failed sites; inspect `per_site.csv` and `consent_coverage.csv`
 before reporting any result. `make respawn` selects candidates from that
@@ -232,7 +240,7 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 After a condition finishes, run `python scripts/paired_uncertainty.py results/BATCH/comparison.csv` to write `paired_uncertainty.json`. It compares each condition with the repeat baseline on common sites with detected baseline pairs and gives a 95% site-bootstrap interval for the difference in pair survival. This quantifies variation across measured sites; it does not resolve sampling or fingerprint-heuristic errors.
 
-On this Windows/Docker setup, the live SQLite database became corrupt on both OneDrive and local Windows bind mounts. Use `docker-compose.volume.yml` to keep the live batch database on Docker's Linux filesystem, and export a copy to the workspace only after the crawler exits. Inspect the run's `.log` file while it writes; open the exported SQLite file after completion. `scripts/resume_local_batch.py` resumes a frozen batch with the volume overlay and runs the offline analysis on that same volume.
+On this Windows/Docker setup, the live SQLite database became corrupt on both OneDrive and local Windows bind mounts. Use `docker-compose.volume.yml` to keep the live batch database on Docker's Linux filesystem, and export a copy to the workspace only after the crawler exits. Inspect the run's `.log` file while it writes; open the exported SQLite file after completion. `scripts/run_study.py` works with this overlay: it gives each batch its own volume (`trackmeasure_<batch>_data`), reads the database through the container, and exports a copy to `data/<batch>/crawl.sqlite` when the requested conditions finish. `scripts/resume_local_batch.py` was used to finish the 2026-11-22 batch.
 
 ## Smoke test
 

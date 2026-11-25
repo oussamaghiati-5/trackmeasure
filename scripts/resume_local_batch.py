@@ -25,7 +25,7 @@ def main():
     network = VPN if manifest["network"] == "vpn" else BASE
     for name in SOURCE_FILES:
         current = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-        if current != manifest["source_sha256"][name]:
+        if current != manifest["source_sha256"].get(name):
             raise RuntimeError(f"Frozen source changed: {name}")
     exit_info = manifest["exit"]
     if manifest["network"] == "vpn":

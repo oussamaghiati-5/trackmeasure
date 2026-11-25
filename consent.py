@@ -1,5 +1,6 @@
 """Consent-banner automation: reject (opt-out) or accept via CMP JS APIs, falling back to
-clicking buttons by accessible name (EN/FR/DE/ES/IT/PT/NL), incl. two-layer banners.
+clicking buttons by accessible name or visible text (EN/FR/DE/ES/IT/PT/NL), incl. two-layer
+banners. Consent-or-pay walls (refusal only with a subscription) are recorded, not clicked.
 Choices are confirmed only from readable TCF or Cookiebot state, not button clicks.
 Stored states can be re-assessed offline (reassess) and checked against the consent
 cookies saved at the end of a visit (cookie_verdict, combine_outcome)."""
@@ -12,20 +13,39 @@ import re
 import time
 import urllib.parse
 
+# Whole-label patterns, so "Reject and pay" or "Reject all and subscribe" never match
+# REJECT. Trailing "!" or "." is allowed ("I Agree!").
 REJECT = re.compile(
-    r"^\s*(reject( all)?( cookies)?|refuse( all)?|decline( all)?|deny( all)?|disagree|"
-    r"i do not (accept|agree)|do not sell( or share)?( my( personal)? info(rmation)?)?|"
+    r"^\s*(reject( all)?( cookies)?|refuse( all)?|decline( all)?( cookies)?|deny( all)?|disagree|"
+    r"(reject|decline|refuse|deny)( all)? (optional|non[- ]?essential|non[- ]?necessary|unnecessary|additional)( cookies)?|"
+    r"i do not (accept|agree|consent)|do not consent|don'?t consent|"
+    r"do not sell( or share)?( my( personal)? info(rmation)?)?|"
     r"opt[- ]out|continue without (accepting|agreeing)|(use |accept )?(only )?(strictly )?necessary( cookies)?( only)?|"
-    r"tout refuser|refuser( tout)?|continuer sans accepter|alle ablehnen|ablehnen|nur notwendige( cookies)?|"
-    r"rechazar( todo| todas)?|rifiuta( tutto)?|rejeitar( tudo)?|alles weigeren|weigeren)\s*$", re.I)
+    r"tout refuser|refuser( tout)?|continuer sans accepter|"
+    r"(alle )?(cookies )?ablehnen|alle (einstellungen|cookies) ablehnen|"
+    r"nur (notwendige|erforderliche|essenzielle)( cookies)?|nicht einverstanden|"
+    r"rechazar( todo| todas)?|continuar sin aceptar|rifiuta( tutto| tutti)?|continua senza accettare|"
+    r"rejeitar( tudo)?|alles weigeren|weigeren)[\s!.]*$", re.I)
 ACCEPT = re.compile(
-    r"^\s*(accept( all)?( cookies)?|agree( (and|&) (close|continue))?|i agree|i accept|allow( all)?( cookies)?|"
-    r"tout accepter|accepter( et (fermer|continuer))?|j'accepte|alle akzeptieren|akzeptieren|zustimmen|"
-    r"aceptar( todo| todas)?|accetta( tutto)?|aceitar( tudo)?|alles accepteren)\s*$", re.I)
+    r"^\s*(accept( all)?( cookies)?( (and|&) (close|continue))?|accept all( the)? collection of (your|my) data|"
+    r"agree( (and|&) (close|continue))?|i agree|i accept|(i )?consent( (and|&) continue)?|allow( all)?( cookies)?|"
+    r"tout accepter|accepter( tout)?( et (fermer|continuer))?|j'accepte|"
+    r"(alle )?(cookies )?akzeptieren( und (weiter|schließen))?|alle (einstellungen|cookies) akzeptieren|"
+    r"zustimmen|einverstanden|ich stimme zu|"
+    r"aceptar( todo| todas)?( y (continuar|cerrar))?|accetta( tutto| tutti| e continua| e chiudi)?|accetto|"
+    r"aceitar( tudo)?|alles accepteren)[\s!.]*$", re.I)
 MANAGE = re.compile(
     r"^\s*(manage (options|preferences|cookies|settings|choices|or reject( cookies)?)|cookie (settings|preferences)|customi[sz]e|"
-    r"more options|options|paramétrer( les cookies)?|personnaliser|gérer (les )?(options|cookies|préférences)|"
-    r"einstellungen|configurar|impostazioni)\s*$", re.I)
+    r"more options|options|(privacy )?preferences|privacy (settings|cent(er|re))|"
+    r"paramétrer( les cookies)?|personnaliser|gérer (les )?(options|cookies|préférences)|préférences|"
+    r"einstellungen|cookie-einstellungen|datenschutz-?einstellungen|präferenzen|configurar|impostazioni|preferenze)\s*$", re.I)
+# Consent-or-pay walls: the only refusal is a paid subscription. Recorded, never clicked.
+PAY_TO_REJECT = re.compile(
+    r"^\s*((reject|refuse|decline)( all)? (and|&) (pay|subscribe)|rifiuta e abbonati|refuser et s'abonner|"
+    r"ablehnen und abonnieren|subscribe( now)?|s'abonner|abonnieren|abbonati|suscríbete|read ad-free)\s*$", re.I)
+# Visible-text fallback: many CMPs give buttons a long aria-label ("Accept the use of
+# cookies and other data...") while showing a short one ("Accept all").
+CLICKABLE = "button, a, [role=button], [role=link], input[type=button], input[type=submit]"
 SAVE = re.compile(
     r"^\s*(save( (and|&) exit| (my )?(choices|preferences|settings))?|confirm( my)? (choices|selection)|"
     r"enregistrer( et fermer)?|speichern|guardar|salva)\s*$", re.I)
@@ -373,18 +393,20 @@ def combine_outcome(action, live_outcome, live_reason, verdict):
     return "failed", f"Stored consent cookie shows a {verdict} state"
 
 
-async def click_matching(page, pattern):
-    """Click the first visible button/link whose accessible name matches, in any frame."""
+async def click_matching(page, pattern, click=True):
+    """Click the first visible button/link whose accessible name, or else visible
+    text, matches, in any frame. With click=False, only report the match."""
     for frame in page.frames:
-        for role in ("button", "link"):
+        for loc in (frame.get_by_role("button", name=pattern), frame.get_by_role("link", name=pattern),
+                    frame.locator(CLICKABLE).filter(has_text=pattern)):
             try:
-                loc = frame.get_by_role(role, name=pattern)
                 n = await loc.count()
                 for i in range(min(n, 8)):
                     el = loc.nth(i)
                     if await el.is_visible():
                         label = (await el.inner_text(timeout=1000)).strip()[:60]
-                        await el.click(timeout=3000)
+                        if click:
+                            await el.click(timeout=3000)
                         return {"frame": frame.url[:200], "label": label, "_frame": frame}
             except Exception:
                 continue
@@ -439,6 +461,11 @@ async def apply_consent(page, action, wait=10):
                 res["attempts"].append(dict(method="click-2layer", detail=[first, second]))
                 break
         await page.wait_for_timeout(1000)
+    if action == "reject" and not res["action_completed"]:
+        pay = await click_matching(page, PAY_TO_REJECT, click=False)
+        if pay:
+            pay.pop("_frame")
+            res["consent_or_pay"] = pay
     await page.wait_for_timeout(2000)
     res.update(await read_page_state(page))
     res["outcome"], res["reason"] = assess_choice(action, res["action_completed"], res)
