@@ -33,6 +33,8 @@ The files use `;` and a UTF-8 BOM, so French Excel opens them in columns.
 
 `validation/method.json` records the procedure. Report the results as AI annotations, a consistency check, never as human validation.
 
+The 16 disagreements were adjudicated on 2026-11-26 by a third AI reviewer (OpenAI Codex), still blind to `annotation_key.csv`; Claude Opus provided an independent read-only second opinion. The adjudication retained `unsure` when the available static evidence did not demonstrate that the browser attribute flowed into storage or transmission: 7 rows became `yes`, 9 stayed `unsure`, and all 16 received a purpose. This is AI adjudication, not a substitute for independent human validation.
+
 ## Procedure
 
 1. Two team members work independently and fill only their own columns (`a1_*` or `a2_*`).

@@ -7,6 +7,7 @@ ext/
 results/
 __pycache__/
 .venv/
+.codex_tmp/
 _metadata/
 *.pyc
 .env

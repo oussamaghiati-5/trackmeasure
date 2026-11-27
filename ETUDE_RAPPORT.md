@@ -1,5 +1,9 @@
 # Rapport de l’étude TrackMeasure
 
+> **Archive — batch du 22 novembre.** Ce rapport est conservé pour la provenance, mais n'est
+> plus la source courante. Utiliser `paper/main.tex` et
+> `public_results/full_eu_20261125/analyze.md` pour les résultats actuels.
+
 **Étude principale :** collecte européenne de 149 sites, sortie VPN en Allemagne
 **Batch :** `full_eu_20261122`
 **Branche :** `Nasrou`

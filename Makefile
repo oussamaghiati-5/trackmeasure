@@ -9,7 +9,7 @@ STUDY_BATCH ?= study
 SITE        ?= theguardian.com
 ACTION      ?= reject
 
-.PHONY: uncertainty tracker-radar purpose annotation-kit annotation-merge id-sharing agreement build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout reject gpc accept respawn analyze
+.PHONY: uncertainty tracker-radar purpose annotation-kit annotation-merge id-sharing cookie-isolation agreement build dirs preflight preflight-vpn smoke extensions verify-blockers verify-consent consent-check pilot-baseline pilot-conditions baseline baseline2 blockers ubol pbadger optout reject gpc accept respawn analyze
 
 dirs:
 	mkdir -p data ext results
@@ -120,6 +120,10 @@ annotation-merge:
 id-sharing:
 	python3 scripts/id_sharing.py data/$(STUDY_BATCH)/crawl.sqlite results/$(STUDY_BATCH) \
 	    --radar reference/tracker_radar_subset.json
+
+# Re-issued identifier-like cookie values across independent per-run profiles.
+cookie-isolation:
+	python3 scripts/cookie_isolation.py data/$(STUDY_BATCH)/crawl.sqlite results/$(STUDY_BATCH)
 
 # After two annotators fill results/$(STUDY_BATCH)/validation/annotation_sheet.csv
 agreement:

@@ -1,0 +1,349 @@
+{
+  "definitions": {
+    "accept_restart": "All sites attempted after the first accept-run restart.",
+    "duration_outlier": "Measurement-ok Privacy Badger visit over 10x its condition median.",
+    "degraded_gpc": "Eligible GPC visit with requests under 25% of both baselines, or zero third-party domains when both baselines are non-zero."
+  },
+  "accept_restart": {
+    "retried_sites": [
+      "accuweather.com",
+      "consumerreports.org",
+      "costco.com",
+      "dailymotion.com",
+      "dictionary.com",
+      "elpais.com",
+      "foodnetwork.com",
+      "goal.com",
+      "healthline.com",
+      "honey.com",
+      "ign.com",
+      "imdb.com",
+      "linkedin.com",
+      "merriam-webster.com",
+      "pcmag.com",
+      "rakuten.co.uk",
+      "rottentomatoes.com",
+      "rtings.com",
+      "soundcloud.com",
+      "telegraph.co.uk",
+      "tomsguide.com",
+      "weather.com",
+      "webmd.com",
+      "wikihow.com",
+      "youtube.com"
+    ],
+    "retried_sites_n": 25,
+    "verified_accept_sites_retried": 17,
+    "dual_verified_sites_retried": 12,
+    "primary": {
+      "sites": 56,
+      "tracking": {
+        "baseline_pairs": 23,
+        "surviving_pairs": 23,
+        "condition_only_pairs": 22,
+        "difference_pp_vs_repeat": 0.0,
+        "ci95_pp": [
+          0.0,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      },
+      "tp_domain_delta_median_vs_repeat": 50.5,
+      "identifiers_baseline": {
+        "sites_to_known_tracker": 28,
+        "median_receivers": 1.0,
+        "cookie_sync_sites": 5
+      },
+      "identifiers_accept": {
+        "sites_to_known_tracker": 54,
+        "median_receivers": 27.0,
+        "cookie_sync_sites": 47
+      }
+    },
+    "excluding_retried": {
+      "sites": 39,
+      "tracking": {
+        "baseline_pairs": 17,
+        "surviving_pairs": 17,
+        "condition_only_pairs": 18,
+        "difference_pp_vs_repeat": 0.0,
+        "ci95_pp": [
+          0.0,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      },
+      "tp_domain_delta_median_vs_repeat": 50.0,
+      "identifiers_baseline": {
+        "sites_to_known_tracker": 21,
+        "median_receivers": 1.0,
+        "cookie_sync_sites": 2
+      },
+      "identifiers_accept": {
+        "sites_to_known_tracker": 39,
+        "median_receivers": 28.0,
+        "cookie_sync_sites": 35
+      }
+    },
+    "dual_primary": {
+      "sites": 31,
+      "medians": {
+        "tp_domains": {
+          "baseline": 18.0,
+          "baseline2": 18.0,
+          "optout": 22.0,
+          "accept": 50.0
+        },
+        "tp_cookies_final": {
+          "baseline": 1.0,
+          "baseline2": 1.0,
+          "optout": 1.0,
+          "accept": 27.0
+        }
+      },
+      "tracking_under_optout": {
+        "baseline_pairs": 14,
+        "surviving_pairs": 13,
+        "condition_only_pairs": 1,
+        "difference_pp_vs_repeat": -7.14285714285714,
+        "ci95_pp": [
+          -30.000000000000004,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 1,
+          "p_two_sided": 1.0
+        }
+      }
+    },
+    "dual_excluding_retried": {
+      "sites": 19,
+      "medians": {
+        "tp_domains": {
+          "baseline": 19.0,
+          "baseline2": 20.0,
+          "optout": 22.0,
+          "accept": 50.0
+        },
+        "tp_cookies_final": {
+          "baseline": 1.0,
+          "baseline2": 1.0,
+          "optout": 0.0,
+          "accept": 27.0
+        }
+      },
+      "tracking_under_optout": {
+        "baseline_pairs": 10,
+        "surviving_pairs": 9,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": -9.999999999999998,
+        "ci95_pp": [
+          -42.85714285714286,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 1,
+          "p_two_sided": 1.0
+        }
+      }
+    }
+  },
+  "pbadger_duration": {
+    "condition_median_seconds": 63.02041292190552,
+    "outlier_sites": [
+      "foodnetwork.com"
+    ],
+    "primary_delta_medians_vs_repeat": {
+      "tp_domains": 0.0,
+      "tp_cookies_final": 0.0,
+      "requests": -3.0
+    },
+    "excluding_outlier_delta_medians_vs_repeat": {
+      "tp_domains": 0.0,
+      "tp_cookies_final": 0.0,
+      "requests": -2.5
+    },
+    "outlier_id_sharing_rows": 0
+  },
+  "gpc_visit_quality": {
+    "flagged_sites": [
+      "nordstrom.com"
+    ],
+    "primary": {
+      "sites": 95,
+      "all": {
+        "baseline_pairs": 233,
+        "surviving_pairs": 200,
+        "condition_only_pairs": 9,
+        "difference_pp_vs_repeat": -8.58369098712446,
+        "ci95_pp": [
+          -15.22633744855968,
+          -3.056768558951961
+        ],
+        "site_sign_test": {
+          "positive": 2,
+          "negative": 14,
+          "p_two_sided": 0.004180908203125
+        }
+      },
+      "service": {
+        "baseline_pairs": 138,
+        "surviving_pairs": 124,
+        "condition_only_pairs": 4,
+        "difference_pp_vs_repeat": -9.420289855072461,
+        "ci95_pp": [
+          -19.379844961240313,
+          -1.4285714285714346
+        ],
+        "site_sign_test": {
+          "positive": 1,
+          "negative": 6,
+          "p_two_sided": 0.125
+        }
+      },
+      "tracking": {
+        "baseline_pairs": 29,
+        "surviving_pairs": 26,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": -10.344827586206895,
+        "ci95_pp": [
+          -23.33333333333333,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 3,
+          "p_two_sided": 0.25
+        }
+      }
+    },
+    "excluding_flagged": {
+      "sites": 94,
+      "all": {
+        "baseline_pairs": 227,
+        "surviving_pairs": 197,
+        "condition_only_pairs": 9,
+        "difference_pp_vs_repeat": -7.488986784140971,
+        "ci95_pp": [
+          -14.018691588785048,
+          -2.3809523809523836
+        ],
+        "site_sign_test": {
+          "positive": 2,
+          "negative": 13,
+          "p_two_sided": 0.00738525390625
+        }
+      },
+      "service": {
+        "baseline_pairs": 135,
+        "surviving_pairs": 124,
+        "condition_only_pairs": 4,
+        "difference_pp_vs_repeat": -7.4074074074074066,
+        "ci95_pp": [
+          -16.129032258064512,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 1,
+          "negative": 5,
+          "p_two_sided": 0.21875
+        }
+      },
+      "tracking": {
+        "baseline_pairs": 29,
+        "surviving_pairs": 26,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": -10.344827586206895,
+        "ci95_pp": [
+          -23.33333333333333,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 3,
+          "p_two_sided": 0.25
+        }
+      }
+    }
+  },
+  "cookie_only_optout_outlier": {
+    "definition": "Confirmed optout using cookie-only evidence, live state unknown, and third-party domains over 2x both baselines.",
+    "flagged_sites": [
+      "vice.com"
+    ],
+    "primary_dual": {
+      "sites": 31,
+      "medians": {
+        "tp_domains": {
+          "baseline": 18.0,
+          "baseline2": 18.0,
+          "optout": 22.0,
+          "accept": 50.0
+        },
+        "tp_cookies_final": {
+          "baseline": 1.0,
+          "baseline2": 1.0,
+          "optout": 1.0,
+          "accept": 27.0
+        }
+      },
+      "tracking_under_optout": {
+        "baseline_pairs": 14,
+        "surviving_pairs": 13,
+        "condition_only_pairs": 1,
+        "difference_pp_vs_repeat": -7.14285714285714,
+        "ci95_pp": [
+          -30.000000000000004,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 1,
+          "p_two_sided": 1.0
+        }
+      }
+    },
+    "excluding_flagged_dual": {
+      "sites": 30,
+      "medians": {
+        "tp_domains": {
+          "baseline": 18.0,
+          "baseline2": 18.0,
+          "optout": 22.0,
+          "accept": 49.5
+        },
+        "tp_cookies_final": {
+          "baseline": 1.0,
+          "baseline2": 1.0,
+          "optout": 0.5,
+          "accept": 27.0
+        }
+      },
+      "tracking_under_optout": {
+        "baseline_pairs": 13,
+        "surviving_pairs": 12,
+        "condition_only_pairs": 1,
+        "difference_pp_vs_repeat": -7.692307692307687,
+        "ci95_pp": [
+          -30.000000000000004,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 1,
+          "p_two_sided": 1.0
+        }
+      }
+    }
+  }
+}

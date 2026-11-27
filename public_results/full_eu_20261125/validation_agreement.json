@@ -4,8 +4,8 @@
     "blinding": "Each annotator saw only its own sheet (site, script domain, script URL, runtime technique, page context, stratum) and a shared evidence folder. Neither saw the rule labels (annotation_key.csv), the repository or the other annotator's answers.",
     "evidence": "The 80 sampled scripts were downloaded once, never executed. 62 of 80 were retrievable; 10 inline scripts and 8 others (HTTP 404, empty answers, timeout) had no file. Each sample also had a neutral card: HTTP status, size, sha256, header comments, referenced domains, API keyword counts and the first 1,500 characters. Annotators searched the files with targeted greps; no web access.",
     "instructions": "Same definitions as docs/annotation_guide.md (is_fp yes/no/unsure; one purpose among Advertising, Analytics, Anti-fraud/security, Functional, CDN, Unknown; evidence notes).",
-    "adjudication": "None. Reference label = shared label when both agree; the 16 disagreements are excluded from precision.",
-    "limits": "Static reading of mostly minified code; both annotators rely partly on vendor recognition, which overlaps with the vendor signatures behind the rule labels; AI annotators may share errors. This is a consistency check, not human ground truth."
+    "adjudication": "The 16 disagreements were adjudicated on 2026-11-26 by a third AI reviewer (OpenAI Codex), using only desaccords.csv, the neutral evidence cards, runtime techniques and public vendor/technical documentation; annotation_key.csv and the automatic labels were not opened before the decisions. Claude Opus independently reviewed the same blinded material in read-only mode as a second opinion. Codex retained uncertainty where a browser-API read could not be linked to a stored or transmitted value: 7 rows were adjudicated yes and 9 unsure; all 16 received a purpose.",
+    "limits": "Static reading of mostly minified code; both original annotators and the AI adjudicators rely partly on vendor recognition, which overlaps with the vendor signatures behind the rule labels; AI reviewers may share errors. The full downloaded scripts were unavailable to the adjudicators, so they used neutral cards and, for a few cases, current public code or documentation. Nine Ad-Shield/Amazon rows remain unsure for fingerprinting because data flow from the observed API value was not established. This is an AI consistency/adjudication check, not human ground truth."
   },
   "n_rows": 80,
   "kappa_is_fingerprinting": {
@@ -18,27 +18,27 @@
   },
   "detector_precision_by_technique": {
     "attr_enum": {
-      "n_judged": 31,
-      "precision": 0.967741935483871
+      "n_judged": 37,
+      "precision": 0.972972972972973
     },
     "audio": {
-      "n_judged": 22,
+      "n_judged": 23,
       "precision": 1.0
     },
     "canvas": {
-      "n_judged": 25,
+      "n_judged": 26,
       "precision": 1.0
     },
     "canvas_font": {
-      "n_judged": 5,
+      "n_judged": 6,
       "precision": 1.0
     },
     "webgl": {
-      "n_judged": 35,
-      "precision": 0.9714285714285714
+      "n_judged": 39,
+      "precision": 0.9743589743589743
     },
     "webrtc": {
-      "n_judged": 8,
+      "n_judged": 11,
       "precision": 1.0
     }
   },
@@ -52,7 +52,7 @@
       "precision": 1.0
     },
     "Anti-fraud/security": {
-      "n_judged": 33,
+      "n_judged": 34,
       "precision": 1.0
     },
     "Functional": {
@@ -60,11 +60,11 @@
       "precision": 1.0
     },
     "Unknown": {
-      "n_judged": 28,
-      "precision": 0.5
+      "n_judged": 31,
+      "precision": 0.4838709677419355
     }
   },
-  "rule_accuracy_overall": 0.7763157894736842,
+  "rule_accuracy_overall": 0.7625,
   "confusion_rule_vs_reference": {
     "Advertising": {
       "Advertising": 8,
@@ -83,9 +83,9 @@
     "Anti-fraud/security": {
       "Advertising": 1,
       "Analytics": 0,
-      "Anti-fraud/security": 33,
+      "Anti-fraud/security": 34,
       "Functional": 0,
-      "Unknown": 8
+      "Unknown": 10
     },
     "Functional": {
       "Advertising": 0,
@@ -99,7 +99,7 @@
       "Analytics": 0,
       "Anti-fraud/security": 0,
       "Functional": 0,
-      "Unknown": 14
+      "Unknown": 15
     }
   }
 }

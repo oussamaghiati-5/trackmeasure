@@ -11,7 +11,7 @@ Writes to the results directory:
                                 site-bootstrap intervals against the repeat baseline
   purpose_consent_sites.csv     per-site fingerprinting by purpose after verified choices
   harm_survival.csv             the same survival analysis by harm class (Tracking = the
-                                study's focus, with an upper bound; see purpose.harm_class)
+                                study's focus, with an inclusive sensitivity scenario)
   validation/annotation_sheet.csv, validation/annotation_key.csv
                                 stratified 80-script manual-validation sample (private)
 
@@ -165,11 +165,12 @@ def prevalence(ps, det, sites_csv):
     return table, out
 
 
-# Harm views (purpose.harm_class). "Tracking" is the study's focus; the upper bound
-# adds dual-use scripts and scripts of unknown purpose with high tracking capability.
+# Harm views (purpose.harm_class). "Tracking" is the study's focus; the inclusive sensitivity
+# scenario adds dual-use and unknown-purpose scripts with high tracking capability. It is not a
+# formal upper bound because a low-capability or unlabelled script can still be advertising.
 HARM_VIEWS = [
     ("Tracking", {purpose.TRACKING}),
-    ("Tracking, upper bound", {purpose.TRACKING, purpose.DUAL_USE, purpose.UNDETERMINED_HIGH}),
+    ("Tracking, inclusive sensitivity", {purpose.TRACKING, purpose.DUAL_USE, purpose.UNDETERMINED_HIGH}),
     ("Service", {purpose.SERVICE}),
     ("Undetermined", {purpose.UNDETERMINED_HIGH, purpose.UNDETERMINED_LOW}),
 ]
@@ -186,12 +187,13 @@ def harm(ps, det, lab):
     b = det[(det.run == "baseline") & det.site.isin(elig)]
     # Two scripts can give the same pair with different capability (an Unknown script
     # at High and at Low): the pair takes the higher-risk class, so it never depends
-    # on row order and the upper bound stays an upper bound.
+    # on row order and the inclusive scenario stays deterministic.
     pairs = (b.assign(_rank=b.harm_class.map({c: i for i, c in enumerate(HARM_RANK)}))
              .sort_values("_rank", kind="stable")
              .drop_duplicates(["site", "script_domain", "purpose_primary", "technique"]))
-    out = {"definition": "Tracking = purpose Advertising/Analytics (not dual-use). Upper bound adds "
-                         "Dual-use and Undetermined scripts with High capability.",
+    out = {"definition": "Tracking = purpose Advertising/Analytics (not dual-use). The inclusive "
+                         "sensitivity scenario adds Dual-use and Undetermined scripts with High "
+                         "capability; it is not a formal upper bound.",
            "pairs_by_class": pairs.harm_class.value_counts().to_dict(),
            "sites_by_class": {c: int(b[b.harm_class == c].site.nunique()) for c in purpose.HARM_CLASSES},
            "strong_pairs_by_class": pairs[pairs.technique.isin(purpose.STRONG)].harm_class.value_counts().to_dict()}
@@ -405,6 +407,10 @@ def main():
     clusters = pd.read_csv(out / "hidden_vendor_clusters.csv")
     hidden = lab[lab.party == "Hidden first-party vendor"]
     res = {
+        "method": {
+            "pair_definition": ["site", "script_domain", "purpose_primary", "technique"],
+            "note": "Headline paper results use purpose-aware pairs. Values therefore differ "
+                    "slightly from paired_uncertainty.json, whose generic pair key omits purpose."},
         "prevalence": prev,
         "survival": surv_summary,
         "harm": harm_res,

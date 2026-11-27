@@ -46,17 +46,20 @@ conditions in a second crawl three days earlier.
 Each fingerprinting script receives a purpose, from vendor signatures, Tracker Radar,
 first-party path clusters and page context, and a tracking capability. We verify consent from
 the CMP API and from decoded consent cookies. Beyond API calls, we look for direct evidence that
-data leaves the browser: the browser's own attribute values, and single-profile cookie
-identifiers sent to other companies.
+data leaves the browser: the browser's own attribute values, and single-profile identifier-like
+cookie values sent to other companies.
 
 On 97 reachable sites, 66 fingerprint. 62\% of the detected (site, script, technique) pairs
 serve security and 11\% advertising or analytics, on 18 sites. 17 of those 18 sites run it
-before any consent interaction. A verified rejection cuts third-party cookies (median 1, against
-27 after acceptance) but leaves all 13 tracking-fingerprinting pairs in place. It does not reduce identifier
-sharing with known trackers either (19 to 21 of 31 sites). GPC alone has no measurable effect.
-Only content blockers cut tracking fingerprinting ($-86$\pp{} with uBlock Origin Lite), and they
-also remove part of the anti-fraud fingerprinting ($-16$\pp{}). The findings replicate across
-both crawls. In an 80-script sample, two blind AI annotators confirm 33 of 33 security labels and
+before any consent interaction. On 31 sites verified under reject+GPC and accept, third-party
+cookies have median 1 in both no-action baselines and under reject+GPC, against 27 under accept.
+Separately, on the 31 reject-only sites, all 13 baseline tracking-fingerprinting pairs survive
+and identifier sharing with known trackers does not fall (19 to 21 sites). GPC alone has no measurable effect on
+tracking pairs or the median number of third-party domains.
+The blocker conditions show the largest tracking reduction ($-86$\pp{} with uBlock Origin Lite)
+and concurrent anti-fraud losses ($-16$\pp{}), whose exact magnitude remains drift-confounded.
+The findings replicate across
+both crawls. In an 80-script sample, two blind AI annotators and an AI adjudicator confirm 34 of 34 security labels and
 11 of 14 tracking labels (purpose $\kappa=0.92$).
 \end{abstract}
 
@@ -111,13 +114,13 @@ We ask three questions:
 \item A \textbf{harm classification} of fingerprinting scripts. Purpose comes from vendor
   signatures, Tracker Radar~\cite{trackerradar}, first-party path clusters, vendor cookies and
   page context. A second axis measures tracking capability. The classification comes with
-  validity checks and an explicit upper bound for what stays undetermined.
+  validity checks and an inclusive sensitivity scenario for what stays undetermined.
 \item \textbf{Two-source consent verification}: the live CMP API and offline decoding of stored
   IAB TCF~\cite{iabtcf}, OneTrust and Cookiebot cookies. Our decoder agrees with IAB's reference
   library on all 21 stored TC strings. Separate conditions isolate the banner choice from GPC.
 \item \textbf{Evidence beyond API calls.} We observe the browser's own attribute values in
-  request URLs and bodies. We also observe cookie identifiers that occur in a single browser
-  profile and are sent to another company.
+  request URLs and bodies. We also observe identifier-like cookie values that occur in a single
+  browser profile and are sent to another company, with a stricter cross-profile variation check.
 \item A \textbf{replicated EU measurement}: two crawls three days apart, paired comparisons
   against a repeat-baseline noise floor, a public privacy-reduced dataset, and a one-command
   offline reproduction.
@@ -229,7 +232,7 @@ pbadger    & Privacy Badger$^\ast$            & MV3 blocker \\
 optout     & reject + GPC (verified)          & full opt-out \\
 reject     & reject only (verified)           & banner choice \\
 gpc        & GPC only, no banner action       & browser signal \\
-accept     & accept (verified)                & upper bound \\
+accept     & accept (verified)                & positive-consent reference \\
 \bottomrule
 \end{tabular}\\[2pt]
 {\footnotesize $^\ast$uBOL 2026.1110.1816, Privacy Badger 2026.9.15.2, hash-pinned official packages.}
@@ -287,8 +290,9 @@ The \textbf{harm class} follows:
 \item \emph{Dual-use}: ad verification, an advertising purpose with a security secondary purpose.
 \item \emph{Undetermined}: unknown purpose, split by high and low capability.
 \end{itemize}
-We report every tracking result twice: for the Tracking class, and for an \emph{upper bound}
-that adds the Dual-use and high-capability Undetermined scripts.
+We report every tracking result twice: for the Tracking class, and for an \emph{inclusive
+sensitivity scenario} that adds Dual-use and high-capability Undetermined scripts. This is not
+a formal upper bound: a low-capability or unlabelled script can still have an advertising purpose.
 
 \subsection{Consent actuation and verification}\label{sec:consent}
 The crawler calls the CMP's JavaScript API (OneTrust, Cookiebot, Didomi, Usercentrics). It then
@@ -315,7 +319,7 @@ is recorded as such and never clicked.
 \subsection{Evidence that data leaves the browser}\label{sec:value}
 \paragraph{Attribute transmission.} We search request URLs and bodies for the browser's own time
 zone and Linux platform string. We match them raw, URL-encoded once or twice, and inside base64.
-\paragraph{Identifier sharing.} A token of a cookie value counts as an \emph{identifier} when all
+\paragraph{Identifier sharing.} A token of a cookie value counts as an \emph{identifier-like candidate} when all
 of these hold:
 \begin{itemize}
 \item it has at least 10 characters from \texttt{[A-Za-z0-9\_-]}, a digit and more than 4
@@ -324,8 +328,12 @@ of these hold:
 \item it is not part of a consent cookie;
 \item it occurs in exactly one browser profile, that is one (condition, site). Each visit starts
   from a fresh profile, so a value repeated across sites or conditions is a constant, not an
-  identifier.
+  identifier candidate.
 \end{itemize}
+Uniqueness is necessary but not sufficient: a constant created only under one condition also
+passes. A stricter sensitivity therefore requires the same cookie name and owner to show at least
+two different candidate values in at least two profiles. It removes condition-only constants but
+can miss genuine identifiers created only after acceptance.
 It is \emph{shared} when it appears, raw or URL-decoded, in the URL or body of an unblocked
 request to another registrable domain not owned by the cookie's owner. We report receivers on
 DuckDuckGo's tracker list (\emph{known trackers}); all third parties together give an upper
@@ -338,8 +346,8 @@ the baseline and the repeat baseline. For consent conditions, the choice must al
 A baseline pair \emph{survives} when it is seen again post-consent in the condition. We report
 the survival minus the repeat baseline's survival on the same sites, with 95\% percentile
 intervals from 2,000 site-level bootstrap resamples. For identifier sharing, we count the sites
-that send an identifier to a known tracker in the baseline, the repeat and the condition, on the
-same sites.
+that send an identifier-like value to a known tracker in the baseline, the repeat and the
+condition, on the same sites, and report a two-sided exact McNemar test over discordant sites.
 
 \subsection{Validity checks}
 Without ground truth, we use four checks:
@@ -383,7 +391,7 @@ the pairs and 86\% of the strong-technique pairs. Table~\ref{tab:harm} gives the
 Harm class & Pairs & Strong pairs & Sites \\
 \midrule
 \textbf{Tracking} (ads, analytics) & \textbf{29 (10\%)} & \textbf{3} & \textbf{18} \\
-Tracking, upper bound      & 67 (24\%)  & 16 & 30 \\
+Tracking, inclusive sensitivity & 67 (24\%)  & 16 & 30 \\
 Service (security, functional) & 179 (63\%) & 89 & 47 \\
 Undetermined, high capability  & 37 (13\%)  & 13 & 12 \\
 Undetermined, low capability   & 39 (14\%)  & 2  & 23 \\
@@ -406,8 +414,9 @@ Dual-use                       & 1 (0.4\%)  & 0  & 1 \\
 \paragraph{Hidden first-party vendors.} 79 pairs (28\%) come from vendors served through the
 site's own URLs: 100 scripts on 31 sites. 80 of those scripts are Akamai Bot Manager; the others
 are Fastly, Kasada, DataDome, HUMAN and Cloudflare challenges. One ad-recovery network also falls
-back to the first party. Domain-based attribution counts all of these as first-party, and domain
-blocklists cannot remove them.
+back to the first party. Domain-based attribution counts all of these as first-party, and a
+domain-only blocklist cannot identify them from the host alone. Path- or script-level rules can
+still remove some, as the Akamai losses under blocker conditions show.
 
 \paragraph{Tracking fingerprinting runs before consent.} 17 of the 18 sites with tracking
 fingerprinting run it before any consent interaction, 12 of them with a high-capability script.
@@ -428,21 +437,23 @@ Table~\ref{tab:effects} summarises every condition.
 \caption{Effect of each condition, on sites measured in the condition, the baseline and the repeat
 baseline (consent conditions: verified choice only). Survival differences are against the repeat
 baseline on the same sites, in percentage points, with 95\% site-bootstrap intervals. ID sharing:
-sites sending a single-profile cookie identifier to a known tracker after the consent step, in the
+sites sending a single-profile identifier-like cookie value to a known tracker after the consent step, in the
 baseline and in the condition. Third parties: median per-site change in contacted third-party
 domains.}\label{tab:effects}
+The eligible-site count is not the survival denominator: survival fractions include only
+baseline tracking pairs, on the subset of eligible sites where such pairs occur.
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{@{}lrrrrrr@{}}
 \toprule
-Condition & Sites & Tracking FP survival & Service FP survival & All FP survival & ID sharing (base $\rightarrow$ cond.) & Third parties \\
+Condition & Eligible sites & Tracking FP survival & Service FP survival & All FP survival & ID sharing (base $\rightarrow$ cond.) & Third parties \\
 \midrule
 reject (verified)        & 31 & 13/13, $0.0$ [$0.0$, $0.0$]            & $-16.7$ [$-39.3$, $0.0$] & $-3.9$ [$-18.2$, $+8.5$]  & 19 $\rightarrow$ 21 & $+2$ [0, 3] \\
 reject + GPC (verified)  & 34 & 14/15, $-6.7$ [$-25.0$, $0.0$]         & $-21.4$ [$-45.0$, $0.0$] & $-12.5$ [$-31.0$, $+2.5$] & 19 $\rightarrow$ 22 & $+2$ [0, 3] \\
 GPC only                 & 95 & 26/29, $-10.3$ [$-23.3$, $0.0$]        & $-9.4$ [$-19.4$, $-1.4$] & $-8.6$ [$-15.2$, $-3.1$]  & 49 $\rightarrow$ 46 & $0$ [0, 0] \\
-accept (verified)        & 56 & 23/23, $0.0$; +22 new                  & $-11.1$ [$-26.0$, $-1.9$] & $-6.5$ [$-16.5$, $+1.2$] & 28 $\rightarrow$ 54 & $+50.5$ [40, 61.5] \\
+accept (verified)        & 56 & 23/23, $0.0$; +22 condition-only       & $-11.1$ [$-26.0$, $-1.9$] & $-6.5$ [$-16.5$, $+1.2$] & 28 $\rightarrow$ 54 & $+50.5$ [40, 61.5] \\
 \midrule
 uBlock Origin Lite       & 95 & 4/29, $\mathbf{-86.2}$ [$-96.8$, $-72.0$] & $-16.2$ [$-30.7$, $-1.6$] & $-22.9$ [$-36.2$, $-8.9$] & 49 $\rightarrow$ 17 & $-6$ [$-10$, $-4$] \\
-Privacy Badger           & 95 & 16/29, $\mathbf{-44.8}$ [$-67.7$, $-19.4$] & $-12.8$ [$-23.3$, $-3.6$] & $-18.8$ [$-29.7$, $-8.6$] & 49 $\rightarrow$ 21 & $0$ [$-1$, 0] \\
+Privacy Badger           & 95 & 16/29, $\mathbf{-44.8}$ [$-67.7$, $-19.4$]; +8 condition-only & $-12.8$ [$-23.3$, $-3.6$] & $-18.8$ [$-29.7$, $-8.6$] & 49 $\rightarrow$ 21 & $0$ [$-1$, 0] \\
 \bottomrule
 \end{tabular}}
 \end{table*}
@@ -456,25 +467,37 @@ Privacy Badger           & 95 & 16/29, $\mathbf{-44.8}$ [$-67.7$, $-19.4$] & $-1
   GumGum, HubSpot, Microsoft Clarity and the X Ads pixel.
 \item \textbf{Identifiers.} Identifier sharing does not drop either. On the same 31 sites, 19 send
   a cookie identifier to a known tracker in the baseline, 19 in the repeat, and 21 after the
-  rejection. Six of them do cookie syncing. The receivers include googlesyndication.com (10
+  rejection (exact paired McNemar $p=0.625$). A stricter sensitivity filter that additionally
+  requires the cookie name to vary across profiles leaves all 21 reject sites unchanged; under
+  accept it reduces the count from 54 to 50 of 56 and the receiver median from 27 to 19.5.
+  Six reject sites do cookie syncing. The receivers include googlesyndication.com (10
   sites), google.com (7), parsely.com (5), Google Analytics, Rubicon, comScore, Facebook, Adobe,
   LiveIntent, Criteo and The Trade Desk. The identifiers include \texttt{\_ga},
   \texttt{\_gcl\_au}, \texttt{\_fbp}, Adobe's \texttt{AMCV}, LiveIntent's \texttt{\_lc2\_fpi} and
   Microsoft's \texttt{MUID}.
-\item \textbf{Cookies and third parties.} The rejection does work on this layer. On the 31 sites
-  verified both ways, a rejection leaves a median of 22 third-party domains against 50 after
-  acceptance, and 1 third-party cookie against 27. 29 of the 31 sites contact more third parties
-  after acceptance.
+\item \textbf{Cookies and third parties.} Consent state stratifies this layer, but asymmetrically.
+  On the 31 sites verified under reject+GPC and accept, median third-party domains are 18 in
+  each no-action baseline, 22 under reject+GPC and 50 under accept; third-party cookies are 1
+  in both baselines and under reject+GPC, against 27 under accept. Thus these data support a
+  much higher level in the accept condition, not a decrease caused by rejection. 29 of the 31
+  sites contact more third parties under accept than under reject+GPC.
 \end{itemize}
 
-\paragraph{GPC adds nothing.} GPC alone changes neither the third parties (median 0) nor the
-tracking pairs: the interval contains 0. Adding it to a rejection gives the same result as the
-rejection alone: 8 sites keep tracking fingerprinting in both cases.
+\paragraph{GPC shows no measurable tracking effect.} GPC alone changes neither the median number
+of third parties (paired delta 0) nor tracking pairs conclusively: 26 of 29 baseline pairs remain,
+and the three losses occur on three sites (two-sided exact sign test, $p=0.25$). Adding it
+to a rejection gives the same tracking result as rejection alone: 8 sites keep tracking
+fingerprinting in both cases. Security pairs do fall by 9.4 points under GPC (CI $-19.4$ to
+$-1.4$); because security fingerprinting should not respond to GPC and this condition ran late,
+we treat that loss as evidence of temporal drift rather than a privacy effect.
 
-\paragraph{Accepting adds tracking on top.} Every baseline tracking pair survives, and 22 new
-ones appear. Identifier sharing with known trackers doubles (28 to 54 sites), and 47 of the 56
-sites do cookie syncing. On the dual-verified sites, the median number of identifier receivers
-is 16 after acceptance against 2 after rejection.
+\paragraph{The accept condition contains more tracking.} Every baseline tracking pair is also
+observed under accept, and 22 condition-only pairs appear. Identifier sharing with known
+trackers is observed on 54 rather than 28 sites, and 47 of the 56 accept sites do cookie syncing.
+On the dual-verified sites, the median number of identifier receivers is 16 under accept against
+2 under rejection. Because accept ran last in the sequential design, these are condition
+associations rather than an isolated causal effect of clicking accept; the independent crawl
+reproduces the direction but does not remove order confounding.
 
 \paragraph{Obstacles.}
 \begin{itemize}
@@ -484,24 +507,34 @@ is 16 after acceptance against 2 after rejection.
   the reject click, or contradicts the API. These are excluded as failed or unknown.
 \end{itemize}
 
-\paragraph{Losses of security fingerprinting under consent conditions.} These come from one to
-three sites per condition, with bot managers that do not fire on every visit (Kasada, Akamai,
-Stripe Radar, HUMAN). The intervals are wide (30 to 54 baseline pairs). We do not read them as
-an effect of the consent signal.
+\paragraph{Losses of security fingerprinting under later conditions.} They occur on three sites
+under each rejection condition, six under GPC and five under accept, with bot managers that do
+not fire on every visit (Kasada, Akamai, Stripe Radar, HUMAN). Because security scripts should
+not respond to consent signals, and the repeat baseline ran only 23 minutes after baseline, the
+9.4-point GPC loss signals late-condition drift or visit degradation. One eligible GPC visit had
+9 requests and no third parties; excluding it changes the service estimate to $-7.4$ points with
+an interval reaching zero, while the tracking estimate is unchanged. We do not attribute these
+security losses to the consent signal.
 
 \subsection{RQ3: content blockers}
-Blockers are the only intervention that cuts tracking:
+The blocker conditions show the largest tracking reductions:
 \begin{itemize}
 \item \textbf{uBlock Origin Lite} removes 25 of 29 tracking pairs ($-86$\pp{}) and two thirds of
   identifier sharing with known trackers (49 to 17 sites).
-\item \textbf{Privacy Badger} removes 13 of 29 ($-45$\pp{}). It starts from its bundled seed data
-  in every fresh profile.
-\item \textbf{Collateral.} Both also remove part of the security fingerprinting: $-16$ and
-  $-13$\pp{}, mostly HUMAN (PerimeterX) on three sites, and Forter, Riskified and Akamai, which
-  protect checkouts.
-\item \textbf{The upper bound} falls less ($-33$ and $-25$\pp{}), because first-party platform
+\item \textbf{Privacy Badger} leaves 16 of 29 baseline pairs ($-45$\pp{}), while 8
+  condition-only tracking pairs appear; the net count is 24 rather than 29. It starts from its
+  bundled seed data in every fresh profile and enables GPC, so this run measures the extension's
+  full default behaviour rather than blocking alone.
+\item \textbf{Collateral.} Both conditions lose security fingerprinting ($-16$ and $-13$\pp{}),
+  including HUMAN (PerimeterX), Forter, Riskified and Akamai. Some of this apparent collateral
+  may be temporal drift: Privacy Badger loses security pairs on nine sites, while the later GPC
+  condition loses 9 points without a blocker.
+\item \textbf{The inclusive sensitivity scenario} falls less ($-33$ and $-25$\pp{}), because first-party platform
   bundles of unknown purpose are untouched.
 \end{itemize}
+The sequential order means these are condition associations rather than isolated blocker effects.
+The controlled extension checks and recorded blocked requests support a blocking mechanism, but
+the exact magnitudes, especially the security losses, remain drift-confounded.
 In the first crawl we also saw circumvention. Forter's script loaded from a CloudFront host
 under both blockers. An ad-recovery network reappeared as UUID paths on the site's own domain.
 
@@ -525,7 +558,7 @@ Measure & 22 Nov & 25 Nov \\
 \midrule
 Reachable sites / with fingerprinting & 93 / 64 & 97 / 66 \\
 Pairs: security / ads+analytics & 63\% / 11\% & 62\% / 11\% \\
-Tracking FP: sites (upper bound) & 17 (23) & 18 (30) \\
+Tracking FP: sites (inclusive scenario) & 17 (23) & 18 (30) \\
 Tracking sites before consent & 17 & 17 \\
 Verified rejections / acceptances & 36 / 44 & 34 / 56 \\
 Tracking pairs surviving reject & 15/16 & 14/15 \\
@@ -553,21 +586,43 @@ Privacy Badger, tracking survival & $-40$\pp{} & $-45$\pp{} \\
   \begin{itemize}
   \item The two annotators agree on purpose with $\kappa=0.92$, and on whether a script
     fingerprints with $\kappa=0.63$. 14 of the 16 disagreements are ``yes'' against ``unsure''.
-  \item Where both decide, the detector is right on 41 of 43 scripts (95\%, Wilson CI 85--99\%).
-    Static reading leaves many scripts undecided: 22 of 80 are ``unsure'' for both, mostly
+    A third, blinded AI reviewer adjudicated all 16, retaining uncertainty where data flow was
+    not demonstrated (7 ``yes'', 9 ``unsure''); Claude Opus supplied an independent second opinion.
+  \item Against the shared or adjudicated reference, the detector is right on 48 of 50 scripts
+    (96\%, Wilson CI 87--99\%). Static reading still leaves 30 of 80 scripts ``unsure'', mostly
     obfuscated or no longer served.
-  \item Rule labels: all 33 security labels are confirmed (CI 90--100\%). 11 of 14 tracking
+  \item Rule labels: all 34 security labels are confirmed (CI 90--100\%). 11 of 14 tracking
     labels are confirmed (CI 52--92\%): one is anti-fraud and two are undecidable.
-  \item Scripts our rules leave Unknown split into 8 security, 5 advertising and 14 undecidable.
-    Unknown leans towards security, which supports reporting it as an upper bound rather than
-    as tracking.
+  \item Scripts our rules leave Unknown split into 10 security, 5 advertising, 1 functional and
+    15 Unknown.
+    Unknown leans towards security, which supports keeping it separate and using only an
+    explicit inclusive sensitivity scenario rather than relabelling it as tracking.
   \end{itemize}
 \item \textbf{Phase attribution.} API calls are stored under the visit that is active when they
   reach the crawler. Re-assigning each call by its own timestamp moves 0.9\% of calls and changes
   0 to 5 post-consent pairs per condition. It changes no tracking pair on a site with a verified
   choice.
-\item \textbf{Host interruptions.} One visit was frozen by a host suspension. Excluding it leaves
-  every result unchanged.
+\item \textbf{Host interruptions.} One Privacy Badger visit was frozen by a host suspension.
+  Excluding it leaves fingerprinting survival, the third-party-domain and cookie medians, and
+  the identifier-sharing site count unchanged. The paired median request delta moves slightly
+  from $-3$ to $-2.5$ requests; no central conclusion depends on it.
+\item \textbf{Accept restart.} A network loss failed the final 25 queued accept sites; the runner
+  retried them 44 minutes later under the same manifest and VPN exit, in new per-site profiles.
+  They contain 17 of 56 verified accept sites and 12 of 31 dual-verified sites. Excluding all 25
+  leaves 39 accept and 19 dual sites: the accept--repeat-baseline domain delta is 50 rather than
+  50.5, the dual cookie medians remain 0 under reject+GPC versus 27 under accept, all 17 baseline
+  tracking pairs survive and 18 condition-only pairs remain. The direction and magnitude persist.
+\item \textbf{Visit quality.} Completed visits remain primary unless navigation itself fails.
+  A conservative post-hoc rule flags one eligible GPC visit (Nordstrom: 9 requests and no third
+  parties, against 169--192 requests and 26--31 domains in the baselines). Excluding it changes
+  service survival from $-9.4$ to $-7.4$ points with an interval reaching zero, but leaves the
+  GPC tracking result unchanged. This sensitivity is reported rather than silently changing
+  eligibility after inspecting outcomes.
+\item \textbf{Cookie-only consent outlier.} Vice's reject+GPC state is confirmed only by its TCF
+  cookie and has 115 third-party domains versus 36 in both baselines. The separate reject-only
+  visit is confirmed by both live API and cookie and stays near baseline (44 domains). Excluding
+  Vice from the dual comparison leaves the domain medians at 18, 18, 22 and 49.5 and the cookie
+  medians at 1, 1, 0.5 and 27 (baseline, repeat, reject+GPC, accept); no conclusion changes.
 \end{itemize}
 
 %% ======================================================================
@@ -589,8 +644,10 @@ Separated by purpose, the picture is different:
 \item a blocker removes most of it, together with a sixth of the security fingerprinting.
 \end{itemize}
 
-\paragraph{Consent and blockers act on different layers.} A verified rejection works where the
-CMP is in control: third-party cookies and third-party contacts. It does not touch the
+\paragraph{Consent and blockers act on different layers.} Consent state clearly stratifies
+third-party cookies and contacts: rejection remains near the no-action baselines, while accept
+is much higher. The sequential design does not show that rejection itself caused a decrease.
+Rejection does not touch the
 fingerprinting and identifier flows that run before or outside it. Under the EDPB's reading of
 Art.~5(3)~\cite{edpb2023scope}, tracking fingerprinting before consent, or after a rejection, is
 the clearest candidate for non-compliance in our data. We report candidates, not legal findings:
@@ -606,23 +663,27 @@ it.
   sharing give direct but lower-bound evidence. Headers, hashed values and server-side use are
   not observed.
 \item \textbf{Purpose labels are estimates.} 27\% of pairs have no supported purpose, and the
-  upper bound covers its high-capability part. The signatures were developed on these data.
-  The validation sample was labelled by AI annotators reading static, mostly minified code,
-  not by humans. Their vendor recognition overlaps with our signatures, so their agreement is
+  inclusive sensitivity scenario covers only its high-capability part; it is not a guaranteed
+  exhaustive estimate. The signatures were developed on these data. The validation sample was labelled
+  by AI annotators reading static, mostly minified code, not by humans; only 62 of 80 script files
+  were retrievable. Their vendor recognition overlaps with our signatures, so their agreement is
   partly circular. The tracking precision rests on 14 scripts.
 \item \textbf{Scale and selection.} We cover 97 reachable sites. The data-centre exit is blocked
   by many e-commerce sites. The consent comparisons rest on 31 to 56 verified sites, so tracking
   counts are small and the intervals wide.
 \item \textbf{Conditions run in sequence.} They span about seven hours, while the repeat baseline
-  ran 23 minutes after the baseline, so later conditions carry some time drift. The noise floor,
-  the replication and the GPC condition (no effect on tracking) bound it. A randomised order per
-  site would remove it.
+  ran only 23 minutes after baseline and cannot bound late drift. The 9.4-point security loss
+  under GPC suggests drift or visit degradation at that time. Replication preserves the main
+  directions but does not remove this order confound. Randomising condition order per site would.
 \item \textbf{One vantage point.} We used one exit (Germany), one browser configuration, the
   home page plus one subpage, and no login or checkout pages.
 \item \textbf{Blocker costs.} Breakage and page-load costs of the blockers are not
   measured~\cite{amjad2023blocking}.
 \item \textbf{Identifier sharing.} We do not establish the direction of the exchange, and a few
-  same-company domains are not recognised as such.
+  same-company domains are not recognised as such. The single-profile filter removes constants
+  seen in another run, but a value set only in one condition (especially accept) can still be a
+  condition-specific constant rather than a browser identifier; accept counts are therefore less
+  directly comparable than the baseline--reject persistence result.
 \end{itemize}
 
 %% ======================================================================
@@ -640,12 +701,13 @@ The Tracker Radar subset (CC BY-NC-SA 4.0) is pinned to commit \texttt{a358dac}.
 \section{Conclusion}
 %% ======================================================================
 Tracking and security fingerprinting can be separated by purpose, with tracking capability as a
-second axis and an explicit bound for what remains undetermined. On popular sites reached from
+second axis and an inclusive sensitivity scenario for what remains undetermined. On popular sites reached from
 the EU, most fingerprinting, and almost all strong fingerprinting, is bot and fraud management.
 Tracking fingerprinting is a minority. It runs before consent, survives a verified rejection,
-and comes with identifier sharing that the rejection does not stop either. GPC adds nothing, and
-only blockers remove it, at some cost to security. The next steps are to add a human
-adjudication of the validation sample, to randomise the condition order, and to link fingerprint
+and comes with identifier sharing that the rejection does not stop either. GPC shows no
+measurable tracking effect. The blocker conditions show the largest reductions, with some apparent
+cost to security and residual temporal confounding. The next steps are to add an independent human
+validation of the AI-adjudicated sample, to randomise the condition order, and to link fingerprint
 values to identifiers directly.
 
 \bibliographystyle{ACM-Reference-Format}

@@ -1,5 +1,8 @@
 # Harmful or Useful? Separating Tracking Fingerprinting from Security Fingerprinting Under Verified Consent and Content Blockers
 
+> **Archive — 22 November batch.** This draft is retained for provenance and is not the current
+> paper. Use `paper/main.tex` and `public_results/full_eu_20261125/analyze.md` for current results.
+
 **Course project paper draft, working version (updated 24 November 2026)**
 **Authors:** [add team members]
 **Affiliation:** [add course / institution]

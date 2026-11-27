@@ -42,6 +42,17 @@ class Tokens(unittest.TestCase):
         self.assertEqual(dict(ids[("baseline", "a.com")]), {"1357924680": [("_ga", "a.com")]})
         self.assertNotIn(("baseline", "b.com"), ids)
 
+    def test_strict_filter_requires_cookie_variation_across_profiles(self):
+        cookies = [
+            ("baseline", "a.com", "_ga", ".a.com", "GA1.1.1357924680.1795000000"),
+            ("baseline2", "a.com", "_ga", ".a.com", "GA1.1.2468135790.1795000000"),
+            ("accept", "a.com", "accept_only", ".a.com", "constant12345x"),
+        ]
+        ids = id_sharing.identifiers(cookies, NOW, require_cookie_variation=True)
+        self.assertIn("1357924680", ids[("baseline", "a.com")])
+        self.assertIn("2468135790", ids[("baseline2", "a.com")])
+        self.assertNotIn(("accept", "a.com"), ids)
+
 
 class Parties(unittest.TestCase):
     owners = {"doubleclick.net": "Google LLC", "google.com": "Google LLC"}
@@ -55,6 +66,11 @@ class Parties(unittest.TestCase):
         self.assertEqual(id_sharing.flow("a.com", "a.com", "x.com"), "first_to_third")
         self.assertEqual(id_sharing.flow("a.com", "x.com", "y.com"), "third_to_third")
         self.assertEqual(id_sharing.flow("a.com", "x.com", "a.com"), "third_to_first")
+
+    def test_exact_mcnemar(self):
+        self.assertEqual(id_sharing.exact_mcnemar(0, 0), 1.0)
+        self.assertEqual(id_sharing.exact_mcnemar(1, 3), 0.625)
+        self.assertAlmostEqual(id_sharing.exact_mcnemar(0, 26), 2.9802322387695312e-08)
 
 
 class Sharing(unittest.TestCase):
@@ -87,8 +103,11 @@ class Sharing(unittest.TestCase):
                                  for r in ("baseline", "baseline2", "ubol")])
         summary = id_sharing.summarize(share, per_site)
         self.assertEqual(summary["by_condition"]["baseline"]["sites_to_known_tracker"], 1)
-        self.assertEqual(summary["paired_known_tracker"]["ubol"],
+        paired = summary["paired_known_tracker"]["ubol"]
+        self.assertEqual({k: paired[k] for k in ("common_sites", "baseline", "repeat", "condition")},
                          {"common_sites": 1, "baseline": 1, "repeat": 0, "condition": 0})
+        self.assertEqual(paired["baseline_vs_condition"], {
+            "baseline_only": 1, "condition_only": 0, "exact_mcnemar_p_two_sided": 1.0})
 
 
 if __name__ == "__main__":

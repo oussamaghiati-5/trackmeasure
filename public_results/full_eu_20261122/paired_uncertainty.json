@@ -1,4 +1,12 @@
 {
+  "_meta": {
+    "pair_definition": [
+      "site",
+      "script_domain",
+      "technique"
+    ],
+    "note": "Generic purpose-agnostic cross-check. The paper uses purpose_results.json, whose pair key also includes purpose_primary; its All-FP estimates differ slightly by construction."
+  },
   "accept": {
     "sites": 24,
     "survival": 0.921875,

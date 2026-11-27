@@ -1,5 +1,8 @@
 # Nasrou branch: improvement report
 
+> **Archive — 22 November batch.** This change report is retained for provenance and is not the
+> current result source. Use `paper/main.tex` and `public_results/full_eu_20261125/analyze.md`.
+
 ## Update of 24 November 2026: purpose labelling and consent fix
 
 This update follows the review of the EU batch, which found that the detector said *that* scripts fingerprint but not *why*, and that the consent question had been dropped because of verifier bugs. The full review, with the final results and the status of each planned item, is in [`docs/review.html`](docs/review.html). This update implements its Tier 1 plan and needs no new crawl. Everything is recomputed from `data/full_eu_20261122/crawl.sqlite`.

@@ -65,8 +65,14 @@ def main():
     with args.comparison_csv.open(newline="", encoding="utf-8") as stream:
         data = list(csv.DictReader(stream))
     reference = {row["site"]: row for row in data if row["run"] == "baseline2"}
-    result = {run: summarize([row for row in data if row["run"] == run], reference)
-              for run in sorted({row["run"] for row in data} - {"baseline2"})}
+    result = {
+        "_meta": {
+            "pair_definition": ["site", "script_domain", "technique"],
+            "note": "Generic purpose-agnostic cross-check. The paper uses purpose_results.json, "
+                    "whose pair key also includes purpose_primary; its All-FP estimates differ "
+                    "slightly by construction."},
+        **{run: summarize([row for row in data if row["run"] == run], reference)
+           for run in sorted({row["run"] for row in data} - {"baseline2"})}}
     output = args.comparison_csv.with_name("paired_uncertainty.json")
     output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(result, indent=2))

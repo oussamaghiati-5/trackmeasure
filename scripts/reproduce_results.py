@@ -11,7 +11,9 @@ Tracker Radar subset; no crawl, no network. Steps:
   3. label_purposes.py       script inventory, purpose labels, capability, harm class
   4. purpose_results.py      results by purpose and by harm class, validity, validation sheet
   5. id_sharing.py           identifier-like cookie values sent to other parties
-  6. export_public_results   privacy-reduced bundle in public_results/<batch> (with --export)
+  6. study_sensitivity.py    accept restart, host suspension and visit-quality sensitivities
+  7. cookie_isolation.py     cookie values re-issued across fresh-profile runs
+  8. export_public_results   privacy-reduced bundle in public_results/<batch> (with --export)
 
 Each step's output goes to results/<batch>/<step>.log; the run stops at the first failure.
 """
@@ -44,6 +46,8 @@ def main():
         ("purpose_results", [py, "scripts/purpose_results.py", str(res), "--sites", str(sites)]),
         ("id_sharing", [py, "scripts/id_sharing.py", str(db), str(res),
                         "--radar", "reference/tracker_radar_subset.json"]),
+        ("sensitivity", [py, "scripts/study_sensitivity.py", str(res)]),
+        ("cookie_isolation", [py, "scripts/cookie_isolation.py", str(db), str(res)]),
     ]
     if a.export:
         steps.append(("export", [py, "scripts/export_public_results.py", str(res), "--sites", str(sites),

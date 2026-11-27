@@ -7,7 +7,7 @@ Course research project (web/device tracking, *Defensive: Detection/Transparency
 ## Research questions
 
 1. **Harmful or useful?** How common is fingerprinting (canvas, canvas-font, WebRTC, audio, WebGL, attribute enumeration) on ~150 popular news, e-commerce and social/affiliate sites? Which share is harmful (tracking: advertising/analytics), which is useful (security, functionality), and which cannot be decided? How much is served by vendors hidden behind first-party URLs?
-2. **Does saying no stop harmful fingerprinting?** With the saved consent state verified, does rejecting consent through the site's CMP (plus a Global Privacy Control signal) remove tracking fingerprinting, cookies and third-party contacts? Accepting is measured as the upper bound.
+2. **Does saying no stop harmful fingerprinting?** With the saved consent state verified, does rejecting consent through the site's CMP (plus a Global Privacy Control signal) remove tracking fingerprinting, cookies and third-party contacts? Accepting is a positive-consent reference, not a causal upper bound.
 3. **Do blockers stop harmful fingerprinting?** How much tracking and how much security fingerprinting survives a content blocker (uBlock Origin Lite, Privacy Badger)?
 4. Do identifiers respawn after cookies are cleared, including identifiers re-derived purely from the browser fingerprint? (Protocol implemented; not run on the EU batch.)
 
@@ -45,7 +45,7 @@ One fresh Chromium profile per site. Every run uses the same four phases, so run
 | `optout` | CMP reject + `Sec-GPC: 1` | does opt-out stop tracking? |
 | `reject` | CMP reject only | effect of the banner choice alone |
 | `gpc` | `Sec-GPC: 1` only, no banner click | effect of the browser signal alone |
-| `accept` | CMP accept | upper bound |
+| `accept` | CMP accept | positive-consent reference |
 
 ### 3. Consent automation (`consent.py`)
 Tries the CMP's JavaScript API (OneTrust, Cookiebot, Didomi, Usercentrics v2/v3), then visible controls if the API does not produce confirmation: a button click matched by accessible name or, failing that, visible text with anchored multilingual regexes (EN/FR/DE/ES/IT/PT/NL), or a two-layer "manage, then reject/save" flow. The visible-text fallback covers CMPs that give buttons a long `aria-label`, such as YouTube's. Consent-or-pay walls, where the only refusal is a subscription ("Reject and pay", "Rifiuta e abbonati"), are recorded as `consent_or_pay` in the consent JSON and never clicked.
@@ -74,6 +74,8 @@ Per site, three browsers on the same IP:
 - **B**: control with a different fingerprint F2 (viewport, DPR, locale, timezone, hardwareConcurrency, deviceMemory, canvas noise).
 
 A token is a *respawn candidate* if an ID-like value in an A1 cookie reappears in an A2 cookie and appears nowhere in B. A single fresh-profile match does not prove fingerprint derivation; server-side behavior, token parsing and visit variability need further checks.
+
+The completed multi-condition crawls also support a strictly observational isolation check. Every `(run, site)` is executed in a newly created profile that is deleted in `finally`. `scripts/cookie_isolation.py` therefore looks for identifier-like cookie tokens re-issued to the same site across two independent run profiles, excluding consent values and tokens seen on another site. It writes `cookie_isolation.csv/json` without values. Such a match is a lead, not a fingerprinting attribution: the common exit IP, server state or a site-scoped constant can explain it. Confirm leads with the A1/A2/B protocol above.
 
 ### 5. Analysis (`analyze.py`)
 Detects fingerprinting per (script, frame, visit) using heuristics after Englehardt & Narayanan (CCS'16) as adapted by FP-Inspector:
@@ -111,7 +113,7 @@ Each script also gets a tracking **capability** (High/Medium/Low) from four ingr
 - attribute transmission: the browser's own time zone or platform string seen in request URLs to that vendor, raw, URL-encoded or base64;
 - storage writes.
 
-Capability ranks scripts within a class. It also splits scripts of unknown purpose into **Undetermined (high/low capability)**. Harmful-fingerprinting results are reported for Tracking and for an upper bound that adds Dual-use and high-capability Undetermined scripts (`harm_survival.csv`, the `harm` block of `purpose_results.json`). `purpose_results.py` re-runs the blocker and verified-consent comparisons per purpose group with site-bootstrap intervals. It also runs validity checks: agreement between Tracker Radar and the signatures (Cohen's κ), automation-probe rates by purpose, and technique strength by purpose. Finally it writes a stratified 80-script manual-validation sheet. Two annotators fill the sheet ([`docs/annotation_guide.md`](docs/annotation_guide.md)), and `make agreement` reports κ, detector precision per technique and label precision per purpose.
+Capability ranks scripts within a class. It also splits scripts of unknown purpose into **Undetermined (high/low capability)**. Harmful-fingerprinting results are reported for Tracking and for an inclusive sensitivity scenario that adds Dual-use and high-capability Undetermined scripts (`harm_survival.csv`, the `harm` block of `purpose_results.json`). This is not a formal upper bound: low-capability or unlabelled scripts may still be advertising. `purpose_results.py` re-runs the blocker and verified-consent comparisons per purpose group with site-bootstrap intervals. It also runs validity checks: agreement between Tracker Radar and the signatures (Cohen's κ), automation-probe rates by purpose, and technique strength by purpose. Finally it writes a stratified 80-script validation sheet for independent annotation ([`docs/annotation_guide.md`](docs/annotation_guide.md)).
 
 To re-run the whole offline analysis in one command (about 1–2 minutes, results are byte-identical across runs):
 
@@ -241,7 +243,7 @@ Without Docker: `pip install -r requirements.txt && python -m playwright install
 
 **Timing.** The direct crawler defaults are 10 s dwell, 3 subpages and up to 10 s consent wait. The full-study runner uses headful browsers with configurable `--workers` (1–4), 5 s dwell, one subpage and up to 20 s consent wait. Keep the worker count fixed within a batch. Budget time from a pilot on the final setup; the six conditions and retries can take hours.
 
-After a condition finishes, run `python scripts/paired_uncertainty.py results/BATCH/comparison.csv` to write `paired_uncertainty.json`. It compares each condition with the repeat baseline on common sites with detected baseline pairs and gives a 95% site-bootstrap interval for the difference in pair survival. This quantifies variation across measured sites; it does not resolve sampling or fingerprint-heuristic errors.
+After a condition finishes, run `python scripts/paired_uncertainty.py results/BATCH/comparison.csv` to write `paired_uncertainty.json`. It compares each condition with the repeat baseline on common sites with detected baseline pairs and gives a 95% site-bootstrap interval for the difference in pair survival. This generic cross-check uses `(site, script domain, technique)`. The paper uses the purpose-aware `(site, script domain, purpose, technique)` estimates in `purpose_results.json`, so the two All-FP values differ slightly by construction; both files now record their pair definition. These intervals quantify variation across measured sites; they do not resolve sampling or fingerprint-heuristic errors.
 
 On this Windows/Docker setup, the live SQLite database became corrupt on both OneDrive and local Windows bind mounts. Use `docker-compose.volume.yml` to keep the live batch database on Docker's Linux filesystem, and export a copy to the workspace only after the crawler exits. Inspect the run's `.log` file while it writes; open the exported SQLite file after completion. `scripts/run_study.py` works with this overlay: it gives each batch its own volume (`trackmeasure_<batch>_data`, handed to the container's `pwuser` once), reads the database through the container, and exports a copy to `data/<batch>/crawl.sqlite` when the requested conditions finish. `scripts/resume_local_batch.py` was used to finish the 2026-11-22 batch.
 
@@ -260,26 +262,39 @@ On this Windows/Docker setup, the live SQLite database became corrupt on both On
 It reproduces the earlier batch:
 - 66 of 97 accessible sites fingerprint.
 - 62% of pairs are security and 11% advertising or analytics.
-- uBlock Origin Lite removes 86 points of tracking fingerprinting and Privacy Badger 45.
+- The uBlock condition leaves 4/29 baseline tracking pairs (−86 points). Privacy Badger leaves
+  16/29 (−45 points) while 8 condition-only pairs appear, for a net 24 rather than 29; Privacy
+  Badger also enables GPC. Sequential order means the exact blocker magnitudes remain
+  drift-confounded.
 - 8 of 31–34 sites with a verified rejection still run tracking fingerprinting.
 
 New in this batch:
-- GPC alone has no measurable effect.
+- GPC alone has no measurable effect on tracking pairs or the median third-party-domain count.
+  Security pairs fall by 9.4 points, which is treated as temporal-drift evidence because GPC
+  should not target security scripts and the condition ran late in the sequential plan.
 - Rejection with or without GPC gives the same result.
-- Accepting adds a median of 50 third-party domains.
+- The accept condition has a paired median of 50.5 additional third-party domains relative to
+  the repeat baseline. Because accept ran last in a sequential design, this is an association,
+  not an isolated causal effect of clicking accept.
 - Verified acceptances rose from 44 to 56.
 
-Cookie identifiers also keep reaching known trackers after a verified rejection, on 21 of 31 sites. The figure was 19 at baseline, and the same holds on 2026-11-22. `scripts/id_sharing.py` measures this offline (`make id-sharing`).
+Identifier-like cookie values also keep reaching known trackers after a verified rejection, on
+21 of 31 sites versus 19 at baseline (paired exact McNemar p = 0.625); the same direction holds
+on 2026-11-22. A stricter sensitivity requiring the same cookie to vary across profiles leaves
+the reject count at 21, while reducing accept from 54 to 50 of 56 sites and its receiver median
+from 27 to 19.5. `scripts/id_sharing.py` writes both analyses offline (`make id-sharing`).
+
+**Cookies across isolated runs.** The fresh-profile audit found an exact identifier-like cookie token on 36/96 sites shared by `baseline` and `baseline2` (34/91 in the independent 22 November batch). The site sets overlap on 31 of 39 sites (Jaccard 0.795), and 61 of 65 tokens in the first batch recur in more than those two profiles. This strong replication is mostly evidence of stable site/configuration values, not of fingerprint-derived identifiers. Only 4/65 tokens in the first batch and 3/64 in the second are confined to the baseline pair; the candidate sites do not replicate. In the first batch, 23 of the 36 candidate sites also fingerprint in both runs and 9 run tracking-class fingerprinting, but co-occurrence does not establish attribution. See [`docs/cookie_isolation_findings.md`](docs/cookie_isolation_findings.md) and the privacy-reduced `cookie_isolation.csv/json` in each public bundle.
 
 Paper and presentation:
 - The AsiaCCS-format paper is [`paper/main.tex`](paper/main.tex), with `references.bib`. It merges main's LaTeX skeleton with this branch's results. Build it with `make -C paper pdf` or on Overleaf.
 - The talk is [`docs/presentation.html`](docs/presentation.html), a self-contained deck: open it in a browser, and print it to PDF if needed.
-- Validation: two blind AI annotators (Claude Haiku and Claude Sonnet, not humans) labelled the 80-script sample.
-  - Security labels confirmed: 33/33.
+- Validation: two blind AI annotators (Claude Haiku and Claude Sonnet, not humans) labelled the 80-script sample; a third AI reviewer adjudicated their 16 disagreements, with Claude Opus as an independent second opinion.
+  - Security labels confirmed: 34/34.
   - Tracking labels confirmed: 11/14.
-  - Detector right on 41 of 43 decided scripts.
+  - Detector right on 48 of 50 decided scripts; 30/80 remain unsure after static review.
   - Purpose κ = 0.92.
-  - Scores and method are in `public_results/full_eu_20261125/validation_agreement.json`. A human can still settle the 16 disagreements in `validation/kit/desaccords.csv`.
+  - Scores and method are in `public_results/full_eu_20261125/validation_agreement.json`. Independent human review remains future work; the adjudication is AI-only.
 
 The sections below describe the 2026-11-22 batch.
 
@@ -287,12 +302,22 @@ The six-condition EU study batch `full_eu_20261122` completed on 2026-11-22. Its
 
 The baseline yielded 93 usable visits out of 149 attempts; 64 sites ran fingerprinting-pattern scripts. Results after the 2026-11-24 update (consent verifier fix and purpose labelling):
 
-- **Harmful vs useful:** 64% of the 237 baseline (site, script, technique) pairs are useful (security or functional). Harmful tracking fingerprinting is 11% of pairs on 17 sites, up to 19% on 23 sites under the upper bound. Harmful fingerprinting is mostly attribute collection: 3 of its 26 pairs use a strong technique, against 76 strong pairs for security. All 17 harmful sites run it before consent. The X Ads pixel sent the browser's time zone and platform to X on 9 sites. 27% of pairs come from bot managers hidden behind first-party URLs (Akamai, Cloudflare, Kasada, DataDome, Fastly).
+- **Harmful vs useful:** 64% of the 237 baseline (site, script, technique) pairs are useful (security or functional). Harmful tracking fingerprinting is 11% of pairs on 17 sites, and 19% on 23 sites in the inclusive sensitivity scenario. Harmful fingerprinting is mostly attribute collection: 3 of its 26 pairs use a strong technique, against 76 strong pairs for security. All 17 harmful sites run it before consent. The X Ads pixel sent the browser's time zone and platform to X on 9 sites. 27% of pairs come from bot managers hidden behind first-party URLs (Akamai, Cloudflare, Kasada, DataDome, Fastly).
 - **Harmful fingerprinting under consent and blockers:** after a verified rejection, 15 of 16 harmful pairs survive (−6.3 points vs repeat baseline, CI −23.1 to 0), on 8 of 36 sites. uBlock Origin Lite removes it almost completely (−88 points, CI −100 to −73). Privacy Badger removes −40.
-- **Consent:** 36 verified rejections and 44 verified acceptances (30 sites both ways). On those 30 sites, rejecting cut third-party domains (median 22 against 63) and third-party cookies (1 against 35), but fingerprinting survival did not change: +1.7 points against the repeat baseline, 95% CI −6.4 to +11.9. 10 of 36 sites kept ad/analytics fingerprinting patterns after a verified rejection, almost all of them weak signals.
+- **Consent:** 36 verified rejections and 44 verified acceptances (30 sites both ways). On those
+  30 sites, the verified-reject condition had fewer third-party domains (median 22 against 63)
+  and cookies (1 against 35) than the accept condition; that comparison alone does not show a
+  decrease caused by rejection relative to no action. Fingerprinting survival did not change:
+  +1.7 points against the repeat baseline, 95% CI −6.4 to +11.9. 10 of 36 sites kept
+  ad/analytics fingerprinting patterns after a verified rejection, almost all weak signals.
 - **Blockers:** uBlock Origin Lite reduced ad/analytics fingerprinting by 88 points but security fingerprinting by only 20 (overall −27.5). Privacy Badger: −40 and −14 (overall −19.9).
 
-See [`PAPER_DRAFT.md`](PAPER_DRAFT.md) for the research-paper draft, [`NASROU_REPORT.md`](NASROU_REPORT.md) for the change log, and [`ETUDE_RAPPORT.md`](ETUDE_RAPPORT.md) for the detailed French report. [`docs/review.html`](docs/review.html) holds the critique that motivated this rework: the brief scorecard, weaknesses, upgrade plan and related-work map. Its "Update" section shows the final results and the status of each Tier 1 item. Open it in a browser.
+`PAPER_DRAFT.md`, `NASROU_REPORT.md`, `ETUDE_RAPPORT.md` and [`docs/review.html`](docs/review.html)
+are historical 22 November material that motivated the rework; they are not the current result
+source. Use `paper/main.tex`, the presentation and `public_results/full_eu_20261125/analyze.md`
+for the current study.
+
+The evidence-backed French audit of the branch itself is [`docs/nasrou_value_audit.md`](docs/nasrou_value_audit.md); the isolated-profile cookie extension is [`docs/cookie_isolation_findings.md`](docs/cookie_isolation_findings.md).
 
 To recreate the shareable bundle from the private batch, run:
 

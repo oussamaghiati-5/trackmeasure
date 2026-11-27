@@ -1,4 +1,13 @@
 {
+  "method": {
+    "pair_definition": [
+      "site",
+      "script_domain",
+      "purpose_primary",
+      "technique"
+    ],
+    "note": "Headline paper results use purpose-aware pairs. Values therefore differ slightly from paired_uncertainty.json, whose generic pair key omits purpose."
+  },
   "prevalence": {
     "usable_baseline_sites": 93,
     "sites_with_fp": 64,
@@ -290,7 +299,7 @@
     }
   },
   "harm": {
-    "definition": "Tracking = purpose Advertising/Analytics (not dual-use). Upper bound adds Dual-use and Undetermined scripts with High capability.",
+    "definition": "Tracking = purpose Advertising/Analytics (not dual-use). The inclusive sensitivity scenario adds Dual-use and Undetermined scripts with High capability; it is not a formal upper bound.",
     "pairs_by_class": {
       "Service": 151,
       "Undetermined (low capability)": 41,
@@ -341,7 +350,7 @@
         "sites_reject": 5
       }
     },
-    "Tracking, upper bound": {
+    "Tracking, inclusive sensitivity": {
       "sites": 23,
       "pairs": 45,
       "strong_pairs": 12,
@@ -433,7 +442,7 @@
           ],
           "pairs_new": 3
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 22,
           "pairs_baseline": 44,
           "pairs_surviving": 22,
@@ -487,7 +496,7 @@
           ],
           "pairs_new": 10
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 22,
           "pairs_baseline": 44,
           "pairs_surviving": 29,
@@ -541,7 +550,7 @@
           ],
           "pairs_new": 1
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 9,
           "pairs_baseline": 16,
           "pairs_surviving": 15,
@@ -595,7 +604,7 @@
           ],
           "pairs_new": 18
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 9,
           "pairs_baseline": 12,
           "pairs_surviving": 12,

@@ -29,13 +29,20 @@ third_to_first (a third-party cookie sent to the site).
 Lower bound: the Cookie and Referer headers, hashed or encoded identifiers and truncated bodies
 are not searched. Direction is not established: the receiver may have issued the value.
 
+The primary filter is supplemented by a stricter sensitivity analysis that also requires the
+same cookie name/owner to show at least two different identifier-like tokens in at least two
+profiles. This drops condition-only constants at the cost of missing genuine cookies that exist
+only after acceptance.
+
 Outputs contain no cookie values, tokens or URLs:
   * id_sharing.csv: run, site, phase, cookie_name, cookie_owner, receiver_domain, flow,
     receiver_known_tracker, requests;
   * id_sharing.json: summary.
+  * id_sharing_strict.csv: the stricter cookie-variation sensitivity rows.
 """
 import argparse
 import json
+import math
 import re
 import sqlite3
 import statistics
@@ -66,7 +73,9 @@ DEFINITION = (
     "request to another registrable domain not owned by the cookie's owner. 'known tracker' = "
     "receiver listed in DuckDuckGo's tracker blocklist subset; other receivers include security, "
     "functional and unrecognised same-company domains, so 'any third party' is an upper bound. "
-    "Counts are over comparison-eligible site/runs after the consent step unless named otherwise.")
+    "A condition-only constant can pass this primary filter; strict_variation_sensitivity also "
+    "requires the cookie name/owner to vary across profiles. Counts are over comparison-eligible "
+    "site/runs after the consent step unless named otherwise.")
 
 
 def is_timestamp(token, now):
@@ -83,20 +92,26 @@ def candidate_tokens(value, now):
             if any(c.isdigit() for c in t) and len(set(t)) > 4 and not is_timestamp(t, now)}
 
 
-def identifiers(cookies, now):
+def identifiers(cookies, now, require_cookie_variation=False):
     """cookies: iterable of (run, site, name, domain, value).
     -> {(run, site): {token: [(cookie_name, cookie_owner)]}} for single-profile tokens."""
     seen = defaultdict(set)
+    cookie_tokens, cookie_profiles = defaultdict(set), defaultdict(set)
     rows = []
     for run, site, name, domain, value in cookies:
         if CONSENT_COOKIE.search(name or ""):
             continue
+        owner = etld1(domain or "")
         for token in candidate_tokens(value, now):
             seen[token].add((run, site))
-            rows.append((run, site, token, name, etld1(domain or "")))
+            cookie_tokens[name, owner].add(token)
+            cookie_profiles[name, owner].add((run, site))
+            rows.append((run, site, token, name, owner))
     out = defaultdict(lambda: defaultdict(list))
     for run, site, token, name, owner in rows:
-        if len(seen[token]) == 1:
+        varying = (len(cookie_tokens[name, owner]) >= 2 and
+                   len(cookie_profiles[name, owner]) >= 2)
+        if len(seen[token]) == 1 and (not require_cookie_variation or varying):
             out[run, site][token].append((name, owner))
     return out
 
@@ -116,9 +131,19 @@ def flow(site, owner, receiver):
     return "third_to_first" if receiver == site else "third_to_third"
 
 
-def find_sharing(con, owners, trackers):
+def exact_mcnemar(reference_only, condition_only):
+    """Two-sided exact McNemar test over discordant paired binary outcomes."""
+    n = reference_only + condition_only
+    if not n:
+        return 1.0
+    tail = sum(math.comb(n, k) for k in range(min(reference_only, condition_only) + 1)) / (2 ** n)
+    return min(1.0, 2 * tail)
+
+
+def find_sharing(con, owners, trackers, require_cookie_variation=False):
     now = statistics.median(r[0] for r in con.execute("SELECT started FROM visits WHERE started IS NOT NULL"))
-    ids = identifiers(con.execute("SELECT run, site, name, domain, value FROM cookies"), now)
+    ids = identifiers(con.execute("SELECT run, site, name, domain, value FROM cookies"), now,
+                      require_cookie_variation=require_cookie_variation)
     has_body = any(r[1] == "body" for r in con.execute("PRAGMA table_info(requests)"))
     body = "r.body" if has_body else "NULL"
     counts = Counter()
@@ -177,11 +202,20 @@ def summarize(share, per_site):
     out["paired_known_tracker"] = {}
     for run in [r for r in CONDITIONS if r in eligible and r not in ("baseline", "baseline2")]:
         common = eligible.get("baseline", set()) & eligible.get("baseline2", set()) & eligible[run]
+        base, repeat, condition = (with_known.get("baseline", set()) & common,
+                                   with_known.get("baseline2", set()) & common,
+                                   with_known[run] & common)
+        base_only, cond_only_base = len(base - condition), len(condition - base)
+        repeat_only, cond_only_repeat = len(repeat - condition), len(condition - repeat)
         out["paired_known_tracker"][run] = {
             "common_sites": len(common),
-            "baseline": len(with_known.get("baseline", set()) & common),
-            "repeat": len(with_known.get("baseline2", set()) & common),
-            "condition": len(with_known[run] & common)}
+            "baseline": len(base), "repeat": len(repeat), "condition": len(condition),
+            "baseline_vs_condition": {
+                "baseline_only": base_only, "condition_only": cond_only_base,
+                "exact_mcnemar_p_two_sided": exact_mcnemar(base_only, cond_only_base)},
+            "repeat_vs_condition": {
+                "repeat_only": repeat_only, "condition_only": cond_only_repeat,
+                "exact_mcnemar_p_two_sided": exact_mcnemar(repeat_only, cond_only_repeat)}}
     base = third[(third.run == "baseline") & third.site.isin(eligible.get("baseline", set()))]
     out["top_receivers_baseline"] = base.groupby("receiver_domain").site.nunique() \
         .sort_values(ascending=False).head(15).to_dict()
@@ -215,10 +249,18 @@ def main():
     owners, trackers = radar.get("owners", {}), set(radar.get("blocklist", {}))
     con = sqlite3.connect(Path(a.db).resolve().as_uri() + "?immutable=1", uri=True)
     share = find_sharing(con, owners, trackers)
+    strict_share = find_sharing(con, owners, trackers, require_cookie_variation=True)
     con.close()
     share.to_csv(res / "id_sharing.csv", index=False)
+    strict_share.to_csv(res / "id_sharing_strict.csv", index=False)
     per_site = pd.read_csv(res / "per_site.csv")
     summary = summarize(share, per_site)
+    strict_summary = summarize(strict_share, per_site)
+    strict_summary["definition"] = ("Primary identifier-like filter plus at least two distinct "
+                                    "candidate tokens for the same cookie name/owner in at least "
+                                    "two profiles. This removes condition-only constants but can "
+                                    "miss identifiers created in only one condition.")
+    summary["strict_variation_sensitivity"] = strict_summary
     path = res / "script_purposes.csv"
     summary["combined_with_tracking_fingerprinting"] = combined(
         share, pd.read_csv(path) if path.exists() else None)

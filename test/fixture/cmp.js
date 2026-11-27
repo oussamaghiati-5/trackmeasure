@@ -6,7 +6,9 @@ window.__tcfapi = (command, version, callback, listenerId) => {
   const accepted = decision === 'accepted';
   callback({ listenerId: 1, cmpId: 999, cmpStatus: 'loaded', gdprApplies: true,
     eventStatus: window.fixtureChoiceMade ? 'useractioncomplete' : (decision ? 'tcloaded' : 'cmpuishown'),
-    purpose: { consents: { 1: accepted, 3: accepted } },
+    // consent.assess_tcf requires an "accept all" fixture to grant at least
+    // nine purposes 1..10.  Keep rejection explicit by setting each false.
+    purpose: { consents: Object.fromEntries(Array.from({length: 10}, (_, i) => [i + 1, accepted])) },
     vendor: { consents: { 1: accepted } }, specialFeatureOptins: { 1: false, 2: false }
   }, true);
 };

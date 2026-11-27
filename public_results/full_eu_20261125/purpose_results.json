@@ -1,4 +1,13 @@
 {
+  "method": {
+    "pair_definition": [
+      "site",
+      "script_domain",
+      "purpose_primary",
+      "technique"
+    ],
+    "note": "Headline paper results use purpose-aware pairs. Values therefore differ slightly from paired_uncertainty.json, whose generic pair key omits purpose."
+  },
   "prevalence": {
     "usable_baseline_sites": 97,
     "sites_with_fp": 66,
@@ -398,7 +407,7 @@
     }
   },
   "harm": {
-    "definition": "Tracking = purpose Advertising/Analytics (not dual-use). Upper bound adds Dual-use and Undetermined scripts with High capability.",
+    "definition": "Tracking = purpose Advertising/Analytics (not dual-use). The inclusive sensitivity scenario adds Dual-use and Undetermined scripts with High capability; it is not a formal upper bound.",
     "pairs_by_class": {
       "Service": 179,
       "Undetermined (low capability)": 39,
@@ -467,7 +476,7 @@
         "sites_reject": 7
       }
     },
-    "Tracking, upper bound": {
+    "Tracking, inclusive sensitivity": {
       "sites": 30,
       "pairs": 67,
       "strong_pairs": 16,
@@ -586,7 +595,7 @@
           ],
           "pairs_new": 0
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 29,
           "pairs_baseline": 61,
           "pairs_surviving": 34,
@@ -640,7 +649,7 @@
           ],
           "pairs_new": 8
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 28,
           "pairs_baseline": 56,
           "pairs_surviving": 40,
@@ -694,7 +703,7 @@
           ],
           "pairs_new": 1
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 9,
           "pairs_baseline": 15,
           "pairs_surviving": 14,
@@ -748,7 +757,7 @@
           ],
           "pairs_new": 2
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 8,
           "pairs_baseline": 13,
           "pairs_surviving": 13,
@@ -802,7 +811,7 @@
           ],
           "pairs_new": 0
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 29,
           "pairs_baseline": 61,
           "pairs_surviving": 53,
@@ -856,7 +865,7 @@
           ],
           "pairs_new": 22
         },
-        "Tracking, upper bound": {
+        "Tracking, inclusive sensitivity": {
           "sites_with_pairs": 14,
           "pairs_baseline": 23,
           "pairs_surviving": 23,

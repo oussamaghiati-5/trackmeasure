@@ -3,301 +3,490 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Does Opting Out Stop Fingerprinting? — TrackMeasure</title>
+<meta name="color-scheme" content="light">
+<title>Does Opting Out Stop Fingerprinting? | TrackMeasure</title>
 <!--
-  Self-contained slide deck. Open in a browser: arrow keys / space / click to move,
-  F11 for full screen, Ctrl+P to save as PDF (one slide per page).
-  Numbers: public_results/full_eu_20261125 (primary) and full_eu_20261122 (replication).
+  Self-contained TrackMeasure research deck.
+  Arrows / space: navigate · F: fullscreen · O: overview · Ctrl+P: PDF.
+  Primary data: full_eu_20261125 · replication: full_eu_20261122.
 -->
 <style>
-  :root {
-    --ink: #1d2330; --muted: #5b6475; --line: #d9dde5; --bg: #f6f7f9; --card: #ffffff;
-    --accent: #b3261e; --service: #2f6db5; --track: #b3261e; --undet: #9aa3b2; --undet-hi: #6b7384;
-    --good: #2e7d4f;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: #2a2f3a; font-family: "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; color: var(--ink); }
-  .deck { height: 100%; display: grid; place-items: center; }
-  .slide {
-    display: none; width: min(100vw, calc(100vh * 16 / 9)); height: min(100vh, calc(100vw * 9 / 16));
-    background: var(--bg); padding: 4.2% 5.5% 3.5%; position: relative; overflow: hidden;
-    font-size: min(2.15vw, 3.8vh); line-height: 1.38;
-  }
-  .slide.active { display: flex; flex-direction: column; }
-  h1 { font-size: 2.05em; line-height: 1.15; margin: 0 0 .35em; letter-spacing: -.01em; }
-  h2 { font-size: 1.45em; margin: 0 0 .6em; letter-spacing: -.01em; }
-  h2 .rq { color: var(--accent); font-weight: 700; margin-right: .35em; }
-  p { margin: .3em 0 .55em; }
-  ul { margin: .2em 0 .5em; padding-left: 1.1em; }
-  li { margin: .22em 0; }
-  .muted { color: var(--muted); }
-  .small { font-size: .78em; }
-  .tiny { font-size: .62em; color: var(--muted); }
-  .big { font-size: 2.3em; font-weight: 700; line-height: 1; }
-  .accent { color: var(--accent); }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4%; flex: 1; min-height: 0; }
-  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3%; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: .5em; padding: .75em .9em; }
-  .card h3 { margin: 0 0 .3em; font-size: .95em; }
-  .footer { position: absolute; left: 5.5%; right: 5.5%; bottom: 2.2%; display: flex; justify-content: space-between; font-size: .55em; color: var(--muted); }
-  table { border-collapse: collapse; width: 100%; font-size: .74em; }
-  th, td { border-bottom: 1px solid var(--line); padding: .32em .45em; text-align: right; }
-  th:first-child, td:first-child { text-align: left; }
-  th { color: var(--muted); font-weight: 600; }
-  .title-slide { justify-content: center; }
-  .title-slide .kicker { color: var(--accent); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: .7em; margin-bottom: .8em; }
-  /* bars */
-  .bars { display: flex; flex-direction: column; gap: .45em; margin-top: .3em; }
-  .bar-row { display: grid; grid-template-columns: 7.2em 1fr 4.2em; align-items: center; gap: .5em; font-size: .8em; }
-  .bar-track { position: relative; height: 1.15em; background: #e7eaf0; border-radius: .25em; overflow: hidden; }
-  .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: .25em; }
-  .bar-base { position: absolute; top: -.15em; bottom: -.15em; width: 2px; background: var(--ink); }
-  .stack { display: flex; height: 2.1em; border-radius: .3em; overflow: hidden; margin: .4em 0 .5em; }
-  .stack div { display: flex; align-items: center; justify-content: center; color: #fff; font-size: .7em; font-weight: 600; white-space: nowrap; }
-  .legend { display: flex; flex-wrap: wrap; gap: .3em 1.1em; font-size: .68em; color: var(--muted); }
-  .sw { display: inline-block; width: .8em; height: .8em; border-radius: .15em; margin-right: .3em; vertical-align: -.05em; }
-  .pipeline { display: flex; align-items: stretch; gap: .5em; margin: .5em 0 .8em; font-size: .78em; }
-  .pipeline .step { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: .45em; padding: .5em .6em; }
-  .pipeline .arrow { align-self: center; color: var(--muted); }
-  .chip { display: inline-block; border: 1px solid var(--line); background: var(--card); border-radius: 1em; padding: .05em .55em; margin: .12em .1em; font-size: .72em; }
-  .takeaway { border-left: .25em solid var(--accent); padding: .2em 0 .2em .7em; margin: .5em 0; }
-  .progress { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--accent); transition: width .2s; }
-  @media print {
-    html, body { background: #fff; }
-    .slide { display: flex !important; flex-direction: column; width: 297mm; height: 167mm; page-break-after: always; font-size: 13.5pt; }
-    .progress { display: none; }
-    @page { size: 297mm 167mm; margin: 0; }
-  }
+:root{
+  --navy-950:#081a2e;--navy-800:#123a63;--navy-650:#315e8a;--navy-450:#6f91b2;
+  --navy-200:#d5e2ee;--navy-100:#eaf0f6;--navy-050:#f6f8fb;--white:#ffffff;
+  --paper:var(--navy-050);--ink:var(--navy-950);--soft:var(--navy-650);--rule:var(--navy-200);
+  --red:var(--navy-800);--red-dark:var(--navy-950);--blue:var(--navy-650);--green:var(--navy-800);--grey:var(--navy-450);
+  --display:"Aptos Display","Trebuchet MS",Arial,sans-serif;
+  --text:"Aptos","Segoe UI Variable","Segoe UI",Arial,sans-serif;
+  --font:var(--display);--serif:var(--display);--sans:var(--text);--mono:var(--text);--code:"Cascadia Mono",Consolas,monospace
+}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{background:#20262b;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.deck{width:100%;height:100%;display:grid;place-items:center}
+.slide{
+  display:none;position:relative;overflow:hidden;
+  width:min(100vw,calc(100vh * 16 / 9));height:min(100vh,calc(100vw * 9 / 16));
+  padding:5.1% 5.8% 4.1%;font-size:min(2.08vw,3.7vh);line-height:1.24;background:var(--paper)
+}
+.slide.active{display:flex;flex-direction:column}.slide:after{content:none}
+.slide>*{position:relative;z-index:1}h1,h2,h3,p{margin-top:0}h1,h2{font-family:var(--font);font-weight:700;letter-spacing:-.035em}
+h1{font-size:2.85em;line-height:.98;margin-bottom:.28em}h2{font-size:1.6em;line-height:1.05;max-width:16em;margin-bottom:.55em}
+h3{font-size:.76em;line-height:1.12;margin-bottom:.28em;text-transform:none;letter-spacing:.01em}
+p{margin-bottom:.55em}b,strong{font-weight:700}code{font-family:var(--code);font-size:.84em}
+.serif{font-family:var(--serif)}.mono{font-family:var(--mono)}.red{color:var(--red-dark)}.blue{color:var(--blue)}.green{color:var(--green)}
+.muted{color:var(--soft)}.small{font-size:.7em;line-height:1.36}.tiny{font-size:.54em;line-height:1.4}
+.label,.eyebrow{font-family:var(--font);font-weight:600;text-transform:none;letter-spacing:.02em}
+.label{font-size:.5em}.eyebrow{display:block;margin-bottom:.62em;color:var(--navy-650);font-size:.51em}
+.eyebrow:before{content:none}
+.topline{position:absolute;left:5.8%;right:5.8%;top:2.35%;display:flex;justify-content:space-between;font:700 .42em/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
+.topline .mark{color:var(--ink)}.folio{position:absolute;left:5.8%;right:5.8%;bottom:2.05%;display:flex;justify-content:space-between;align-items:center;font:.42em/1 var(--mono);color:var(--soft)}
+.folio .line{display:none}.folio .page{color:var(--ink);font-weight:800}
+.split{display:grid;grid-template-columns:1.1fr .9fr;gap:6%;flex:1;min-height:0;align-items:center}
+.big{font:700 3.5em/.8 var(--serif);letter-spacing:-.06em}.mid{font:700 2.2em/.9 var(--serif);letter-spacing:-.05em}
+.callout{border-left:2px solid var(--red);padding-left:.62em}.rule-top{border-top:1px solid var(--rule);padding-top:.45em}
+
+/* cover */
+.cover,.closing{background:var(--ink);color:var(--paper)}.cover .topline,.cover .folio,.closing .topline,.closing .folio{color:rgba(243,239,230,.62)}
+.cover .topline .mark,.cover .folio .page,.closing .topline .mark,.closing .folio .page{color:var(--paper)}
+.cover .folio .line,.closing .folio .line{background:rgba(243,239,230,.28)}
+.cover:before{content:none}
+.cover-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:5%;flex:1;align-items:center}.cover h1{max-width:8.2em}.cover h1 em{color:var(--red);font-style:normal}
+.cover-sub{max-width:31em;color:rgba(243,239,230,.74);font-size:.75em;line-height:1.4}.cover-facts{display:flex;gap:2.1em;margin-top:1.1em}
+.cover-facts b{display:block;color:var(--paper);font:700 1.35em/1 var(--serif)}.cover-facts small{color:rgba(243,239,230,.58);font:.45em/1.2 var(--mono);text-transform:uppercase}
+.ticket{position:relative;min-height:68%;display:grid;place-items:center}
+.fingerprint{width:72%;max-height:70%;color:var(--paper)}.fingerprint path{fill:none;stroke:currentColor;stroke-width:4;stroke-linecap:round}
+.stamp{position:absolute;right:1%;bottom:7%;border:2px solid var(--red);color:var(--red);padding:.08em .22em .1em;font:800 1.65em/1 var(--sans);letter-spacing:-.06em;transform:rotate(-5deg)}
+
+/* paradox */
+.api-stage{display:grid;grid-template-columns:1fr .55fr 1fr;align-items:stretch;flex:1;min-height:0}
+.purpose{padding:.85em .9em .72em;border-top:3px solid;background:var(--white)}.purpose.track{border-color:var(--red)}.purpose.secure{border-color:var(--blue)}
+.purpose .verb{font:700 1.7em/.98 var(--serif);margin:.35em 0 .25em;letter-spacing:-.04em}.purpose ul{margin:.55em 0 0;padding:0;list-style:none;font-size:.63em}
+.purpose li{padding:.18em 0;border-bottom:1px solid var(--rule)}.api-core{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.api-core:before,.api-core:after{content:"";width:100%;height:1px;background:var(--rule)}.api-core div{width:6.5em;aspect-ratio:1;margin:.45em 0;display:grid;place-items:center;border:1px solid var(--ink);border-radius:50%;background:var(--paper);font:700 .62em/1.3 var(--mono)}
+
+/* questions + method */
+.rq{list-style:none;margin:.05em 0 0;padding:0}.rq li{display:grid;grid-template-columns:2.3em 1fr 8.5em;gap:.7em;align-items:baseline;border-top:1px solid var(--rule);padding:.42em 0 .48em}
+.rq .n{font:700 1.4em/1 var(--serif);color:var(--red-dark)}.rq .q{font-weight:800;font-size:.9em}.rq .how{font:.5em/1.4 var(--mono);color:var(--soft);text-transform:uppercase}
+.premise{margin-top:auto;display:grid;grid-template-columns:2.2fr 1fr;gap:5%;align-items:end}
+.verify{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:.55em;margin:.1em 0 .75em}
+.verify-step{min-height:4.6em;padding:.56em .62em;border:1px solid var(--rule);background:var(--white)}.verify-step b{display:block;font:700 .8em/1.1 var(--serif);margin-bottom:.2em}
+.verify-step span{display:block;font-size:.52em;line-height:1.3;color:var(--soft)}.arrow{color:var(--red);font:700 1.1em var(--serif)}
+.conditions{display:grid;grid-template-columns:1fr 1.45fr 1fr;border-block:1px solid var(--rule)}.condition{padding:.48em .68em;border-right:1px solid var(--rule)}
+.condition:last-child{border:0}.condition .items{font-size:.57em;line-height:1.45}.method-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:.8em;margin-top:.65em}
+.method-facts div{border-left:3px solid var(--rule);padding-left:.48em}.method-facts b{display:block;font:700 1.12em/1 var(--serif)}.method-facts span{font-size:.45em;color:var(--soft)}
+
+/* results */
+.composition{display:flex;height:2.8em;margin-top:.3em;overflow:hidden}.composition div{display:flex;flex-direction:column;justify-content:center;padding:0 .55em;color:var(--white)}
+.composition b{font:700 1em/1 var(--serif)}.composition span{font:.4em/1.2 var(--mono);text-transform:uppercase}.service{width:62.8%;background:var(--blue)}
+.tracking{width:10.2%;min-width:5.2em;background:var(--red)}.unknown{width:27%;background:var(--grey)}
+.result-notes{display:grid;grid-template-columns:1.05fr 1fr 1fr;gap:1.3em;margin-top:.75em}.result-note{padding-top:.42em;border-top:1px solid var(--rule)}
+.result-note b{font:700 1.45em/1 var(--serif)}.result-note p{font-size:.54em;line-height:1.35;margin:.25em 0 0}
+.before{display:grid;grid-template-columns:.86fr 1.14fr;gap:6%;flex:1;align-items:center}.ratio{border-top:3px solid var(--red);padding-top:.48em}
+.ratio .big{color:var(--red-dark);font-size:4.1em}.ratio .caption{max-width:15em;font-weight:800;font-size:.78em}
+.timeline{position:relative;margin:.6em 0 1em;padding-top:1.2em}.timeline:before{content:"";position:absolute;left:0;right:0;top:1.55em;height:2px;background:var(--ink)}
+.events{display:grid;grid-template-columns:repeat(4,1fr);position:relative}.event{text-align:center;font-size:.48em;line-height:1.25}.event i{display:block;width:1.15em;height:1.15em;margin:0 auto .5em;border:2px solid var(--ink);border-radius:50%;background:var(--paper)}
+.event.hot{color:var(--red-dark);font-weight:800}.event.hot i{background:var(--red);border-color:var(--red-dark);box-shadow:0 0 0 .19em var(--paper)}
+.flow-facts{display:grid;grid-template-columns:1fr 1fr;gap:.7em}.flow-fact{background:var(--white);border:0;padding:.55em .62em}
+.flow-fact b{font:700 1.45em/1 var(--serif)}.flow-fact span{display:block;font-size:.47em;margin-top:.2em;line-height:1.3}
+.survival{display:grid;grid-template-columns:.85fr 1.15fr;gap:5%;flex:1;align-items:center}.punch{padding:.75em 0;border-top:3px solid var(--red);border-bottom:1px solid var(--rule)}
+.punch .big{color:var(--red-dark);font-size:4.25em}.punch p{font-size:.61em;max-width:17em}.survival-list{border-top:1px solid var(--rule)}
+.survival-row{display:grid;grid-template-columns:6em 1fr 3em;gap:.5em;align-items:center;padding:.48em 0;border-bottom:1px solid var(--rule)}
+.survival-row .name{font:700 .57em/1.2 var(--mono);text-transform:uppercase}.survival-row .track{height:.45em;background:rgba(20,33,43,.13)}.survival-row .track i{display:block;height:100%;background:var(--red)}
+.survival-row .value{text-align:right;font:700 .76em/1 var(--serif)}
+.layers{display:grid;grid-template-columns:1fr 1fr;gap:5%;flex:1}.layer{display:flex;flex-direction:column;padding-top:.52em;border-top:.22em solid}.layer.cookies{border-color:var(--green)}.layer.identity{border-color:var(--red)}
+.before-after{display:flex;align-items:center;gap:.45em;margin:.48em 0 .55em}.before-after b{font:700 2.45em/.9 var(--serif);letter-spacing:-.05em}.before-after .good{color:var(--green)}.before-after .bad{color:var(--red-dark)}
+.ledger{margin-top:auto;border-top:1px solid var(--rule)}.ledger div{display:flex;justify-content:space-between;gap:1em;padding:.32em 0;border-bottom:1px solid var(--rule);font-size:.5em}.ledger b{font-family:var(--mono);white-space:nowrap}
+.bottomline{margin-top:.65em;padding:.48em 0;border-top:1px solid var(--rule);color:var(--ink);font:700 .64em/1.25 var(--serif)}
+.blockers{display:grid;grid-template-columns:1fr 1fr;gap:4%}.blocker{border-top:3px solid var(--green);padding-top:.42em}.blocker-name{font:700 .68em/1 var(--mono);text-transform:uppercase}
+.impacts{display:grid;grid-template-columns:1.15fr .85fr;gap:.42em;margin-top:.48em}.impact{padding:.5em .56em;background:var(--white);border:0}.impact b{display:block;font:700 1.9em/.9 var(--serif)}
+.impact span{font-size:.44em;line-height:1.2}.impact.good b{color:var(--green)}.impact.cost b{color:var(--red-dark)}.blocker-bottom{display:grid;grid-template-columns:1.15fr .85fr;gap:5%;align-items:end;margin-top:.7em}
+.id-drop{border-top:1px solid var(--rule);padding-top:.38em}.sequence{display:flex;gap:.5em;align-items:baseline;font:700 1.1em/1 var(--serif)}.sequence .down{color:var(--green);font-size:1.55em}
+
+/* replication, validation, limits, close */
+.rep-head,.rep-row{display:grid;grid-template-columns:1fr 1.15fr 1fr;align-items:center}.rep-head{margin-bottom:.25em}.rep-head div{font:700 .54em/1 var(--mono);text-transform:uppercase}
+.rep-head div:nth-child(2){text-align:center}.rep-head div:last-child{text-align:right}.rep-rows{border-top:1px solid var(--rule)}.rep-row{padding:.39em 0;border-bottom:1px solid var(--rule)}
+.rep-row .left,.rep-row .right{font:700 .82em/1 var(--serif);color:var(--green)}.rep-row .right{text-align:right}.rep-row .metric{text-align:center;font:.46em/1.25 var(--mono);color:var(--soft);text-transform:uppercase}
+.seal{display:none}
+.validation{display:grid;grid-template-columns:repeat(3,1fr);gap:1.05em;flex:1}.evidence{border-top:.22em solid var(--ink);padding-top:.48em}.evidence:nth-child(2){border-color:var(--blue)}.evidence:nth-child(3){border-color:var(--red)}
+.evidence h3{min-height:2.2em}.stat{padding:.33em 0 .42em;border-bottom:1px solid var(--rule)}.stat b{display:block;font:700 1.3em/.95 var(--serif)}.stat span{display:block;margin-top:.17em;font-size:.45em;line-height:1.32}
+.ai-note{margin-top:.5em;padding:.4em .46em;background:rgba(239,73,56,.09);border:1px solid rgba(185,47,38,.35);font:700 .44em/1.34 var(--mono);color:var(--red-dark)}
+.limits{display:grid;grid-template-columns:1fr 1fr;gap:5%;flex:1}.limit{padding-top:.48em;border-top:.22em solid}.limit.can{border-color:var(--green)}.limit.cannot{border-color:var(--red)}
+.limit ul{list-style:none;padding:0;margin:.3em 0 0}.limit li{position:relative;padding:.31em 0 .34em 1.4em;border-bottom:1px solid var(--rule);font-size:.59em;line-height:1.3}
+.limit li:before{position:absolute;left:0;top:.26em;font:800 .8em var(--mono)}.can li:before{content:"+";color:var(--green)}.cannot li:before{content:"×";color:var(--red-dark)}
+.scope{margin-top:.68em;display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--rule);background:transparent}.scope div{padding:.4em .46em;border-right:1px solid var(--rule)}.scope div:last-child{border:0}
+.scope b{display:block;font:700 .5em/1.2 var(--mono);text-transform:uppercase}.scope span{display:block;margin-top:.13em;font-size:.4em;line-height:1.3;color:var(--soft)}
+.closing h2{max-width:12em;font-size:2.05em}.closing h2 .red{color:var(--red)}.takeaways{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2em;margin-top:.2em}
+.takeaway{border-top:2px solid rgba(243,239,230,.55);padding-top:.42em}.takeaway .n{font:700 .54em var(--mono);color:var(--red)}.takeaway b{display:block;margin:.18em 0;font:700 .84em/1.08 var(--serif)}
+.takeaway p{font-size:.48em;line-height:1.35;color:rgba(243,239,230,.68)}.next{display:flex;gap:1em;align-items:center;margin-top:auto;padding-top:.5em;border-top:1px solid rgba(243,239,230,.25);font:.43em/1.3 var(--mono);color:rgba(243,239,230,.62)}
+.next b{color:var(--paper);text-transform:uppercase}
+
+/* Unified navy system: grouping comes from space, soft shapes and drawings. */
+.slide{font-variant-numeric:tabular-nums lining-nums}
+.topline{display:none}
+.folio{left:auto;right:5.8%;justify-content:flex-end;color:var(--navy-450)}
+.folio>span:first-child,.folio .line{display:none}
+.cover,.closing{background:var(--navy-950)}
+.cover .eyebrow,.closing .eyebrow{color:var(--navy-200)!important}
+.cover-sub{color:var(--navy-200)}
+.cover-facts small{color:var(--navy-450);font-family:var(--font);letter-spacing:.02em;text-transform:none}
+.stamp{display:none}
+.ticket{min-height:66%}.fingerprint{width:84%;color:var(--navy-100)}
+.purpose{border:0;border-radius:1.2em;background:var(--white);padding:1em}
+.purpose.track{height:auto}
+.purpose li{border:0;padding:.13em 0}.api-stage{gap:1em}
+.api-core:before,.api-core:after{content:none}.api-core svg{width:125%;overflow:visible}
+.callout{border:0;background:var(--navy-100);border-radius:1em;padding:.65em .75em}
+.rq{position:relative}.rq li{border:0;background:var(--white);border-radius:3em;margin:.34em 0;padding:.52em .72em;grid-template-columns:2.3em 1fr 8.5em}
+.rq .n{width:1.7em;height:1.7em;display:grid;place-items:center;border-radius:50%;background:var(--navy-100);color:var(--navy-800);font-size:1em}
+.premise .rule-top{border:0;background:var(--navy-100);border-radius:1em;padding:.65em .75em}
+.verify-step{border:0;border-radius:1.15em;background:var(--white);padding:.65em .72em;min-height:5.4em}
+.verify-step b{font-family:var(--font)}.verify-icon{width:2em;height:2em;margin-bottom:.2em;color:var(--navy-800)}
+.verify-icon *{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.verify-arrow{width:1.7em;color:var(--navy-450)}.verify-arrow path{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.conditions{border:0;gap:.55em}.condition{border:0;border-radius:1em;background:var(--navy-100);padding:.6em .72em}
+.method-facts div{border:0;border-radius:1em;background:var(--white);padding:.55em .65em}
+.purpose-overview{display:grid;grid-template-columns:.8fr 1.2fr;gap:2em;align-items:center;margin:.25em 0 .5em}
+.donut{--hole:58%;position:relative;width:7.2em;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--navy-650) 0 62.8%,var(--navy-950) 62.8% 73%,var(--navy-200) 73% 100%)}
+.donut:after{content:"";position:absolute;width:var(--hole);height:var(--hole);border-radius:50%;background:var(--navy-050)}
+.donut-center{position:relative;z-index:1;text-align:center}.donut-center b{display:block;font-size:1.35em;line-height:1}.donut-center span{font-size:.45em;color:var(--navy-650)}
+.purpose-legend{display:grid;gap:.42em}.purpose-key{display:grid;grid-template-columns:1.25em 4.2em 1fr;align-items:center;gap:.55em;background:var(--white);border-radius:1em;padding:.48em .65em}
+.purpose-key i{width:1.05em;height:1.05em;border-radius:50%}.purpose-key b{font-size:.9em}.purpose-key span{font-size:.5em;color:var(--soft)}
+.result-note{border:0;background:var(--white);border-radius:1.1em;padding:.6em .7em}
+.consent-scene{width:100%;height:5.6em;margin:.1em 0 .55em}.consent-scene *{vector-effect:non-scaling-stroke}
+.flow-fact{background:var(--navy-100);border-radius:1em}
+.ratio{border:0;background:var(--white);border-radius:1.2em;padding:.75em}
+.punch{border:0;background:var(--navy-100);border-radius:1.25em;padding:.8em}
+.survival-list{border:0}.gauge-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.55em}
+.gauge-item{text-align:center}.gauge{--p:100;position:relative;width:4.6em;aspect-ratio:1;margin:0 auto .28em;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--navy-800) calc(var(--p)*1%),var(--navy-200) 0)}
+.gauge:before{content:"";position:absolute;width:3.25em;aspect-ratio:1;border-radius:50%;background:var(--navy-050)}
+.gauge span{position:relative;z-index:1;font-weight:700;font-size:.62em}.gauge-item b{display:block;font-size:.48em}.gauge-item small{font-size:.4em;color:var(--soft)}
+.layer{border:0;border-radius:1.25em;background:var(--white);padding:.75em}.layer-figure{width:4.5em;height:3.1em;color:var(--navy-650);margin-bottom:.2em}
+.layer-figure *{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ledger,.ledger div{border:0}.ledger div{background:var(--navy-050);border-radius:.7em;margin:.18em 0;padding:.35em .5em}
+.bottomline{border:0;background:var(--navy-100);border-radius:1em;padding:.55em .7em}
+.blocker{border:0;border-radius:1.25em;background:var(--white);padding:.7em}.blocker-head{display:flex;align-items:center;gap:.55em}
+.shield-icon{width:2.2em;height:2.2em;color:var(--navy-800)}.shield-icon *{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.impact{background:var(--navy-050);border-radius:1em}.id-drop{border:0;background:var(--navy-100);border-radius:1em;padding:.55em .65em}
+.rep-head{grid-template-columns:1fr .8fr 1fr;margin-bottom:.5em}.calendar{display:inline-grid;grid-template-columns:auto auto;align-items:baseline;gap:.2em;background:var(--navy-100);border-radius:1em;padding:.45em .7em;width:max-content}
+.calendar b{font-size:1.15em}.calendar span{font-size:.55em;color:var(--soft)}.rep-head>div:last-child .calendar{margin-left:auto}
+.rep-rows{border:0;display:grid;gap:.22em}.rep-row{border:0;border-radius:1em;background:var(--white);padding:.42em .65em}
+.evidence{border:0;border-radius:1.2em;background:var(--white);padding:.7em}.evidence h3{display:flex;align-items:center;gap:.45em;min-height:auto}
+.evidence-icon{width:1.8em;height:1.8em;display:grid;place-items:center;border-radius:50%;background:var(--navy-100);color:var(--navy-800);font-size:.7em}
+.stat{border:0;background:var(--navy-050);border-radius:.8em;margin:.24em 0;padding:.42em .5em}.stat span{font-size:.48em}.ai-note{border:0;background:var(--navy-100);border-radius:.8em;color:var(--navy-800);font-size:.5em;padding:.55em .6em}
+.evidence{background:transparent;border-radius:0;padding:.2em}
+.limit{border:0;border-radius:0;background:transparent;padding:.25em}.limit li{border:0}.limit li:before{width:1em;height:1em;border-radius:50%;display:grid;place-items:center;background:var(--navy-100);color:var(--navy-800)}
+.scope{border:0;background:var(--navy-100);border-radius:1em;gap:.2em;padding:.25em}.scope div{border:0}
+.scope-drawing{position:absolute;right:8%;top:5%;width:7.5em;height:3.8em;color:var(--navy-450);opacity:.55}.scope-drawing *{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.takeaways{position:relative}.takeaway{border:0;background:transparent;border-radius:0;padding:.55em}.takeaway .n{display:none}
+.takeaway-icon{width:2.2em;height:2.2em;margin-bottom:.35em;color:var(--navy-200)}.takeaway-icon *{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.takeaway-route{position:absolute;left:4%;right:4%;top:1.55em;width:92%;height:2.2em;color:var(--navy-450);opacity:.45}.takeaway-route path{fill:none;stroke:currentColor;stroke-width:2;stroke-dasharray:5 8;stroke-linecap:round}
+.next{border:0}.progress{background:var(--navy-650)}
+.closing h2 .red{color:var(--navy-200)}
+
+/* Editorial redesign: open research layouts, one navy ink, fewer UI containers. */
+body{font-family:var(--text)}
+h1,h2{font-family:var(--display);font-weight:650;letter-spacing:-.045em}
+h3,.purpose .verb,.big,.mid,.cover-facts b,.result-note b,.ratio .big,.punch .big,.before-after b,.impact b,.rep-row .left,.rep-row .right,.stat b,.takeaway b{font-family:var(--display)}
+h2{font-size:1.68em;max-width:17.5em}.small{font-size:.72em}.tiny{font-size:.58em}.label{font-size:.53em}.eyebrow{font-size:.54em;letter-spacing:.08em;text-transform:uppercase}
+.slide:not(.cover):not(.closing){background:#f8fafc}
+.slide:not(.cover):not(.closing):before{content:"";position:absolute;right:-5%;top:-18%;width:28%;height:42%;border:1px solid rgba(49,94,138,.16);border-radius:46% 54% 61% 39%/55% 42% 58% 45%;transform:rotate(-12deg)}
+.callout,.premise .rule-top{background:transparent;border-radius:0;padding:.25em 0;color:var(--ink)}
+.callout{padding-left:.85em;position:relative}.callout:before{content:"";position:absolute;left:0;top:.25em;width:.46em;height:.46em;border:2px solid var(--navy-650);border-radius:50%}
+
+/* Purpose fork */
+.api-stage{gap:1.4em;grid-template-columns:1fr .62fr 1fr}
+.purpose{background:transparent;border-radius:0;padding:.55em .2em}.purpose .verb{font-size:1.78em}
+.purpose.track{transform:rotate(-.35deg)}.purpose.secure{transform:rotate(.35deg)}
+.api-core svg{width:138%}
+
+/* Questions follow a drawn route instead of three generated-looking pills. */
+.rq{padding-left:1.2em;margin-top:.25em}.rq-route{position:absolute;left:-.1em;top:.2em;width:2.35em;height:8.4em;overflow:visible;z-index:0}
+.rq-route path{fill:none;stroke:var(--navy-200);stroke-width:3;stroke-linecap:round}
+.rq li{position:relative;background:transparent;border-radius:0;margin:0;padding:.5em 0 .6em;grid-template-columns:2.4em 1fr 9em;min-height:2.55em}
+.rq .n{background:var(--navy-950);color:var(--white);font-family:var(--display);font-size:.72em;position:relative;z-index:1}
+.rq .q{font-family:var(--display);font-size:.95em}.rq .how{font-family:var(--text);font-size:.48em;letter-spacing:.02em;text-transform:none}
+.premise{grid-template-columns:2.45fr 1fr}.premise .rule-top:last-child{padding-left:1.1em}
+
+/* Method reads as one continuous instrument path. */
+.verify{gap:.75em;margin:.35em 0 .85em}.verify-step{background:transparent;border-radius:0;padding:.4em .15em;min-height:4.8em}
+.verify-step b{font-family:var(--display);font-size:.9em}.verify-step span{font-size:.56em}.verify-icon{width:2.35em;height:2.35em}
+.verify-arrow{width:2.25em}.conditions{gap:1.2em;position:relative}.condition{background:transparent;border-radius:0;padding:.25em 0}.condition+.condition:before{content:"";position:absolute;width:.34em;height:.34em;margin-left:-.78em;margin-top:.35em;border-radius:50%;background:var(--navy-200)}
+.method-facts{gap:1.25em}.method-facts div{background:transparent;border-radius:0;padding:.2em 0}.method-facts b{font-size:1.25em}.method-facts span{font-size:.5em}
+
+/* Purpose result uses a fingerprint ring rather than a stock donut. */
+.purpose-overview{grid-template-columns:.78fr 1.22fr;gap:2.5em}.donut{background:transparent;width:7.4em}.donut:after{display:none}.purpose-mark{position:absolute;inset:0;width:100%;height:100%}
+.purpose-mark circle{fill:none;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}.purpose-mark .service-arc{stroke:var(--navy-650);stroke-width:12;stroke-dasharray:63 37}.purpose-mark .track-arc{stroke:var(--navy-950);stroke-width:12;stroke-dasharray:10 90;stroke-dashoffset:-64}.purpose-mark .unknown-arc{stroke:var(--navy-200);stroke-width:12;stroke-dasharray:26 74;stroke-dashoffset:-75}.purpose-mark path{fill:none;stroke:var(--navy-450);stroke-width:1.8;stroke-linecap:round}
+.purpose-key,.result-note{background:transparent;border-radius:0;padding:.35em 0}.purpose-key{grid-template-columns:1em 3.8em 1fr}.purpose-key i{width:.65em;height:.65em}.result-notes{gap:2em}.result-note p{font-size:.58em}
+
+/* Data slides: drawings and whitespace replace cards. */
+.ratio,.punch,.flow-fact,.layer,.ledger div,.bottomline,.blocker,.impact,.id-drop,.rep-row,.stat,.scope{background:transparent;border-radius:0}
+.ratio{padding:.35em 0}.flow-facts{gap:1.5em}.flow-fact{padding:.4em 0}.punch{padding:.4em 0}.gauge-grid{gap:.8em}.gauge{box-shadow:inset 0 0 0 1px rgba(49,94,138,.12)}
+.layers{gap:8%;position:relative}.layers:after{content:"";position:absolute;left:50%;top:5%;bottom:8%;width:1.6em;border-left:1px solid var(--navy-200);border-radius:50%;transform:translateX(-50%) rotate(4deg)}
+.layer{padding:.25em 0}.layer-figure{width:5.1em;height:3.5em}.ledger div{padding:.28em 0;margin:.08em 0}.bottomline{padding:.35em 0;font-size:.68em}
+.blockers{gap:7%}.blocker{padding:.2em 0}.blocker-head{align-items:flex-end}.shield-icon{width:3.25em;height:3.25em}.impacts{gap:1.2em;margin-top:.25em}.impact{padding:.3em 0}.impact b{font-size:2.15em}.impact span{font-size:.5em}.id-drop{padding:.25em 0}
+.rep-head{margin-bottom:.2em}.calendar{background:transparent;border-radius:0;padding:.2em 0}.rep-rows{gap:.08em}.rep-row{position:relative;padding:.43em .2em;overflow:hidden}.rep-row:before{content:"";position:absolute;left:8%;right:8%;top:55%;height:1.5em;border-top:1px solid var(--navy-200);border-radius:50%;z-index:0}.rep-row>*{position:relative;z-index:1;background:#f8fafc;padding:0 .35em}.rep-row .metric{font-family:var(--text);font-size:.49em;letter-spacing:.02em;text-transform:none}
+.validation{gap:1.7em}.evidence{padding:.15em}.evidence-icon{background:transparent;border:1px solid var(--navy-200)}.stat{padding:.38em 0;margin:.12em 0}.stat span{font-size:.52em}.ai-note{border-radius:0;padding:.5em 0;border-top:1px solid var(--navy-200)}
+.limits{gap:7%}.limit{padding:.15em}.limit li{font-size:.63em;padding-top:.34em}.limit li:before{background:transparent;border:1px solid var(--navy-200)}.scope{padding:.25em 0;gap:1em}.scope-drawing{width:9.8em;height:5.2em;right:6%;top:3%;opacity:.7}
+.takeaway p{font-size:.53em}.takeaway b{font-size:.92em}.takeaway-route{opacity:.6}
+
+.progress{position:fixed;z-index:50;left:0;bottom:0;width:0;height:2px;background:var(--red);transition:width .18s}
+.hint{display:none}
+.deck.overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;align-content:start;overflow:auto;padding:1rem;background:#20262b}
+.deck.overview .slide{display:flex;flex-direction:column;width:100%;height:auto;aspect-ratio:16/9;font-size:.52vw;cursor:pointer;box-shadow:0 .25rem 1.2rem rgba(0,0,0,.35)}
+.deck.overview .slide.active{outline:4px solid var(--red);outline-offset:2px}.deck.overview+.progress,.deck.overview~.hint{display:none}
+@media(prefers-reduced-motion:reduce){.progress{transition:none}}
+@media print{
+  html,body{width:auto;height:auto;overflow:visible;background:#fff}.deck{display:block;width:auto;height:auto}
+  .slide,.slide.active{display:flex!important;flex-direction:column;width:297mm;height:167.0625mm;page-break-after:always;break-after:page;font-size:13.8pt}
+  .progress,.hint{display:none!important}@page{size:297mm 167.0625mm;margin:0}
+}
 </style>
 </head>
 <body>
-<div class="deck">
+<main class="deck" id="deck">
 
-<!-- 1 -->
-<section class="slide title-slide">
-  <div class="kicker">Information Security Project · Defensive track: detection, transparency &amp; evaluation</div>
-  <h1>Does opting out stop fingerprinting?</h1>
-  <p class="muted" style="font-size:1.05em">Separating <span class="accent">tracking</span> from <span style="color:var(--service)">security</span> fingerprinting under verified consent and content blockers</p>
-  <p class="small muted" style="margin-top:1.6em">149 popular sites · German VPN exit · 8 conditions · two crawls (22 &amp; 25 Nov 2026)</p>
-  <div class="footer"><span>TrackMeasure</span><span>[team names]</span></div>
-</section>
-
-<!-- 2 -->
-<section class="slide">
-  <h2>The problem: same API call, two purposes</h2>
-  <div class="grid2">
+<!-- 01 -->
+<section class="slide cover" aria-label="Title slide">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Research presentation · November 2026</span></div>
+  <div class="cover-grid">
     <div>
-      <div class="card" style="margin-bottom:.7em"><h3 style="color:var(--track)">Ad-tech</h3>
-        Canvas read-back + attributes → recognise the visitor across sites. <b>Needs consent</b> (ePrivacy Art.&nbsp;5(3); EDPB Guidelines 2/2023 cover fingerprinting).</div>
-      <div class="card"><h3 style="color:var(--service)">Bot management</h3>
-        Same canvas read-back → decide whether the visitor is a human. Arguably <b>strictly necessary</b> for the service.</div>
+      <div class="eyebrow" style="color:var(--red)">Browser fingerprinting after verified consent</div>
+      <h1>Does opting out<br>stop fingerprinting?</h1>
+      <p class="cover-sub">A measurement study across 149 popular sites, with tracking fingerprinting separated from security.</p>
+      <div class="cover-facts"><span><b>149</b><small>sites</small></span><span><b>8</b><small>conditions</small></span><span><b>2</b><small>independent crawls</small></span><span><b>DE</b><small>fixed vantage point</small></span></div>
     </div>
-    <div>
-      <p>Detectors (Englehardt &amp; Narayanan 2016, FP-Inspector 2021) say <b>that</b> a script fingerprints — not <b>why</b>.</p>
-      <p>Opt-out studies count all fingerprinting together, and often trust the <i>click</i> instead of the <i>stored</i> consent state.</p>
-      <p class="takeaway">A site that keeps fingerprinting after “reject all” may be breaking the rules — or protecting its checkout.</p>
+    <div class="ticket" aria-hidden="true">
+      <svg class="fingerprint" viewBox="0 0 280 340">
+        <path d="M28 18h224a18 18 0 0 1 18 18v268a18 18 0 0 1-18 18H28a18 18 0 0 1-18-18V36a18 18 0 0 1 18-18Z" opacity=".38"/>
+        <path d="M10 60h260" opacity=".38"/>
+        <circle cx="32" cy="39" r="4" fill="currentColor" opacity=".55"/><circle cx="48" cy="39" r="4" fill="currentColor" opacity=".35"/><circle cx="64" cy="39" r="4" fill="currentColor" opacity=".22"/>
+        <path d="M54 134c7-54 43-88 88-88 53 0 92 43 92 103 0 28-7 45-10 71"/><path d="M33 170c0-83 47-139 109-139 68 0 116 54 116 126 0 25-5 48-9 72"/>
+        <path d="M78 148c2-40 28-66 64-66 38 0 67 31 67 75 0 33-11 57-14 89"/><path d="M102 151c2-25 17-42 40-42 26 0 43 20 43 50 0 55-22 86-12 139"/>
+        <path d="M128 158c0-10 6-17 15-17 11 0 17 8 17 20 0 58-23 83-11 142"/><path d="M52 196c-2 54 16 102 48 131"/><path d="M78 180c-1 66 20 113 52 145"/><path d="M105 187c1 56 17 89 25 104"/>
+      </svg>
     </div>
   </div>
-  <div class="footer"><span>Motivation</span><span>2</span></div>
+  <div class="folio"><span>Research presentation</span><span class="line"></span><span class="page">01 / 13</span></div>
 </section>
 
-<!-- 3 -->
-<section class="slide">
-  <h2>Research questions</h2>
-  <div class="grid3" style="margin-top:.4em">
-    <div class="card"><h3><span class="accent">RQ1</span></h3>Can <b>tracking</b> fingerprinting be told apart from <b>security</b> fingerprinting, and how much of each is there?</div>
-    <div class="card"><h3><span class="accent">RQ2</span></h3>Does a <b>verified</b> consent rejection — with or without GPC — or GPC alone stop tracking fingerprinting and identifier sharing?</div>
-    <div class="card"><h3><span class="accent">RQ3</span></h3>Do <b>content blockers</b> stop it, and what else do they remove?</div>
+<!-- 02 -->
+<section class="slide" aria-label="The purpose problem">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Context</span></div>
+  <div class="eyebrow">Context</div><h2>One technique,<br>two different purposes.</h2>
+  <div class="api-stage">
+    <article class="purpose track"><span class="label red">Ad-tech</span><div class="verb">Recognise<br>this visitor.</div><p class="small">Combine attributes into a durable signal for advertising, analytics or cross-site recognition.</p><ul><li>Commercial purpose</li><li>Consent-sensitive</li><li class="red">Tracking risk</li></ul></article>
+    <div class="api-core" aria-label="The same browser signals branch to tracking and security purposes">
+      <svg viewBox="0 0 250 190" role="img">
+        <path d="M104 78C77 54 48 49 14 56" fill="none" stroke="var(--navy-800)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M146 78c27-24 56-29 90-22" fill="none" stroke="var(--navy-650)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="12" cy="56" r="6" fill="var(--navy-800)"/><circle cx="238" cy="56" r="6" fill="var(--navy-650)"/>
+        <path d="M86 105c0-32 17-53 40-53 27 0 45 23 45 52 0 17-6 32-8 48M100 116c-1-28 9-47 26-47 18 0 29 16 29 37 0 28-12 43-8 67M115 116c0-18 4-30 13-30 10 0 14 10 14 23 0 27-10 40-7 62" fill="none" stroke="var(--navy-950)" stroke-width="4" stroke-linecap="round"/>
+        <text x="125" y="21" text-anchor="middle" fill="var(--navy-650)" font-size="12" font-family="system-ui">same browser signals</text>
+      </svg>
+    </div>
+    <article class="purpose secure"><span class="label blue">Bot defense</span><div class="verb">Decide if<br>this is human.</div><p class="small">Use the same signals to detect automation, payment fraud, account abuse or suspicious sessions.</p><ul><li>Protective purpose</li><li>May be necessary</li><li class="blue">Service function</li></ul></article>
   </div>
-  <p class="small muted" style="margin-top:1.2em">Starting reference: Iqbal, Englehardt &amp; Shafiq, <i>Fingerprinting the Fingerprinters</i> (S&amp;P 2021) — we keep its transparent rules and add <b>purpose</b>, <b>verified consent</b> and <b>evidence that data leaves the browser</b>.</p>
-  <div class="footer"><span>Questions</span><span>3</span></div>
+  <p class="small callout" style="margin-top:.52em"><b>A detector identifies the technique, not its purpose.</b> Counting every fingerprint as tracking therefore overstates the tracking category.</p>
+  <div class="folio"><span>Motivation</span><span class="line"></span><span class="page">02 / 13</span></div>
 </section>
 
-<!-- 4 -->
-<section class="slide">
-  <h2>Method</h2>
-  <div class="pipeline">
-    <div class="step"><b>149 sites</b><br><span class="muted">Tranco: 50 news, 50 e-commerce, 37 social, 12 affiliate</span></div><div class="arrow">→</div>
-    <div class="step"><b>Instrumented Chromium</b><br><span class="muted">API hooks, requests + POST bodies, cookies · Docker sandbox · fixed DE exit</span></div><div class="arrow">→</div>
-    <div class="step"><b>8 conditions</b><br><span class="muted">fresh profile each, same pages, verified consent only</span></div><div class="arrow">→</div>
-    <div class="step"><b>Offline analysis</b><br><span class="muted">detection · purpose · harm · survival vs noise floor · ID sharing</span></div>
-  </div>
-  <div>
-    <span class="chip">baseline</span><span class="chip">baseline2 (noise floor)</span><span class="chip">uBlock Origin Lite</span><span class="chip">Privacy Badger</span>
-    <span class="chip">reject (verified)</span><span class="chip">reject + GPC (verified)</span><span class="chip">GPC only</span><span class="chip">accept (verified)</span>
-  </div>
-  <ul class="small" style="margin-top:.8em">
-    <li><b>Purpose</b>: vendor signatures → Tracker Radar → first-party path clusters (hidden vendors) → page context; else Unknown. <b>Harm class</b> = purpose + tracking capability.</li>
-    <li><b>Consent verified</b> from the live CMP API <i>and</i> decoded cookies (TCF decoder = IAB reference library on 21/21 strings).</li>
-    <li><b>Leaves the browser?</b> Browser’s own time zone/platform in URLs or POST bodies; cookie identifiers seen in <i>one</i> profile only, sent to another company.</li>
-  </ul>
-  <div class="footer"><span>Method</span><span>4</span></div>
+<!-- 03 -->
+<section class="slide" aria-label="Research questions">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Study design</span></div>
+  <div class="eyebrow">Study design</div><h2>Research questions</h2>
+  <ol class="rq">
+    <svg class="rq-route" viewBox="0 0 70 250" aria-hidden="true"><path d="M35 8C7 43 65 69 35 104S8 167 35 190s11 36 0 53"/></svg>
+    <li><span class="n">01</span><span class="q">What is tracking, and what is security?</span><span class="how">Purpose + capability + data flow</span></li>
+    <li><span class="n">02</span><span class="q">Does a verified opt-out stop the tracking?</span><span class="how">Reject · GPC · accept · paired baseline</span></li>
+    <li><span class="n">03</span><span class="q">If consent does not stop it, what does?</span><span class="how">uBlock Origin Lite · Privacy Badger</span></li>
+  </ol>
+  <div class="premise"><p class="small rule-top"><b>Starting point.</b> Keep the transparent rules from Iqbal, Englehardt &amp; Shafiq (S&amp;P 2021), then add what counting misses: purpose, verified consent state and evidence that attributes leave the browser.</p><p class="tiny rule-top mono">Unit of analysis<br><b style="color:var(--ink)">(site, script, technique)</b></p></div>
+  <div class="folio"><span>Questions</span><span class="line"></span><span class="page">03 / 13</span></div>
 </section>
 
-<!-- 5 -->
-<section class="slide">
-  <h2><span class="rq">RQ1</span>Most fingerprinting is security, not tracking</h2>
-  <p class="small muted">66 of 97 reachable sites fingerprint · 285 (site, script, technique) pairs in the baseline</p>
-  <div class="stack">
-    <div style="width:62.8%;background:var(--service)">Service 179 (63%)</div>
-    <div style="width:10.2%;background:var(--track)">Tracking 29</div>
-    <div style="width:13.0%;background:var(--undet-hi)">Undet. high 37</div>
-    <div style="width:13.7%;background:var(--undet)">Undet. low 39</div>
+<!-- 04 -->
+<section class="slide" aria-label="Method and consent verification">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Method</span></div>
+  <div class="eyebrow">Method</div><h2>Consent-state verification</h2>
+  <div class="verify">
+    <div class="verify-step"><svg class="verify-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="7" width="38" height="30" rx="5"/><path d="M5 15h38M13 11h.1M19 11h.1M28 25l5 5 9-11"/></svg><b>Interact</b><span>Click reject or accept, or send GPC, in an instrumented Chromium visit.</span></div>
+    <svg class="verify-arrow" viewBox="0 0 40 30" aria-hidden="true"><path d="M3 21c9-14 20-14 32-4M29 11l6 6-8 3"/></svg>
+    <div class="verify-step"><svg class="verify-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 10h32v28H8zM14 17h20M14 23h13M14 29h9M30 28l4 4 7-9"/></svg><b>Verify</b><span>CMP API: reject ✓<br>Stored consent cookie: reject ✓</span></div>
+    <svg class="verify-arrow" viewBox="0 0 40 30" aria-hidden="true"><path d="M3 21c9-14 20-14 32-4M29 11l6 6-8 3"/></svg>
+    <div class="verify-step"><svg class="verify-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 9h28v30H10zM17 9V5h14v4M17 19h14M17 25h14M17 31h8"/></svg><b>Include</b><span>Compare consent conditions only where the resulting state is confirmed.</span></div>
   </div>
-  <div class="legend"><span><i class="sw" style="background:var(--service)"></i>security / functional</span><span><i class="sw" style="background:var(--track)"></i>advertising / analytics (18 sites)</span><span><i class="sw" style="background:var(--undet-hi)"></i>unknown purpose, high capability (upper bound: 67 pairs, 30 sites)</span><span><i class="sw" style="background:var(--undet)"></i>unknown, low capability</span></div>
-  <div class="grid3" style="margin-top:1em">
-    <div class="card"><div class="big" style="color:var(--service)">83%</div><span class="small">of strong-technique pairs (canvas, audio, WebRTC) are security</span></div>
-    <div class="card"><div class="big">28%</div><span class="small">of pairs come from vendors <b>hidden behind first-party URLs</b> (80 Akamai scripts)</span></div>
-    <div class="card"><div class="big accent">17/18</div><span class="small">tracking sites fingerprint <b>before any consent</b>; 37 tracking scripts send the browser’s attributes home</span></div>
+  <div class="conditions">
+    <div class="condition"><span class="label">Controls</span><div class="items"><b>baseline</b><br><b>baseline2</b> · noise floor</div></div>
+    <div class="condition"><span class="label red">Consent signals</span><div class="items"><b>reject</b> · <b>reject + GPC</b><br><b>GPC only</b> · <b>accept</b></div></div>
+    <div class="condition"><span class="label blue">Blockers</span><div class="items"><b>uBlock Origin Lite</b><br><b>Privacy Badger</b> · includes GPC</div></div>
   </div>
-  <div class="footer"><span>Results · RQ1</span><span>5</span></div>
+  <div class="method-facts"><div><b>149</b><span>frozen Tranco sites</span></div><div><b>97</b><span>reachable from DE</span></div><div><b>fresh</b><span>profile for every run</span></div><div><b>offline</b><span>purpose, harm and flow analysis</span></div></div>
+  <div class="folio"><span>Method · API hooks, requests, POST bodies and cookies</span><span class="line"></span><span class="page">04 / 13</span></div>
 </section>
 
-<!-- 6 -->
-<section class="slide">
-  <h2><span class="rq">RQ2</span>A verified “no” does not stop tracking</h2>
-  <div class="grid2">
+<!-- 05 -->
+<section class="slide" aria-label="Fingerprinting composition by purpose">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Result 01 / Purpose</span></div>
+  <div class="eyebrow">RQ1 · Purpose</div><h2>Fingerprinting by purpose</h2>
+  <p class="small muted"><b style="color:var(--ink)">285</b> baseline pairs across <b style="color:var(--ink)">66 of 97</b> reachable sites.</p>
+  <div class="purpose-overview" role="img" aria-label="Of 285 pairs, 63 percent are service, 10 percent tracking and 27 percent undetermined">
+    <div class="donut"><svg class="purpose-mark" viewBox="0 0 120 120" aria-hidden="true"><circle class="service-arc" cx="60" cy="60" r="50" pathLength="100"/><circle class="track-arc" cx="60" cy="60" r="50" pathLength="100"/><circle class="unknown-arc" cx="60" cy="60" r="50" pathLength="100"/><path d="M42 73c0-23 7-37 20-37 14 0 22 13 22 31 0 18-7 29-6 39M50 78c0-21 4-32 13-32 9 0 14 9 14 23 0 17-6 27-5 37M58 79c0-14 2-22 7-22 6 0 8 6 8 15 0 13-4 22-3 31"/></svg><div class="donut-center"><b>285</b><span>baseline pairs</span></div></div>
+    <div class="purpose-legend">
+      <div class="purpose-key"><i style="background:var(--navy-650)"></i><b>63%</b><span>Service · 179 pairs</span></div>
+      <div class="purpose-key"><i style="background:var(--navy-950)"></i><b>10%</b><span>Tracking · 29 pairs</span></div>
+      <div class="purpose-key"><i style="background:var(--navy-200)"></i><b>27%</b><span>Undetermined · 76 pairs</span></div>
+    </div>
+  </div>
+  <div class="result-notes">
+    <div class="result-note"><b class="blue">83%</b><p>of strong-technique pairs (canvas, canvas-font, audio and WebRTC) belong to security scripts.</p></div>
+    <div class="result-note"><b>28%</b><p>of pairs come from vendors hidden behind first-party URLs, including 80 Akamai scripts.</p></div>
+    <div class="result-note"><b class="red">18 sites</b><p>run confirmed advertising or analytics fingerprinting; an inclusive sensitivity scenario reaches 30.</p></div>
+  </div>
+  <p class="tiny" style="margin-top:auto">“Service” = anti-fraud/security or functional. The inclusive scenario adds dual-use and high-capability unknowns; it is not a formal upper bound.</p>
+  <div class="folio"><span>RQ1 · Separate purpose before judging harm</span><span class="line"></span><span class="page">05 / 13</span></div>
+</section>
+
+<!-- 06 -->
+<section class="slide" aria-label="Tracking begins before consent">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Result 01 / Timing + flow</span></div>
+  <div class="eyebrow">RQ1 · Timing and flows</div><h2>Timing and observed data flows</h2>
+  <div class="before">
+    <div class="ratio"><div class="big">17<span style="color:var(--rule);font-weight:400">/</span>18</div><p class="caption">tracking sites fingerprint before any consent interaction.</p><p class="small muted">The minority purpose is early, observable and often connected to storage or transmission.</p></div>
     <div>
-      <p class="small muted">Tracking-fingerprinting pairs that survive (baseline → condition)</p>
-      <div class="bars">
-        <div class="bar-row"><span>reject</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--track)"></div></div><span>13/13</span></div>
-        <div class="bar-row"><span>reject+GPC</span><div class="bar-track"><div class="bar-fill" style="width:93.3%;background:var(--track)"></div></div><span>14/15</span></div>
-        <div class="bar-row"><span>GPC only</span><div class="bar-track"><div class="bar-fill" style="width:89.7%;background:var(--track)"></div></div><span>26/29</span></div>
-        <div class="bar-row"><span>accept</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--track)"></div></div><span>23/23</span></div>
+      <svg class="consent-scene" viewBox="0 0 620 185" role="img" aria-label="A fingerprinting call fires on the page before the consent dialog appears">
+        <rect x="18" y="18" width="584" height="148" rx="18" fill="var(--white)" stroke="var(--navy-200)" stroke-width="2"/>
+        <path d="M18 52h584" stroke="var(--navy-200)" stroke-width="2"/><circle cx="40" cy="35" r="4" fill="var(--navy-450)"/><circle cx="55" cy="35" r="4" fill="var(--navy-200)"/>
+        <path d="M92 118c0-35 19-59 46-59 30 0 51 25 51 61 0 14-4 25-6 37M108 123c0-26 12-44 31-44 20 0 34 17 34 41 0 23-8 34-7 45M126 128c0-17 5-29 14-29 11 0 17 10 17 24 0 17-5 25-5 39" fill="none" stroke="var(--navy-800)" stroke-width="5" stroke-linecap="round"/>
+        <path d="M205 112c58-48 116-48 174-10" fill="none" stroke="var(--navy-450)" stroke-width="3" stroke-linecap="round" stroke-dasharray="7 9"/>
+        <path d="m367 91 15 12-18 6" fill="none" stroke="var(--navy-450)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="394" y="68" width="173" height="76" rx="12" fill="var(--navy-100)"/>
+        <rect x="416" y="112" width="58" height="17" rx="8" fill="var(--navy-200)"/><rect x="483" y="112" width="62" height="17" rx="8" fill="var(--navy-800)"/>
+        <text x="139" y="174" text-anchor="middle" fill="var(--navy-800)" font-size="13" font-family="system-ui">fingerprint call</text>
+        <text x="481" y="94" text-anchor="middle" fill="var(--navy-950)" font-size="13" font-weight="600" font-family="system-ui">consent prompt</text>
+        <text x="290" y="54" text-anchor="middle" fill="var(--navy-650)" font-size="12" font-family="system-ui">fires first</text>
+      </svg>
+      <div class="flow-facts"><div class="flow-fact"><b>37/58</b><span>tracking scripts send a known attribute such as platform or time zone.</span></div><div class="flow-fact"><b>39/58</b><span>tracking scripts write browser storage somewhere in the observed conditions.</span></div></div>
+      <p class="small callout" style="margin-top:.68em"><b>Interpretation.</b> Tracking is a minority of detections, but it frequently precedes consent.</p>
+    </div>
+  </div>
+  <div class="folio"><span>RQ1 · Timing and direct flow evidence</span><span class="line"></span><span class="page">06 / 13</span></div>
+</section>
+
+<!-- 07 -->
+<section class="slide" aria-label="Tracking fingerprinting survives consent choices">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Result 02 / Consent</span></div>
+  <div class="eyebrow">RQ2 · Consent</div><h2>Tracking survival after consent choices</h2>
+  <div class="survival">
+    <div class="punch"><div class="big">13<span style="color:var(--rule);font-weight:400">/</span>13</div><p><b>paired tracking-fingerprinting pairs survive a verified rejection.</b></p><p class="tiny muted">Only sites with a confirmed resulting consent state enter this comparison.</p></div>
+    <div class="survival-list">
+      <div class="gauge-grid" aria-label="Tracking-fingerprinting pair survival by condition">
+        <div class="gauge-item"><div class="gauge" style="--p:100"><span>13/13</span></div><b>Reject</b><small>100% survive</small></div>
+        <div class="gauge-item"><div class="gauge" style="--p:93.3"><span>14/15</span></div><b>Reject + GPC</b><small>93% survive</small></div>
+        <div class="gauge-item"><div class="gauge" style="--p:89.7"><span>26/29</span></div><b>GPC only</b><small>90% survive</small></div>
+        <div class="gauge-item"><div class="gauge" style="--p:100"><span>23/23</span></div><b>Accept</b><small>100% survive</small></div>
       </div>
-      <p class="small" style="margin-top:.9em">8 of 31 verified-reject sites still run tracking fingerprinting (X Ads pixel, AppsFlyer, HubSpot, Adobe, GumGum, Prebid, Clarity, ad-recovery).</p>
-    </div>
-    <div>
-      <p class="small muted">Sites sending a cookie identifier to a known tracker (same sites)</p>
-      <table>
-        <tr><th>condition</th><th>sites</th><th>baseline</th><th>condition</th></tr>
-        <tr><td>reject (verified)</td><td>31</td><td>19</td><td><b>21</b></td></tr>
-        <tr><td>reject + GPC</td><td>34</td><td>19</td><td><b>22</b></td></tr>
-        <tr><td>GPC only</td><td>95</td><td>49</td><td><b>46</b></td></tr>
-        <tr><td>accept (verified)</td><td>56</td><td>28</td><td><b>54</b></td></tr>
-      </table>
-      <p class="small" style="margin-top:.7em">What rejection <i>does</i> cut: third-party cookies (median <b>1</b> vs 27 after accept) and third parties (22 vs 50).</p>
-      <p class="takeaway small">Consent controls the cookie layer — not fingerprinting, not identifiers already flowing. GPC adds nothing.</p>
+      <p class="small" style="margin-top:.62em"><b>No conclusive tracking reduction from GPC.</b> 26/29 baseline pairs survive; three sites each lose one pair (exact sign test, p = .25).</p>
     </div>
   </div>
-  <div class="footer"><span>Results · RQ2 · _ga, _fbp, _gcl_au, AMCV, LiveIntent, MUID still sent after a verified reject</span><span>6</span></div>
+  <div class="folio"><span>RQ2 · Paired with each site's baseline</span><span class="line"></span><span class="page">07 / 13</span></div>
 </section>
 
-<!-- 7 -->
-<section class="slide">
-  <h2><span class="rq">RQ3</span>Only blockers cut tracking — at a cost</h2>
-  <div class="grid2">
-    <div>
-      <p class="small muted">Survival vs repeat baseline (percentage points, 95% CI)</p>
-      <table>
-        <tr><th></th><th>tracking</th><th>security</th></tr>
-        <tr><td>uBlock Origin Lite</td><td class="accent"><b>−86</b> [−97, −72]</td><td>−16 [−31, −2]</td></tr>
-        <tr><td>Privacy Badger</td><td class="accent"><b>−45</b> [−68, −19]</td><td>−13 [−23, −4]</td></tr>
-        <tr><td>reject (verified)</td><td>0 [0, 0]</td><td>n.s.</td></tr>
-        <tr><td>GPC only</td><td>−10 [−23, 0]</td><td>−9 [−19, −1]*</td></tr>
-      </table>
-      <p class="tiny" style="margin-top:.5em">n.s.: interval contains 0. * Security drops under consent/GPC come from 1–3 sites with bot managers that do not fire on every visit — not an effect of the signal.</p>
-    </div>
-    <div>
-      <p class="small muted">Identifier sharing with known trackers (95 sites)</p>
-      <div class="bars">
-        <div class="bar-row"><span>baseline</span><div class="bar-track"><div class="bar-fill" style="width:51.6%;background:var(--ink)"></div></div><span>49</span></div>
-        <div class="bar-row"><span>uBlock</span><div class="bar-track"><div class="bar-fill" style="width:17.9%;background:var(--good)"></div></div><span>17</span></div>
-        <div class="bar-row"><span>Privacy Badger</span><div class="bar-track"><div class="bar-fill" style="width:22.1%;background:var(--good)"></div></div><span>21</span></div>
-      </div>
-      <p class="small" style="margin-top:.9em">Collateral: blockers also remove anti-fraud scripts (HUMAN/PerimeterX, Forter, Riskified) that protect checkouts.</p>
-    </div>
+<!-- 08 -->
+<section class="slide" aria-label="Consent affects cookies but not identifier flow">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Result 02 / Two layers</span></div>
+  <div class="eyebrow">RQ2 · Consent</div><h2>Cookies, fingerprinting and identifier sharing</h2>
+  <div class="layers">
+    <article class="layer cookies"><span class="label">Third-party cookies · reject + GPC vs accept</span><svg class="layer-figure" viewBox="0 0 90 62" aria-hidden="true"><path d="M22 18h46l-4 36H26zM18 18h54M30 10h30l5 8H25z"/><circle cx="38" cy="31" r="3"/><circle cx="51" cy="40" r="3"/><circle cx="57" cy="27" r="2"/></svg><div class="before-after"><b>1</b><span>vs</span><b>27</b></div><p class="small">On 31 sites confirmed in both conditions. Both no-action baselines also have a median of 1 cookie.</p><div class="ledger"><div><span>Reject + GPC</span><b>22 domains</b></div><div><span>Accept condition</span><b>50 domains</b></div></div></article>
+    <article class="layer identity"><span class="label">Sites sending an ID to a known tracker</span><svg class="layer-figure" viewBox="0 0 90 62" aria-hidden="true"><circle cx="18" cy="31" r="8"/><circle cx="70" cy="16" r="8"/><circle cx="70" cy="47" r="8"/><path d="M26 28c17-13 24-13 36-12M26 35c17 13 24 13 36 12M52 27l10-11-14-2M52 37l10 10-14 3"/></svg><div class="before-after"><b>19</b><span>vs</span><b>21</b></div><p class="small">No-action baseline versus verified reject on the same 31 sites. Reject + GPC is 19 vs 22 on 34 sites.</p><div class="ledger"><div><span>Tracking fingerprints</span><b>no reduction</b></div><div><span>Identifier sharing</span><b>no reduction</b></div></div></article>
   </div>
-  <div class="footer"><span>Results · RQ3</span><span>7</span></div>
+  <div class="bottomline">Verified rejection keeps cookies near the no-action baseline and far below acceptance; fingerprinting and identifier sharing do not fall.</div>
+  <div class="folio"><span>RQ2 · Cookie values stay private</span><span class="line"></span><span class="page">08 / 13</span></div>
 </section>
 
-<!-- 8 -->
-<section class="slide">
-  <h2>It replicates</h2>
-  <table style="font-size:.8em">
-    <tr><th>measure</th><th>crawl 22 Nov</th><th>crawl 25 Nov</th></tr>
-    <tr><td>reachable sites / fingerprinting</td><td>93 / 64</td><td>97 / 66</td></tr>
-    <tr><td>pairs: security / ads + analytics</td><td>63% / 11%</td><td>62% / 11%</td></tr>
-    <tr><td>tracking sites before consent</td><td>17</td><td>17</td></tr>
-    <tr><td>tracking pairs surviving a verified reject (+GPC)</td><td>15/16</td><td>14/15</td></tr>
-    <tr><td>sites with tracking fingerprinting after reject</td><td>8/36</td><td>8/34</td></tr>
-    <tr><td>ID sharing to trackers, baseline → reject</td><td>17 → 18</td><td>19 → 22</td></tr>
-    <tr><td>ID sharing to trackers, baseline → accept</td><td>18 → 41</td><td>28 → 54</td></tr>
-    <tr><td>uBlock / Privacy Badger on tracking</td><td>−88 / −40 pp</td><td>−86 / −45 pp</td></tr>
-  </table>
-  <p class="small muted" style="margin-top:.6em">Differences come from method fixes: button matching by visible text (verified accepts 44 → 56), POST-body capture (attribute senders 12 → 37).</p>
-  <div class="footer"><span>Replication</span><span>8</span></div>
-</section>
-
-<!-- 9 -->
-<section class="slide">
-  <h2>Can we trust the labels?</h2>
-  <div class="grid2">
-    <div>
-      <div class="card" style="margin-bottom:.6em"><h3>Behaviour agrees</h3>
-        <span class="big" style="font-size:1.6em;color:var(--service)">96.5%</span> of security scripts probe <code>navigator.webdriver</code> vs <span class="big" style="font-size:1.6em">70.8%</span> of ad/analytics scripts (Fisher p = 3·10⁻⁷). Strong techniques: 87% vs 12%.</div>
-      <div class="card"><h3>Independent sources</h3>Vendor signatures vs Tracker Radar: κ = 0.45 on 11 domains (disagreements on secondary purpose).</div>
-    </div>
-    <div>
-      <div class="card" style="margin-bottom:.6em"><h3>Robustness</h3>
-        <ul class="small" style="margin:0">
-          <li>Re-assigning API calls by timestamp: 0.9% of calls move, 0 tracking pairs change on verified sites.</li>
-          <li>Frozen visit (host sleep) excluded: no change.</li>
-          <li>Noise floor: repeat baseline on the same sites.</li>
-        </ul></div>
-      <div class="card"><h3>80-script sample, 2 blind AI annotators</h3>
-        <span class="small">Haiku + Sonnet, no access to our labels or to each other.<br>
-        Security labels confirmed <b>33/33</b> · tracking labels <b>11/14</b> · detector right on <b>41/43</b> decided scripts · purpose κ = <b>0.92</b>.<br>
-        <span class="muted">A consistency check, not human ground truth.</span></span></div>
-    </div>
+<!-- 09 -->
+<section class="slide" aria-label="Blocker effects and collateral cost">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Result 03 / Blockers</span></div>
+  <div class="eyebrow">RQ3 · Blockers</div><h2>Observed under content blockers</h2>
+  <div class="blockers">
+    <article class="blocker"><div class="blocker-head"><svg class="shield-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 5 40 11v12c0 10-6 17-16 21C14 40 8 33 8 23V11zM16 24l6 6 11-13"/><circle cx="42" cy="8" r="3"/><circle cx="45" cy="18" r="2"/></svg><div class="blocker-name">uBlock Origin Lite</div></div><div class="impacts"><div class="impact good"><b>−86 pp</b><span>tracking survival<br>95% CI [−97, −72]</span></div><div class="impact cost"><b>−16 pp</b><span>security survival<br>95% CI [−31, −2]</span></div></div></article>
+    <article class="blocker"><div class="blocker-head"><svg class="shield-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 5 40 11v12c0 10-6 17-16 21C14 40 8 33 8 23V11zM15 16c7 3 11 9 12 18M33 15c-6 4-9 10-9 19"/><circle cx="43" cy="10" r="3"/></svg><div class="blocker-name">Privacy Badger · includes GPC</div></div><div class="impacts"><div class="impact good"><b>−45 pp</b><span>16/29 survive · +8 condition-only<br>net pairs: 29 → 24</span></div><div class="impact cost"><b>−13 pp</b><span>security survival<br>partly drift-confounded</span></div></div></article>
   </div>
-  <div class="footer"><span>Validity</span><span>9</span></div>
+  <div class="blocker-bottom">
+    <div class="id-drop"><span class="label">ID sharing to known trackers · 95 sites</span><div class="sequence"><span>49</span><span>→</span><span class="down">17</span><span class="tiny muted">uBlock</span><span>/</span><span class="down">21</span><span class="tiny muted">Badger</span></div></div>
+    <p class="small callout"><b>Collateral effect.</b> HUMAN/PerimeterX, Forter and Riskified also disappear. These scripts protect logins and checkouts.</p>
+  </div>
+  <div class="folio"><span>RQ3 · Effects relative to the repeat-baseline noise floor</span><span class="line"></span><span class="page">09 / 13</span></div>
 </section>
 
 <!-- 10 -->
-<section class="slide">
-  <h2>Limitations</h2>
-  <ul>
-    <li><b>API use ≠ proven tracking</b> — attribute and identifier flows are direct but lower-bound evidence.</li>
-    <li><b>Labels are estimates</b> — 27% of pairs stay Unknown (bounded by the upper bound); validated by two AI annotators, not humans; tracking precision rests on 14 scripts.</li>
-    <li><b>Scale</b> — 97 reachable sites; the VPN’s data-centre IP is blocked by many e-commerce sites; consent comparisons rest on 31–56 verified sites.</li>
-    <li><b>Sequential conditions</b> over ~7 h — noise floor + replication bound the drift; randomised order is future work.</li>
-    <li><b>One vantage point</b> (Germany), home page + one subpage, no login/checkout; blocker breakage not measured.</li>
-    <li>We report <b>candidates</b> for non-compliance, not legal findings.</li>
-  </ul>
-  <div class="footer"><span>Limitations</span><span>10</span></div>
+<section class="slide" aria-label="Replication across two crawls">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Replication</span></div>
+  <div class="eyebrow">Replication</div><h2>Results across two crawls</h2><div class="seal">same<br>direction<br>twice</div>
+  <div class="rep-head"><div><div class="calendar"><b>22</b><span>Nov</span></div></div><div style="text-align:center">Paired measure</div><div><div class="calendar"><b>25</b><span>Nov</span></div></div></div>
+  <div class="rep-rows">
+    <div class="rep-row"><span class="left">63%</span><span class="metric">security share</span><span class="right">62%</span></div>
+    <div class="rep-row"><span class="left">11%</span><span class="metric">tracking share</span><span class="right">11%</span></div>
+    <div class="rep-row"><span class="left">15/16</span><span class="metric">tracking survives reject + GPC</span><span class="right">14/15</span></div>
+    <div class="rep-row"><span class="left">−88 pp</span><span class="metric">uBlock effect on tracking</span><span class="right">−86 pp</span></div>
+    <div class="rep-row"><span class="left">−40 pp</span><span class="metric">Badger effect on tracking</span><span class="right">−45 pp</span></div>
+    <div class="rep-row"><span class="left" style="color:var(--ink)">17 → 18</span><span class="metric">ID sites: baseline → reject</span><span class="right" style="color:var(--ink)">19 → 22</span></div>
+  </div>
+  <p class="tiny" style="margin-top:.5em">The second crawl improved visible-button matching and POST-body capture. Coverage changed; the central findings did not.</p>
+  <div class="folio"><span>Two complete batches · same frozen site list</span><span class="line"></span><span class="page">10 / 13</span></div>
 </section>
 
 <!-- 11 -->
-<section class="slide">
-  <h2>Take-aways</h2>
-  <div class="takeaway"><b>Separate by purpose.</b> Two thirds of fingerprinting — and almost all strong fingerprinting — is bot &amp; fraud management, often hidden behind first-party URLs.</div>
-  <div class="takeaway"><b>Opt-outs act on cookies, not on fingerprinting.</b> Tracking fingerprinting runs before consent and survives a verified “no”; identifiers keep flowing to trackers; GPC adds nothing.</div>
-  <div class="takeaway"><b>Blockers work — with collateral.</b> −86 pp tracking with uBlock, but anti-fraud scripts go too.</div>
-  <p class="small muted" style="margin-top:1em">Next: human adjudication of the validation sample · randomise condition order · link fingerprint values to identifiers (taint / bid experiments).</p>
-  <p class="tiny">Data &amp; code: public_results/full_eu_20261125 · scripts/reproduce_results.py · paper/main.tex</p>
-  <div class="footer"><span>Conclusion</span><span>11</span></div>
+<section class="slide" aria-label="Validity and annotation evidence">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Validity</span></div>
+  <div class="eyebrow">Validation</div><h2>Validation and robustness</h2>
+  <div class="validation">
+    <article class="evidence"><h3><span class="evidence-icon">↗</span>Independent sources</h3><div class="stat"><b>κ = 0.45</b><span>Vendor signatures versus Tracker Radar on 11 shared domains; differences concern secondary purpose.</span></div><div class="stat"><b>73%</b><span>of baseline pairs receive a purpose; the remainder stay Unknown instead of being forced.</span></div></article>
+    <article class="evidence"><h3><span class="evidence-icon">◉</span>Observed behaviour</h3><div class="stat"><b class="blue">96.5%</b><span>of security scripts probe <code>navigator.webdriver</code>, versus 70.8% of ad/analytics scripts.</span></div><div class="stat"><b>87% vs 12%</b><span>strong-technique use in security versus ad/analytics labels.</span></div></article>
+    <article class="evidence"><h3><span class="evidence-icon">AI</span>Blinded AI review</h3><div class="stat"><b>34/34 · 11/14</b><span>security labels · tracking labels confirmed.</span></div><div class="stat"><b>48/50</b><span>detector decisions confirmed; purpose κ = 0.92.</span></div><div class="ai-note"><b>AI-only validation. Not human ground truth.</b><br>Two blind AI annotators + one AI adjudicator; 30/80 remain unsure.</div></article>
+  </div>
+  <div class="folio"><span>Validation · precision only; this sample cannot estimate recall</span><span class="line"></span><span class="page">11 / 13</span></div>
 </section>
 
-</div>
-<div class="progress" id="progress"></div>
+<!-- 12 -->
+<section class="slide" aria-label="Scope and limitations">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Limits</span></div>
+  <div class="eyebrow">Limitations</div><h2>Scope and limitations</h2>
+  <svg class="scope-drawing" viewBox="0 0 220 120" aria-hidden="true"><circle cx="55" cy="47" r="28"/><path d="m75 68 31 31M84 59c43-17 79-10 120 19M84 59c37 21 70 33 120 19"/><circle cx="150" cy="50" r="5"/><circle cx="177" cy="65" r="4"/><circle cx="135" cy="82" r="3"/></svg>
+  <div class="limits">
+    <article class="limit can"><h3>Supported here</h3><ul><li>Observed fingerprinting API patterns, storage writes and selected browser attributes in traffic.</li><li>Purpose estimates backed by vendors, Tracker Radar, hidden-vendor paths and context.</li><li>Paired changes after a consent state the crawler actually verified.</li><li>Replication across two crawls and a repeat-baseline noise floor.</li></ul></article>
+    <article class="limit cannot"><h3>Not established here</h3><ul><li>That every API use becomes a stable fingerprint or cross-site identifier.</li><li>A causal link from a fingerprint value to a particular identifier or ad bid.</li><li>A legal finding against any site; these are technical candidates for review.</li><li>Independent human ground truth for the annotation sample.</li></ul></article>
+  </div>
+  <div class="scope"><div><b>One vantage point</b><span>German data-centre VPN</span></div><div><b>97 reachable</b><span>e-commerce often blocked</span></div><div><b>Limited pages</b><span>no checkout or login</span></div><div><b>Sequential runs</b><span>order not randomised</span></div></div>
+  <div class="folio"><span>Scope before claims</span><span class="line"></span><span class="page">12 / 13</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide closing" aria-label="Conclusion">
+  <div class="topline"><span class="mark">TrackMeasure</span><span>Conclusion</span></div>
+  <div class="eyebrow" style="color:var(--red)">Conclusion</div><h2>Consent gates many cookies.<br><span class="red">It does not stop tracking fingerprinting.</span></h2>
+  <div class="takeaways">
+    <svg class="takeaway-route" viewBox="0 0 900 80" preserveAspectRatio="none" aria-hidden="true"><path d="M15 55C180 5 270 5 445 45S710 85 885 25"/></svg>
+    <article class="takeaway"><svg class="takeaway-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M9 35c4-17 12-26 24-26M15 40c3-13 9-20 18-20M22 42c1-8 5-13 11-13M35 8l5 5-7 2"/></svg><b>Purpose changes interpretation.</b><p>Most fingerprinting is defensive. Purpose determines both the privacy meaning and the remedy.</p></article>
+    <article class="takeaway"><svg class="takeaway-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 11h32v26H8zM8 18h32M16 27l5 5 11-12"/></svg><b>Verified reject leaves 13/13.</b><p>A successful click is not a consent state. Confirm the stored state before comparing conditions.</p></article>
+    <article class="takeaway"><svg class="takeaway-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 5 40 11v12c0 10-6 17-16 21C14 40 8 33 8 23V11zM17 24h14"/></svg><b>Blocker runs also lose security.</b><p>They show the largest tracking reductions, with concurrent anti-fraud losses partly confounded by drift.</p></article>
+  </div>
+  <div class="next"><b>Next</b><span>independent human validation</span><span>·</span><span>randomised condition order</span><span>·</span><span>fingerprint-to-identifier experiments</span></div>
+  <p class="tiny" style="margin-top:.5em;color:rgba(243,239,230,.55)">Data &amp; code · public_results/full_eu_20261125 · scripts/reproduce_results.py · paper/main.tex</p>
+  <div class="folio"><span>Questions?</span><span class="line"></span><span class="page">13 / 13</span></div>
+</section>
+</main>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+<div class="hint" aria-hidden="true">← → navigate · F fullscreen · O overview</div>
 <script>
-  const slides = [...document.querySelectorAll('.slide')];
-  let i = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1), 10) || 1) - 1));
-  function show(n) {
-    i = Math.max(0, Math.min(slides.length - 1, n));
-    slides.forEach((s, k) => s.classList.toggle('active', k === i));
-    document.getElementById('progress').style.width = ((i + 1) / slides.length * 100) + '%';
-    history.replaceState(null, '', '#' + (i + 1));
-  }
-  document.addEventListener('keydown', e => {
-    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); show(i + 1); }
-    if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); show(i - 1); }
-    if (e.key === 'Home') show(0);
-    if (e.key === 'End') show(slides.length - 1);
-  });
-  document.addEventListener('click', e => { if (e.clientX > innerWidth / 3) show(i + 1); else show(i - 1); });
-  show(i);
+const deck=document.getElementById("deck"),slides=[...document.querySelectorAll(".slide")],progress=document.getElementById("progress");
+let current=Math.max(0,Math.min(slides.length-1,(parseInt(location.hash.slice(1),10)||1)-1)),touchStart=null;
+function show(next){current=Math.max(0,Math.min(slides.length-1,next));slides.forEach((s,n)=>s.classList.toggle("active",n===current));progress.style.width=((current+1)/slides.length*100)+"%";history.replaceState(null,"","#"+(current+1))}
+function overview(){deck.classList.toggle("overview");slides[current].scrollIntoView({block:"nearest"})}
+document.addEventListener("keydown",e=>{if(["ArrowRight","PageDown"," ","Enter"].includes(e.key)){e.preventDefault();show(current+1)}if(["ArrowLeft","PageUp","Backspace"].includes(e.key)){e.preventDefault();show(current-1)}if(e.key==="Home")show(0);if(e.key==="End")show(slides.length-1);if(e.key.toLowerCase()==="o")overview();if(e.key.toLowerCase()==="f")document.documentElement.requestFullscreen?.();if(e.key==="Escape"&&deck.classList.contains("overview"))overview()});
+deck.addEventListener("click",e=>{if(deck.classList.contains("overview")){const s=e.target.closest(".slide");if(s){current=slides.indexOf(s);overview();show(current)}return}show(current+(e.clientX>innerWidth*.32?1:-1))});
+deck.addEventListener("touchstart",e=>touchStart=e.changedTouches[0].clientX,{passive:true});deck.addEventListener("touchend",e=>{if(touchStart===null)return;const d=e.changedTouches[0].clientX-touchStart;if(Math.abs(d)>50)show(current+(d<0?1:-1));touchStart=null},{passive:true});
+show(current);
 </script>
 </body>
 </html>

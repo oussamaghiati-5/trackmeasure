@@ -1,10 +1,32 @@
 # TrackMeasure — handoff for a new AI session
 
-Read this file first when continuing work on this repository. It summarizes the project state as of 2026-11-23; verify live files and Git status before making assumptions.
+Read this file first when continuing work on this repository. Its opening batch notes are a
+historical 2026-11-23 snapshot. The current primary batch is `full_eu_20261125`; use
+`paper/main.tex`, `docs/presentation.html` and `public_results/full_eu_20261125/analyze.md` for
+current results, and always verify live files and Git status before making assumptions.
 
 ## Project in one paragraph
 
 This is an academic Information Security course project on **defensive measurement of advanced web tracking**. An instrumented Chromium crawler observes browser API patterns associated with fingerprinting, third-party requests, storage and consent state. It compares a baseline, a repeated baseline, uBlock Origin Lite, Privacy Badger, attempted rejection plus GPC, and attempted acceptance. The course brief asks for related scientific work, a clear research question, a meaningful implementation, experimental evaluation, limitations, ethics, and a concise paper in ACM AsiaCCS style.
+
+## Current scientific-audit corrections (27 November 2026)
+
+- Rejection does **not** reduce median third-party cookies or domains relative to either no-action
+  baseline. On 31 sites verified under reject+GPC and accept, cookies are 1/1/1/27 and domains
+  18/18/22/50 (baseline, repeat, reject+GPC, accept). The defensible claim is that consent state
+  stratifies this layer and the accept condition is much higher; sequential order prevents a
+  causal click effect.
+- The repeat baseline ran only 23 minutes after baseline and cannot bound seven-hour drift. GPC
+  loses 9.4 points of service pairs; excluding one conservatively flagged degraded visit changes
+  this to −7.4 with an interval reaching zero, while its tracking result is unchanged.
+- Privacy Badger leaves 16/29 baseline tracking pairs (−45 points) but has 8 condition-only pairs,
+  for a net 24 versus 29. It also enables GPC. Blocker magnitudes remain order-confounded.
+- `id_sharing.json` now includes exact paired McNemar tests and a strict cross-profile variation
+  sensitivity. Reject stays 21/31 versus 19 baseline (p=0.625); strict filtering leaves reject at
+  21 but lowers accept from 54 to 50/56 and its receiver median from 27 to 19.5.
+- `sensitivity_audit.json` records the accept restart exclusion, Privacy Badger suspension
+  exclusion, degraded-GPC exclusion and the vice.com cookie-only consent outlier. None changes a
+  central direction, but their exact small changes must not be described as “everything unchanged.”
 
 ## User preferences and working context
 
@@ -25,14 +47,17 @@ Primary batch: `full_eu_20261122`, with a Germany network exit. The input list h
 - Relative to repeat baseline, paired site-bootstrap change in pair survival was −27.7 percentage points for uBlock Origin Lite (95% interval [−40.0, −16.3], 56 paired sites) and −19.8 points for Privacy Badger (95% interval [−31.7, −8.6], 57 sites).
 - Paired median change in contacted third-party domains was −6.5 with uBlock (90 sites; interval [−8.5, −4]) and 0 with Privacy Badger (91 sites; interval [−2, 0]). Blocked-request totals were 3,624 and 2,376, respectively; they are request counts, not counts of trackers/identifiers prevented.
 - Consent verification, **updated 2026-11-24.** The crawl-time verifier confirmed only 2 rejections and 1 acceptance, because of two bugs: an empty TCF purpose map after rejection was treated as unreadable, and acceptance required every Global Vendor List vendor to be true. After the fix (`consent.tcf_matches`), offline re-assessment of the stored states (`consent.reassess`) and decoding of the stored consent cookies (`consent.cookie_verdict`), there are **36 verified rejections and 44 verified acceptances, 30 sites both ways.** Do not repeat the old "n = 1 per action" claim. Reject and GPC are still combined.
-- Consent result: a verified rejection cuts third-party domains (median 22 against 63 after accept, 30 sites) and third-party cookies (1 against 35), but does **not** reduce fingerprinting: +1.7 pp vs the repeat baseline, 95% CI [−6.4, +11.9].
+- Consent result in this historical batch: the verified-reject condition has fewer third-party
+  domains (median 22 against 63) and cookies (1 against 35) than accept on 30 common sites, but
+  that contrast does not establish a decrease caused by rejection relative to no action.
+  Fingerprinting does **not** decrease: +1.7 pp vs the repeat baseline, 95% CI [−6.4, +11.9].
 - Purpose labels (`purpose.py`, `scripts/label_purposes.py`, `scripts/purpose_results.py`):
   - 63% of baseline pairs are security or anti-fraud and 11% ads/analytics; security vendors produce 84% of strong-technique pairs.
   - 27% of pairs come from hidden first-party vendors.
   - uBlock: ads/analytics −88 pp, security −19.8 pp.
   - 10 of 36 verified-reject sites keep ad/analytics fingerprinting patterns, almost all weak.
 - Harm classes (`purpose.harm_class`): Tracking (ads/analytics, harmful) / Dual-use / Service (security, functional; useful) / Undetermined (high/low capability). Capability combines identifying power, cross-site reach, attribute transmission seen in URLs, and storage writes.
-  - The study focuses on Tracking: 11% of pairs on 17 sites, upper bound 19% on 23 sites.
+  - The study focuses on Tracking: 11% of pairs on 17 sites; the inclusive sensitivity scenario reaches 19% on 23 sites and is not a formal upper bound.
   - All harmful sites run it before consent.
   - 15 of 16 harmful pairs survive a verified rejection (8 of 36 sites).
   - uBlock removes 88 points of it.
@@ -81,10 +106,11 @@ The project relates to this prior work through browser-based measurement, behavi
    - The paper is now `paper/main.tex`, in AsiaCCS acmart format. It uses `full_eu_20261125` as the primary batch and `full_eu_20261122` as the replication. The talk is `docs/presentation.html`.
    - `PAPER_DRAFT.md`, `ETUDE_RAPPORT.md` and `NASROU_REPORT.md` are older and still quote 2026-11-22. Treat the LaTeX paper as current.
    - Validation sample: on 2026-11-25, at the user's request, two independent AI annotators labelled it: Claude subagents, Haiku as A and Sonnet as B, blind to the rule labels.
-     - Results: purpose κ = 0.92; is_fp κ = 0.63; detector 41/43; security labels 33/33; tracking labels 11/14.
+     - On 2026-11-26, OpenAI Codex adjudicated all 16 disagreements while blind to the rule labels, with Claude Opus as an independent read-only second opinion: 7 `yes`, 9 `unsure`, and a purpose for every row.
+     - Results: purpose κ = 0.92; is_fp κ = 0.63; detector 48/50; security labels 34/34; tracking labels 11/14. Static review still leaves 30/80 scripts `unsure`.
      - Always describe these as AI annotations, never as human validation.
      - The method is in `results/full_eu_20261125/validation/method.json`, and the evidence cards in `validation/evidence_cards/`.
-     - Optional: a human adjudicates the 16 rows of `kit/desaccords.csv`, then runs `annotation_kit.py merge` and `make agreement`.
+     - The adjudicated rows are in `validation/kit/desaccords.csv`; an independent human review remains optional future work.
    - The paper was not compiled here: no LaTeX on the host, and the TeX Live image download was stopped for low memory. A static check passed (no missing citation or reference, balanced environments). Compile and read it before submitting.
    - main's `paper/` also exists. Merging main will give add/add conflicts there; keep this version, which fills main's TBDs.
 4. If evaluating blocker costs, measure page completion/rendering or another predefined compatibility/performance metric on real sites; current fixture verification only checks extension setup and controlled blocking.

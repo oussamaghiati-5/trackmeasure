@@ -1,5 +1,5 @@
 {
- "definition": "A single-profile identifier-like cookie value (>= 10 chars, a digit, not a timestamp, not a consent cookie, seen in one run/site only) found in the URL or body of an unblocked request to another registrable domain not owned by the cookie's owner. 'known tracker' = receiver listed in DuckDuckGo's tracker blocklist subset; other receivers include security, functional and unrecognised same-company domains, so 'any third party' is an upper bound. Counts are over comparison-eligible site/runs after the consent step unless named otherwise.",
+ "definition": "A single-profile identifier-like cookie value (>= 10 chars, a digit, not a timestamp, not a consent cookie, seen in one run/site only) found in the URL or body of an unblocked request to another registrable domain not owned by the cookie's owner. 'known tracker' = receiver listed in DuckDuckGo's tracker blocklist subset; other receivers include security, functional and unrecognised same-company domains, so 'any third party' is an upper bound. A condition-only constant can pass this primary filter; strict_variation_sensitivity also requires the cookie name/owner to vary across profiles. Counts are over comparison-eligible site/runs after the consent step unless named otherwise.",
  "by_condition": {
   "baseline": {
    "eligible_sites": 97,
@@ -79,37 +79,97 @@
    "common_sites": 95,
    "baseline": 49,
    "repeat": 49,
-   "condition": 17
+   "condition": 17,
+   "baseline_vs_condition": {
+    "baseline_only": 33,
+    "condition_only": 1,
+    "exact_mcnemar_p_two_sided": 4.0745362639427185e-09
+   },
+   "repeat_vs_condition": {
+    "repeat_only": 33,
+    "condition_only": 1,
+    "exact_mcnemar_p_two_sided": 4.0745362639427185e-09
+   }
   },
   "pbadger": {
    "common_sites": 95,
    "baseline": 49,
    "repeat": 49,
-   "condition": 21
+   "condition": 21,
+   "baseline_vs_condition": {
+    "baseline_only": 28,
+    "condition_only": 0,
+    "exact_mcnemar_p_two_sided": 7.450580596923828e-09
+   },
+   "repeat_vs_condition": {
+    "repeat_only": 28,
+    "condition_only": 0,
+    "exact_mcnemar_p_two_sided": 7.450580596923828e-09
+   }
   },
   "optout": {
    "common_sites": 34,
    "baseline": 19,
    "repeat": 18,
-   "condition": 22
+   "condition": 22,
+   "baseline_vs_condition": {
+    "baseline_only": 1,
+    "condition_only": 4,
+    "exact_mcnemar_p_two_sided": 0.375
+   },
+   "repeat_vs_condition": {
+    "repeat_only": 1,
+    "condition_only": 5,
+    "exact_mcnemar_p_two_sided": 0.21875
+   }
   },
   "reject": {
    "common_sites": 31,
    "baseline": 19,
    "repeat": 19,
-   "condition": 21
+   "condition": 21,
+   "baseline_vs_condition": {
+    "baseline_only": 1,
+    "condition_only": 3,
+    "exact_mcnemar_p_two_sided": 0.625
+   },
+   "repeat_vs_condition": {
+    "repeat_only": 1,
+    "condition_only": 3,
+    "exact_mcnemar_p_two_sided": 0.625
+   }
   },
   "gpc": {
    "common_sites": 95,
    "baseline": 49,
    "repeat": 48,
-   "condition": 46
+   "condition": 46,
+   "baseline_vs_condition": {
+    "baseline_only": 4,
+    "condition_only": 1,
+    "exact_mcnemar_p_two_sided": 0.375
+   },
+   "repeat_vs_condition": {
+    "repeat_only": 5,
+    "condition_only": 3,
+    "exact_mcnemar_p_two_sided": 0.7265625
+   }
   },
   "accept": {
    "common_sites": 56,
    "baseline": 28,
    "repeat": 28,
-   "condition": 54
+   "condition": 54,
+   "baseline_vs_condition": {
+    "baseline_only": 0,
+    "condition_only": 26,
+    "exact_mcnemar_p_two_sided": 2.9802322387695312e-08
+   },
+   "repeat_vs_condition": {
+    "repeat_only": 0,
+    "condition_only": 26,
+    "exact_mcnemar_p_two_sided": 2.9802322387695312e-08
+   }
   }
  },
  "top_receivers_baseline": {
@@ -140,6 +200,210 @@
   "__eoi": 5,
   "_ga": 5,
   "_twpid": 4
+ },
+ "strict_variation_sensitivity": {
+  "definition": "Primary identifier-like filter plus at least two distinct candidate tokens for the same cookie name/owner in at least two profiles. This removes condition-only constants but can miss identifiers created in only one condition.",
+  "by_condition": {
+   "baseline": {
+    "eligible_sites": 97,
+    "sites_id_to_third_party": 57,
+    "sites_first_to_third": 50,
+    "sites_cookie_sync": 10,
+    "sites_to_known_tracker": 49,
+    "median_receivers_per_site": 1.0,
+    "sites_before_consent": 44
+   },
+   "baseline2": {
+    "eligible_sites": 96,
+    "sites_id_to_third_party": 54,
+    "sites_first_to_third": 48,
+    "sites_cookie_sync": 13,
+    "sites_to_known_tracker": 48,
+    "median_receivers_per_site": 1.0,
+    "sites_before_consent": 43
+   },
+   "ubol": {
+    "eligible_sites": 96,
+    "sites_id_to_third_party": 24,
+    "sites_first_to_third": 23,
+    "sites_cookie_sync": 1,
+    "sites_to_known_tracker": 17,
+    "median_receivers_per_site": 0.0,
+    "sites_before_consent": 22
+   },
+   "pbadger": {
+    "eligible_sites": 95,
+    "sites_id_to_third_party": 35,
+    "sites_first_to_third": 34,
+    "sites_cookie_sync": 1,
+    "sites_to_known_tracker": 21,
+    "median_receivers_per_site": 0.0,
+    "sites_before_consent": 32
+   },
+   "optout": {
+    "eligible_sites": 34,
+    "sites_id_to_third_party": 23,
+    "sites_first_to_third": 22,
+    "sites_cookie_sync": 5,
+    "sites_to_known_tracker": 22,
+    "median_receivers_per_site": 2.0,
+    "sites_before_consent": 15
+   },
+   "reject": {
+    "eligible_sites": 31,
+    "sites_id_to_third_party": 22,
+    "sites_first_to_third": 21,
+    "sites_cookie_sync": 6,
+    "sites_to_known_tracker": 21,
+    "median_receivers_per_site": 2.0,
+    "sites_before_consent": 15
+   },
+   "gpc": {
+    "eligible_sites": 95,
+    "sites_id_to_third_party": 51,
+    "sites_first_to_third": 45,
+    "sites_cookie_sync": 10,
+    "sites_to_known_tracker": 46,
+    "median_receivers_per_site": 1.0,
+    "sites_before_consent": 42
+   },
+   "accept": {
+    "eligible_sites": 56,
+    "sites_id_to_third_party": 52,
+    "sites_first_to_third": 41,
+    "sites_cookie_sync": 46,
+    "sites_to_known_tracker": 50,
+    "median_receivers_per_site": 19.5,
+    "sites_before_consent": 25
+   }
+  },
+  "paired_known_tracker": {
+   "ubol": {
+    "common_sites": 95,
+    "baseline": 49,
+    "repeat": 48,
+    "condition": 17,
+    "baseline_vs_condition": {
+     "baseline_only": 33,
+     "condition_only": 1,
+     "exact_mcnemar_p_two_sided": 4.0745362639427185e-09
+    },
+    "repeat_vs_condition": {
+     "repeat_only": 32,
+     "condition_only": 1,
+     "exact_mcnemar_p_two_sided": 7.916241884231567e-09
+    }
+   },
+   "pbadger": {
+    "common_sites": 95,
+    "baseline": 49,
+    "repeat": 48,
+    "condition": 21,
+    "baseline_vs_condition": {
+     "baseline_only": 28,
+     "condition_only": 0,
+     "exact_mcnemar_p_two_sided": 7.450580596923828e-09
+    },
+    "repeat_vs_condition": {
+     "repeat_only": 27,
+     "condition_only": 0,
+     "exact_mcnemar_p_two_sided": 1.4901161193847656e-08
+    }
+   },
+   "optout": {
+    "common_sites": 34,
+    "baseline": 19,
+    "repeat": 18,
+    "condition": 22,
+    "baseline_vs_condition": {
+     "baseline_only": 1,
+     "condition_only": 4,
+     "exact_mcnemar_p_two_sided": 0.375
+    },
+    "repeat_vs_condition": {
+     "repeat_only": 1,
+     "condition_only": 5,
+     "exact_mcnemar_p_two_sided": 0.21875
+    }
+   },
+   "reject": {
+    "common_sites": 31,
+    "baseline": 19,
+    "repeat": 19,
+    "condition": 21,
+    "baseline_vs_condition": {
+     "baseline_only": 1,
+     "condition_only": 3,
+     "exact_mcnemar_p_two_sided": 0.625
+    },
+    "repeat_vs_condition": {
+     "repeat_only": 1,
+     "condition_only": 3,
+     "exact_mcnemar_p_two_sided": 0.625
+    }
+   },
+   "gpc": {
+    "common_sites": 95,
+    "baseline": 49,
+    "repeat": 47,
+    "condition": 46,
+    "baseline_vs_condition": {
+     "baseline_only": 4,
+     "condition_only": 1,
+     "exact_mcnemar_p_two_sided": 0.375
+    },
+    "repeat_vs_condition": {
+     "repeat_only": 4,
+     "condition_only": 3,
+     "exact_mcnemar_p_two_sided": 1.0
+    }
+   },
+   "accept": {
+    "common_sites": 56,
+    "baseline": 28,
+    "repeat": 28,
+    "condition": 50,
+    "baseline_vs_condition": {
+     "baseline_only": 0,
+     "condition_only": 22,
+     "exact_mcnemar_p_two_sided": 4.76837158203125e-07
+    },
+    "repeat_vs_condition": {
+     "repeat_only": 0,
+     "condition_only": 22,
+     "exact_mcnemar_p_two_sided": 4.76837158203125e-07
+    }
+   }
+  },
+  "top_receivers_baseline": {
+   "google.com": 16,
+   "cxense.com": 7,
+   "parsely.com": 7,
+   "piano.io": 6,
+   "googlesyndication.com": 5,
+   "google-analytics.com": 5,
+   "facebook.com": 5,
+   "scorecardresearch.com": 4,
+   "px-cloud.net": 4,
+   "liadm.com": 4,
+   "twitter.com": 4,
+   "t.co": 4,
+   "pinterest.com": 3,
+   "demdex.net": 3,
+   "google.de": 3
+  },
+  "top_cookies_baseline": {
+   "g_state": 8,
+   "_parsely_visitor": 7,
+   "__tbc": 6,
+   "cX_G": 6,
+   "_pcid": 6,
+   "__eoi": 5,
+   "cX_P": 5,
+   "_fbp": 5,
+   "_ga": 4,
+   "_twpid": 4
+  }
  },
  "combined_with_tracking_fingerprinting": {
   "baseline": {

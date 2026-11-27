@@ -65,6 +65,7 @@ code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflo
 .small { font-size: 0.9rem; }
 
 header.top { display: grid; gap: 18px; }
+.archive-note { background: var(--warn-bg); color: var(--fg); border-left: 4px solid var(--warn); padding: 14px 16px; }
 .verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
 .verdict { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: grid; gap: 6px; align-content: start; min-width: 0; }
 .verdict h3 { font-size: 1rem; display: flex; gap: 8px; align-items: center; }
@@ -157,6 +158,11 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; display: grid; ga
 <div class="wrap">
 
 <header class="top">
+  <div class="archive-note"><strong>Historical review.</strong> The figures on this page refer to
+  <code>full_eu_20261122</code> and document the critique that motivated the later study. Current
+  results are in <a href="../paper/main.tex">paper/main.tex</a>,
+  <a href="presentation.html">the presentation</a> and
+  <a href="../public_results/full_eu_20261125/analyze.md">the 25 November analysis</a>.</div>
   <div class="eyebrow">Branch Nasrou · batch full_eu_20261122 · reviewed 24 Nov 2026 · Tier 1 done the same day (commit 45c566b)</div>
   <h1>TrackMeasure Review</h1>
   <p class="lede">The engineering is the strongest part of this project and better than most course work: sandboxing, pinned extensions, VPN checks, a repeat-baseline noise floor and paired bootstrap intervals. The research framing is the weak part. The detector is a 2016-style set of API thresholds, which the brief explicitly asks you to go beyond. You also gave up on your most interesting question (consent) because of two bugs in the verifier. Your existing crawl data already answers that question.</p>

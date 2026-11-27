@@ -1,0 +1,386 @@
+{
+  "definitions": {
+    "accept_restart": "All sites attempted after the first accept-run restart.",
+    "duration_outlier": "Measurement-ok Privacy Badger visit over 10x its condition median.",
+    "degraded_gpc": "Eligible GPC visit with requests under 25% of both baselines, or zero third-party domains when both baselines are non-zero."
+  },
+  "accept_restart": {
+    "retried_sites": [
+      "20minutes.fr",
+      "9gag.com",
+      "accuweather.com",
+      "airbnb.com",
+      "aliexpress.com",
+      "amazon.co.uk",
+      "amazon.com",
+      "amazon.de",
+      "amazon.fr",
+      "asos.com",
+      "bbc.co.uk",
+      "bestbuy.com",
+      "bild.de",
+      "bloomberg.com",
+      "booking.com",
+      "businessinsider.com",
+      "buzzfeed.com",
+      "cnbc.com",
+      "cnet.com",
+      "cnn.com",
+      "consumerreports.org",
+      "corriere.it",
+      "costco.com",
+      "dailymail.co.uk",
+      "dailymotion.com",
+      "dictionary.com",
+      "elcorteingles.es",
+      "elmundo.es",
+      "elpais.com",
+      "facebook.com",
+      "foodnetwork.com",
+      "forbes.com",
+      "foxnews.com",
+      "goal.com",
+      "hespress.com",
+      "honey.com",
+      "huffpost.com",
+      "ign.com",
+      "imdb.com",
+      "independent.co.uk",
+      "instagram.com",
+      "latimes.com",
+      "lefigaro.fr",
+      "lemonde.fr",
+      "merriam-webster.com",
+      "mirror.co.uk",
+      "msn.com",
+      "nbcnews.com",
+      "newegg.com",
+      "newsweek.com",
+      "nike.com",
+      "nordstrom.com",
+      "npr.org",
+      "nypost.com",
+      "otto.de",
+      "pcmag.com",
+      "pinterest.com",
+      "rakuten.co.uk",
+      "rakuten.com",
+      "reddit.com",
+      "repubblica.it",
+      "retailmenot.com",
+      "rottentomatoes.com",
+      "rtings.com",
+      "shein.com",
+      "soundcloud.com",
+      "spiegel.de",
+      "target.com",
+      "techcrunch.com",
+      "telegraph.co.uk",
+      "temu.com",
+      "theguardian.com",
+      "thesun.co.uk",
+      "theverge.com",
+      "tiktok.com",
+      "time.com",
+      "tomsguide.com",
+      "tumblr.com",
+      "twitch.tv",
+      "usatoday.com",
+      "vice.com",
+      "walmart.com",
+      "washingtonpost.com",
+      "weather.com",
+      "webmd.com",
+      "welt.de",
+      "wikihow.com",
+      "yahoo.com",
+      "youtube.com",
+      "zalando.de",
+      "zara.com",
+      "zdnet.com"
+    ],
+    "retried_sites_n": 92,
+    "verified_accept_sites_retried": 42,
+    "dual_verified_sites_retried": 29,
+    "primary": {
+      "sites": 43,
+      "tracking": {
+        "baseline_pairs": 12,
+        "surviving_pairs": 12,
+        "condition_only_pairs": 18,
+        "difference_pp_vs_repeat": 0.0,
+        "ci95_pp": [
+          0.0,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      },
+      "tp_domain_delta_median_vs_repeat": 56.0,
+      "identifiers_baseline": {
+        "sites_to_known_tracker": 18,
+        "median_receivers": 0.0,
+        "cookie_sync_sites": 4
+      },
+      "identifiers_accept": {
+        "sites_to_known_tracker": 41,
+        "median_receivers": 17.0,
+        "cookie_sync_sites": 35
+      }
+    },
+    "excluding_retried": {
+      "sites": 1,
+      "tracking": {
+        "baseline_pairs": 0,
+        "surviving_pairs": 0,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": null,
+        "ci95_pp": null,
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      },
+      "tp_domain_delta_median_vs_repeat": 36.0,
+      "identifiers_baseline": {
+        "sites_to_known_tracker": 0,
+        "median_receivers": 0.0,
+        "cookie_sync_sites": 0
+      },
+      "identifiers_accept": {
+        "sites_to_known_tracker": 1,
+        "median_receivers": 9.0,
+        "cookie_sync_sites": 1
+      }
+    },
+    "dual_primary": {
+      "sites": 30,
+      "medians": {
+        "tp_domains": {
+          "baseline": 19.5,
+          "baseline2": 18.5,
+          "optout": 22.0,
+          "accept": 63.0
+        },
+        "tp_cookies_final": {
+          "baseline": 1.0,
+          "baseline2": 1.0,
+          "optout": 1.0,
+          "accept": 35.0
+        }
+      },
+      "tracking_under_optout": {
+        "baseline_pairs": 9,
+        "surviving_pairs": 8,
+        "condition_only_pairs": 1,
+        "difference_pp_vs_repeat": -11.111111111111116,
+        "ci95_pp": [
+          -42.85714285714286,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 1,
+          "p_two_sided": 1.0
+        }
+      }
+    },
+    "dual_excluding_retried": {
+      "sites": 1,
+      "medians": {
+        "tp_domains": {
+          "baseline": 16.0,
+          "baseline2": 18.0,
+          "optout": 32.0,
+          "accept": 54.0
+        },
+        "tp_cookies_final": {
+          "baseline": 1.0,
+          "baseline2": 1.0,
+          "optout": 1.0,
+          "accept": 24.0
+        }
+      },
+      "tracking_under_optout": {
+        "baseline_pairs": 0,
+        "surviving_pairs": 0,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": null,
+        "ci95_pp": null,
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      }
+    }
+  },
+  "pbadger_duration": {
+    "condition_median_seconds": 62.885523200035095,
+    "outlier_sites": [],
+    "primary_delta_medians_vs_repeat": {
+      "tp_domains": 0.0,
+      "tp_cookies_final": -1.0,
+      "requests": -2.0
+    },
+    "excluding_outlier_delta_medians_vs_repeat": {
+      "tp_domains": 0.0,
+      "tp_cookies_final": -1.0,
+      "requests": -2.0
+    },
+    "outlier_id_sharing_rows": 0
+  },
+  "gpc_visit_quality": {
+    "flagged_sites": [],
+    "primary": {
+      "sites": 0,
+      "all": {
+        "baseline_pairs": 0,
+        "surviving_pairs": 0,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": null,
+        "ci95_pp": null,
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      },
+      "service": {
+        "baseline_pairs": 0,
+        "surviving_pairs": 0,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": null,
+        "ci95_pp": null,
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      },
+      "tracking": {
+        "baseline_pairs": 0,
+        "surviving_pairs": 0,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": null,
+        "ci95_pp": null,
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      }
+    },
+    "excluding_flagged": {
+      "sites": 0,
+      "all": {
+        "baseline_pairs": 0,
+        "surviving_pairs": 0,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": null,
+        "ci95_pp": null,
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      },
+      "service": {
+        "baseline_pairs": 0,
+        "surviving_pairs": 0,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": null,
+        "ci95_pp": null,
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      },
+      "tracking": {
+        "baseline_pairs": 0,
+        "surviving_pairs": 0,
+        "condition_only_pairs": 0,
+        "difference_pp_vs_repeat": null,
+        "ci95_pp": null,
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 0,
+          "p_two_sided": 1.0
+        }
+      }
+    }
+  },
+  "cookie_only_optout_outlier": {
+    "definition": "Confirmed optout using cookie-only evidence, live state unknown, and third-party domains over 2x both baselines.",
+    "flagged_sites": [],
+    "primary_dual": {
+      "sites": 30,
+      "medians": {
+        "tp_domains": {
+          "baseline": 19.5,
+          "baseline2": 18.5,
+          "optout": 22.0,
+          "accept": 63.0
+        },
+        "tp_cookies_final": {
+          "baseline": 1.0,
+          "baseline2": 1.0,
+          "optout": 1.0,
+          "accept": 35.0
+        }
+      },
+      "tracking_under_optout": {
+        "baseline_pairs": 9,
+        "surviving_pairs": 8,
+        "condition_only_pairs": 1,
+        "difference_pp_vs_repeat": -11.111111111111116,
+        "ci95_pp": [
+          -42.85714285714286,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 1,
+          "p_two_sided": 1.0
+        }
+      }
+    },
+    "excluding_flagged_dual": {
+      "sites": 30,
+      "medians": {
+        "tp_domains": {
+          "baseline": 19.5,
+          "baseline2": 18.5,
+          "optout": 22.0,
+          "accept": 63.0
+        },
+        "tp_cookies_final": {
+          "baseline": 1.0,
+          "baseline2": 1.0,
+          "optout": 1.0,
+          "accept": 35.0
+        }
+      },
+      "tracking_under_optout": {
+        "baseline_pairs": 9,
+        "surviving_pairs": 8,
+        "condition_only_pairs": 1,
+        "difference_pp_vs_repeat": -11.111111111111116,
+        "ci95_pp": [
+          -42.85714285714286,
+          0.0
+        ],
+        "site_sign_test": {
+          "positive": 0,
+          "negative": 1,
+          "p_two_sided": 1.0
+        }
+      }
+    }
+  }
+}
